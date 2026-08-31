@@ -1,0 +1,19 @@
+CLASS|"class"|""|3:1|119-124
+TYPE_ID|"Main"|"Main"|3:7|125-129
+INHERITS|"inherits"|""|3:12|130-138
+TYPE_ID|"IO"|"IO"|3:21|139-141
+LBRACE|"{"|""|3:24|142-143
+OBJECT_ID|"main"|"main"|4:3|146-150
+LPAREN|"("|""|4:7|150-151
+RPAREN|")"|""|4:8|151-152
+COLON|":"|""|4:10|153-154
+TYPE_ID|"Object"|"Object"|4:12|155-161
+LBRACE|"{"|""|4:19|162-163
+OBJECT_ID|"out_string"|"out_string"|5:5|168-178
+LPAREN|"("|""|5:15|178-179
+STR_CONST|"\"tab:\\t quote:\\\" slash:\\\\\\n\""|"tab:\t quote:\" slash:\\\n"|5:16|179-207
+RPAREN|")"|""|5:44|207-208
+RBRACE|"}"|""|6:3|211-212
+SEMICOLON|";"|""|6:4|212-213
+RBRACE|"}"|""|7:1|214-215
+SEMICOLON|";"|""|7:2|215-216

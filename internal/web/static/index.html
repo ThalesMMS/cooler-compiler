@@ -1,0 +1,221 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Cooler Compiler Lab</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/style-tabs.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-area">
+        <button id="aboutButton" class="icon-button about-button" type="button" title="About Cooler Compiler Lab" aria-label="About Cooler Compiler Lab" aria-haspopup="dialog" aria-controls="aboutDialog">?</button>
+        <div class="brand" aria-label="Cooler Compiler Lab">
+          <div class="brand-mark" aria-hidden="true"><span>C</span></div>
+          <div class="brand-copy">
+            <strong>Cooler</strong>
+            <span>Compiler Lab</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar" role="toolbar" aria-label="Compiler controls">
+        <label class="select-wrap compact">
+          <span class="sr-only">Example</span>
+          <select id="exampleSelect" aria-label="Load example">
+            <option value="">Examples…</option>
+          </select>
+        </label>
+        <label class="select-wrap compact">
+          <span class="sr-only">Recent files</span>
+          <select id="recentSelect" aria-label="Open recent file">
+            <option value="">Recent files…</option>
+          </select>
+        </label>
+        <button id="clearSourceButton" class="button ghost" type="button" title="Clear the COOL editor">Clear</button>
+        <button id="openButton" class="button secondary" type="button" title="Open one or more .cl files">Open</button>
+        <button id="addFileButton" class="button secondary" type="button" title="Add another .cl file">Add</button>
+        <button id="saveButton" class="button secondary" type="button" title="Save the current .cl file">Save</button>
+        <button id="saveAsButton" class="button secondary" type="button" title="Save with another .cl file name">Save As</button>
+        <button id="compileButton" class="button primary" type="button" title="Compile and create a debug session (⌘/Ctrl+Enter)">
+          <span class="button-icon">▶</span> Compile
+        </button>
+        <button id="nextPhaseButton" class="button secondary" type="button" title="Execute the next compiler phase">Next: Lexer</button>
+        <button id="runButton" class="button secondary" type="button" title="Run until halt or breakpoint">Run</button>
+        <button id="stepButton" class="button secondary" type="button" title="Execute one VM instruction (Shift+Enter)">Step</button>
+        <button id="resetButton" class="button ghost" type="button" title="Reset VM">Reset</button>
+      </div>
+
+      <div class="topbar-actions">
+        <label class="select-wrap export-select-wrap">
+          <span class="sr-only">Export artifact</span>
+          <select id="exportSelect" aria-label="Export artifact">
+            <option value="report">JSON report</option>
+            <option value="tokens">Tokens JSON</option>
+            <option value="ast">AST JSON</option>
+            <option value="symbols">Symbols JSON</option>
+            <option value="ir">IR text</option>
+            <option value="assembly">Assembly text</option>
+            <option value="trace">VM trace JSON</option>
+            <option value="zip">ZIP report</option>
+          </select>
+        </label>
+        <button id="exportButton" class="icon-button" type="button" title="Export selected artifact" aria-label="Export selected artifact">⇩</button>
+        <button id="themeButton" class="icon-button" type="button" title="Toggle theme" aria-label="Toggle theme">◐</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="source-pane panel" aria-label="COOL source editor">
+        <div class="panel-header source-header">
+          <div>
+            <div class="eyebrow">Source</div>
+            <h1 id="documentName">untitled.cl</h1>
+          </div>
+          <div class="source-meta">
+            <span id="sourcePosition">Ln 1, Col 1</span>
+            <span id="sourceSize">0 lines</span>
+          </div>
+        </div>
+
+        <div class="tabs-bar source-tabs-bar">
+          <div id="sourceTabs" class="tabs" role="tablist" aria-label="Source files"></div>
+        </div>
+
+        <div class="editor-shell" id="sourcePanel" role="tabpanel" aria-label="COOL source">
+          <div id="lineGutter" class="line-gutter" aria-label="Line numbers and breakpoints"></div>
+          <div class="editor-stack">
+            <pre id="sourceHighlights" aria-hidden="true"></pre>
+            <textarea id="sourceEditor" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="COOL source code"></textarea>
+          </div>
+        </div>
+
+        <div class="editor-footer">
+          <div class="legend">
+            <span><i class="dot breakpoint-dot"></i> breakpoint</span>
+            <span><i class="dot diagnostic-dot"></i> diagnostic</span>
+          </div>
+          <span class="language-badge">COOL</span>
+        </div>
+      </section>
+
+      <section class="results-pane" aria-label="Compiler results">
+        <div id="pipeline" class="pipeline" aria-label="Compilation pipeline"></div>
+
+        <section class="panel artifact-panel">
+          <div class="tabs-bar">
+            <div id="artifactTabs" class="tabs" role="tablist" aria-label="Compiler artifacts">
+              <button class="tab active" data-tab="diagnostics" role="tab">Diagnostics <span id="diagnosticCount" class="tab-count">0</span></button>
+              <button class="tab" data-tab="tokens" role="tab">Tokens</button>
+              <button class="tab" data-tab="ast" role="tab">AST</button>
+              <button class="tab" data-tab="symbols" role="tab">Symbols</button>
+              <button class="tab" data-tab="ir" role="tab">IR</button>
+              <button class="tab" data-tab="assembly" role="tab">Assembly</button>
+              <button class="tab" data-tab="cfg" role="tab">Control flow</button>
+              <button class="tab" data-tab="vm" role="tab">VM</button>
+            </div>
+            <div class="artifact-actions">
+              <span id="sessionStatus" class="status-pill neutral">not compiled</span>
+            </div>
+          </div>
+
+          <aside id="stageGuide" class="stage-guide" aria-live="polite"></aside>
+
+          <div id="artifactContent" class="artifact-content" tabindex="0"></div>
+        </section>
+
+        <section class="panel console-panel">
+          <div class="panel-header compact-header">
+            <div>
+              <div class="eyebrow">Program output</div>
+              <h2>Console</h2>
+            </div>
+            <div class="console-actions">
+              <span id="executionSummary">0 instructions</span>
+              <button id="clearConsoleButton" class="text-button" type="button">Clear view</button>
+            </div>
+          </div>
+          <label class="program-input-block" for="programInput">
+            <span>Program input <span class="program-input-hint">IO.in_string / in_int</span></span>
+            <textarea id="programInput" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="One line per in_string / in_int call"></textarea>
+          </label>
+          <pre id="consoleOutput" class="console-output" aria-live="polite"><span class="console-muted">Compile or advance a phase to begin.</span></pre>
+        </section>
+      </section>
+    </main>
+
+    <footer class="statusbar">
+      <span id="globalStatus"><i class="status-light idle"></i> Ready</span>
+      <span>Lexer → Parser → Types → Stack IR → VM</span>
+      <span id="versionLabel">local educational compiler</span>
+    </footer>
+  </div>
+
+  <dialog id="aboutDialog" class="about-dialog" aria-labelledby="aboutTitle" aria-describedby="aboutDescription">
+    <div class="about-surface">
+      <button id="aboutCloseButton" class="icon-button about-close" type="button" aria-label="Close About">×</button>
+
+      <header class="about-hero">
+        <img class="about-app-icon" src="/app-icon.png" alt="" width="84" height="84">
+        <div>
+          <div class="eyebrow">Educational developer tool</div>
+          <h2 id="aboutTitle">Cooler Compiler Lab</h2>
+          <p id="aboutDescription">Explore how a COOL program becomes executable code, one compiler phase at a time.</p>
+        </div>
+      </header>
+
+      <section class="about-section" aria-labelledby="aboutPipelineTitle">
+        <h3 id="aboutPipelineTitle">How it works</h3>
+        <p>Your source moves through lexical analysis, parsing, semantic analysis, stack IR, pseudo-assembly, and an educational virtual machine. Each phase exposes its artifacts so you can inspect what the compiler produced.</p>
+        <div class="about-pipeline" aria-label="Compiler phases">
+          <span>Lexer</span><i aria-hidden="true">→</i>
+          <span>Parser</span><i aria-hidden="true">→</i>
+          <span>Semantic</span><i aria-hidden="true">→</i>
+          <span>IR</span><i aria-hidden="true">→</i>
+          <span>VM</span>
+        </div>
+      </section>
+
+      <section class="about-section" aria-labelledby="aboutControlsTitle">
+        <h3 id="aboutControlsTitle">Controls</h3>
+        <dl class="about-controls">
+          <div><dt>Next Phase</dt><dd>Advances exactly one compiler phase and preserves its intermediate state.</dd></div>
+          <div><dt>Compile</dt><dd>Completes all remaining phases without executing a VM instruction.</dd></div>
+          <div><dt>Run</dt><dd>Completes pending compilation, then runs until the program halts or reaches a breakpoint.</dd></div>
+          <div><dt>Step</dt><dd>Completes pending compilation, then executes exactly one VM instruction.</dd></div>
+        </dl>
+      </section>
+
+      <footer class="about-footer">
+        <div class="about-meta">
+          <span>Version <strong id="aboutVersion">local</strong></span>
+          <span>Created by <strong>Thales Matheus M Santos</strong></span>
+          <span>Licensed under the <strong>GNU Affero General Public License v3.0 or later</strong></span>
+        </div>
+        <a class="about-github" href="https://github.com/ThalesMMS/cooler-compiler" target="_blank" rel="noreferrer">View the project on GitHub <span aria-hidden="true">↗</span></a>
+      </footer>
+    </div>
+  </dialog>
+
+  <input id="fileInput" type="file" accept=".cl,.cool,text/plain" multiple hidden>
+  <input id="addFileInput" type="file" accept=".cl,.cool,text/plain" multiple hidden>
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+
+  <template id="emptyTemplate">
+    <div class="empty-state">
+      <div class="empty-icon">C</div>
+      <h2>No compilation artifacts yet</h2>
+      <p>Choose an example or enter a COOL program, then press Compile or Next Phase.</p>
+    </div>
+  </template>
+
+  <script src="/about.js" defer></script>
+  <script src="/client-utils.js" defer></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>
