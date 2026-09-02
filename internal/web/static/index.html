@@ -5,12 +5,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark light">
+  <meta name="cooler-capability" content="{{COOLER_CAPABILITY}}">
   <title>Cooler Compiler Lab</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/style-tabs.css">
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Skip to source and results</a>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-area">
@@ -24,7 +26,7 @@
         </div>
       </div>
 
-      <div class="toolbar" role="toolbar" aria-label="Compiler controls">
+      <div class="toolbar" role="group" aria-label="Compiler controls">
         <label class="select-wrap compact">
           <span class="sr-only">Example</span>
           <select id="exampleSelect" aria-label="Load example">
@@ -37,18 +39,103 @@
             <option value="">Recent files…</option>
           </select>
         </label>
-        <button id="clearSourceButton" class="button ghost" type="button" title="Clear the COOL editor">Clear</button>
-        <button id="openButton" class="button secondary" type="button" title="Open one or more .cl files">Open</button>
-        <button id="addFileButton" class="button secondary" type="button" title="Add another .cl file">Add</button>
-        <button id="saveButton" class="button secondary" type="button" title="Save the current .cl file">Save</button>
-        <button id="saveAsButton" class="button secondary" type="button" title="Save with another .cl file name">Save As</button>
-        <button id="compileButton" class="button primary" type="button" title="Compile and create a debug session (⌘/Ctrl+Enter)">
-          <span class="button-icon">▶</span> Compile
+        <button id="clearSourceButton" class="icon-button file-action-button" type="button" title="Clear the COOL editor" aria-label="Clear the COOL editor">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m7 21-4.3-4.3a2.4 2.4 0 0 1 0-3.4L13.3 2.7a2.4 2.4 0 0 1 3.4 0l4.6 4.6a2.4 2.4 0 0 1 0 3.4L11 21Z"></path>
+            <path d="m5 11 9 9"></path>
+            <path d="M7 21h14"></path>
+          </svg>
         </button>
+        <button id="openButton" class="icon-button file-action-button" type="button" title="Open one or more .cl files" aria-label="Open one or more .cl files">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 19V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"></path>
+            <path d="M3 19h15l3-8H6Z"></path>
+          </svg>
+        </button>
+        <button id="addFileButton" class="icon-button file-action-button" type="button" title="Add another .cl file" aria-label="Add another .cl file">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+            <path d="M14 2v6h6"></path>
+            <path d="M12 18v-6"></path>
+            <path d="M9 15h6"></path>
+          </svg>
+        </button>
+        <button id="saveButton" class="icon-button file-action-button" type="button" title="Save the current .cl file" aria-label="Save the current .cl file">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path>
+            <path d="M17 21v-8H7v8"></path>
+            <path d="M7 3v5h8"></path>
+          </svg>
+        </button>
+        <button id="saveAsButton" class="icon-button file-action-button" type="button" title="Save with another .cl file name" aria-label="Save with another .cl file name">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"></path>
+            <path d="M7 3v5h7"></path>
+            <path d="M7 21v-8h7v2"></path>
+            <path d="m14 20 5.5-5.5a1.4 1.4 0 0 1 2 2L16 22h-2Z"></path>
+          </svg>
+        </button>
+        <button id="compileButton" class="button primary responsive-action-button" type="button" title="Compile and create a debug session (⌘/Ctrl+Enter)" aria-label="Compile">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m14.5 6.5 3 3"></path>
+            <path d="m4 21 8.5-8.5"></path>
+            <path d="m16 2 6 6-5 5-6-6Z"></path>
+            <path d="m4 16 4 4"></path>
+          </svg>
+          <span class="button-label">Compile</span>
+        </button>
+		<label class="select-wrap compact optimization-mode-wrap">
+		  <span class="sr-only">Optimization mode</span>
+		  <select id="optimizationMode" aria-label="Optimization mode" title="Choose baseline or conservative educational optimization">
+			<option value="none">Opt: none</option>
+			<option value="basic">Opt: basic</option>
+		  </select>
+		</label>
         <button id="nextPhaseButton" class="button secondary" type="button" title="Execute the next compiler phase">Next: Lexer</button>
-        <button id="runButton" class="button secondary" type="button" title="Run until halt or breakpoint">Run</button>
-        <button id="stepButton" class="button secondary" type="button" title="Execute one VM instruction (Shift+Enter)">Step</button>
-        <button id="resetButton" class="button ghost" type="button" title="Reset VM">Reset</button>
+        <button id="runButton" class="button secondary responsive-action-button" type="button" title="Run until halt or breakpoint" aria-label="Run" data-action-icon="run">
+          <svg class="action-icon run-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"></path></svg>
+          <svg class="action-icon pause-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14"></path><path d="M15 5v14"></path></svg>
+          <span class="button-label">Run</span>
+        </button>
+        <button id="stepButton" class="button secondary responsive-action-button" type="button" title="Execute one VM instruction (Shift+Enter)" aria-label="Step instruction" aria-keyshortcuts="Shift+Enter">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 5 10 7-10 7Z"></path><path d="M19 5v14"></path></svg>
+          <span class="button-label">Step instruction</span>
+        </button>
+        <button id="stepIntoButton" class="button secondary responsive-action-button" type="button" title="Step into the next source construct (F11)" aria-label="Step into" aria-keyshortcuts="F11">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12"></path><path d="m7 11 5 5 5-5"></path><path d="M5 20h14"></path></svg>
+          <span class="button-label">Into</span>
+        </button>
+        <button id="stepOverButton" class="button secondary responsive-action-button" type="button" title="Step over the current source construct (F10)" aria-label="Step over" aria-keyshortcuts="F10">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 16v-2a7 7 0 0 1 12-5"></path><path d="m14 5 3 4-4 3"></path><path d="M5 20h14"></path></svg>
+          <span class="button-label">Over</span>
+        </button>
+        <button id="stepOutButton" class="button secondary responsive-action-button" type="button" title="Step out to the caller (Shift+F11)" aria-label="Step out" aria-keyshortcuts="Shift+F11">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"></path><path d="m7 13 5-5 5 5"></path><path d="M5 4h14"></path></svg>
+          <span class="button-label">Out</span>
+        </button>
+        <button id="runToCursorButton" class="button secondary responsive-action-button" type="button" title="Run to the editor cursor (⌘/Ctrl+F10)" aria-label="Run to cursor" aria-keyshortcuts="Control+F10 Meta+F10">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 3 13 9-7 1-3 7Z"></path><path d="M17 17h4"></path><path d="M19 15v4"></path></svg>
+          <span class="button-label">Cursor</span>
+        </button>
+		<label class="select-wrap reverse-mode-wrap">
+		  <span class="sr-only">Step Back mode</span>
+		  <select id="reverseMode" aria-label="Step Back mode" title="Choose instruction or source-level Step Back">
+			<option value="instruction">Instr back</option>
+			<option value="source">Source back</option>
+		  </select>
+		</label>
+		<button id="stepBackButton" class="button secondary responsive-action-button" type="button" title="Restore the previous instruction or source stop" aria-label="Step back" disabled>
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5v14"></path><path d="m18 5-10 7 10 7Z"></path></svg>
+          <span class="button-label">Back</span>
+        </button>
+		<button id="reverseContinueButton" class="button secondary responsive-action-button" type="button" title="Return to the preceding meaningful debugger stop" aria-label="Reverse continue" disabled>
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m11 18-7-6 7-6"></path><path d="m20 18-7-6 7-6"></path></svg>
+          <span class="button-label">Reverse</span>
+        </button>
+        <button id="resetButton" class="button ghost responsive-action-button" type="button" title="Reset VM" aria-label="Reset VM">
+          <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6"></path><path d="M5.5 16a8 8 0 1 0 .5-9.5L4 10"></path></svg>
+          <span class="button-label">Reset</span>
+        </button>
       </div>
 
       <div class="topbar-actions">
@@ -62,6 +149,10 @@
             <option value="ir">IR text</option>
             <option value="assembly">Assembly text</option>
             <option value="trace">VM trace JSON</option>
+			<option value="visualizations">Visualization JSON</option>
+			<option value="inheritance-svg">Inheritance SVG</option>
+			<option value="inheritance-dot">Inheritance DOT</option>
+			<option value="cfg-dot">Control-flow DOT</option>
             <option value="zip">ZIP report</option>
           </select>
         </label>
@@ -70,7 +161,7 @@
       </div>
     </header>
 
-    <main class="workspace">
+    <main id="mainContent" class="workspace" tabindex="-1">
       <section class="source-pane panel" aria-label="COOL source editor">
         <div class="panel-header source-header">
           <div>
@@ -110,16 +201,21 @@
         <section class="panel artifact-panel">
           <div class="tabs-bar">
             <div id="artifactTabs" class="tabs" role="tablist" aria-label="Compiler artifacts">
-              <button class="tab active" data-tab="diagnostics" role="tab">Diagnostics <span id="diagnosticCount" class="tab-count">0</span></button>
-              <button class="tab" data-tab="tokens" role="tab">Tokens</button>
-              <button class="tab" data-tab="ast" role="tab">AST</button>
-              <button class="tab" data-tab="symbols" role="tab">Symbols</button>
-              <button class="tab" data-tab="ir" role="tab">IR</button>
-              <button class="tab" data-tab="assembly" role="tab">Assembly</button>
-              <button class="tab" data-tab="cfg" role="tab">Control flow</button>
-              <button class="tab" data-tab="vm" role="tab">VM</button>
+			  <button class="tab active" data-tab="diagnostics" role="tab" aria-selected="true">Diagnostics <span id="diagnosticCount" class="tab-count">0</span></button>
+			  <button class="tab" data-tab="tokens" role="tab" aria-selected="false" tabindex="-1">Tokens</button>
+			  <button class="tab" data-tab="ast" role="tab" aria-selected="false" tabindex="-1">AST</button>
+			  <button class="tab" data-tab="symbols" role="tab" aria-selected="false" tabindex="-1">Symbols</button>
+			  <button class="tab" data-tab="ir" role="tab" aria-selected="false" tabindex="-1">IR</button>
+			  <button class="tab" data-tab="assembly" role="tab" aria-selected="false" tabindex="-1">Assembly</button>
+			  <button class="tab" data-tab="cfg" role="tab" aria-selected="false" tabindex="-1">Control flow</button>
+			  <button class="tab" data-tab="explore" role="tab" aria-selected="false" tabindex="-1">Explore</button>
+			  <button class="tab" data-tab="optimization" role="tab" aria-selected="false" tabindex="-1">Optimize</button>
+			  <button class="tab" data-tab="vm" role="tab" aria-selected="false" tabindex="-1">VM</button>
+			  <button class="tab" data-tab="heap" role="tab" aria-selected="false" tabindex="-1">Heap</button>
             </div>
             <div class="artifact-actions">
+			  <span id="timelineStatus" class="timeline-status" role="status" aria-live="polite">timeline unavailable</span>
+              <span id="debugLocation" class="debug-location" role="status" aria-atomic="true">no source location</span>
               <span id="sessionStatus" class="status-pill neutral">not compiled</span>
             </div>
           </div>
@@ -128,6 +224,39 @@
 
           <div id="artifactContent" class="artifact-content" tabindex="0"></div>
         </section>
+
+		<section class="panel debugger-panel" aria-labelledby="debuggerToolsTitle">
+		  <div class="panel-header compact-header">
+			<div>
+			  <div class="eyebrow">Side-effect-free inspection</div>
+			  <h2 id="debuggerToolsTitle">Debugger tools</h2>
+			</div>
+			<button id="saveDebuggerButton" class="text-button" type="button">Save locally</button>
+		  </div>
+		  <div class="debugger-tools-grid">
+			<section aria-labelledby="breakpointsTitle">
+			  <h3 id="breakpointsTitle">Breakpoints</h3>
+			  <p class="debugger-help">Click a source line, then optionally add a condition, hit count, or log message.</p>
+			  <div id="breakpointEditor" class="debugger-list" aria-live="polite"></div>
+			</section>
+			<section aria-labelledby="watchesTitle">
+			  <h3 id="watchesTitle">Watches</h3>
+			  <form id="watchForm" class="watch-form">
+				<label for="watchExpression">Side-effect-free expression</label>
+				<div class="debugger-input-row">
+				  <input id="watchExpression" type="text" maxlength="1024" autocomplete="off" placeholder="i + 1">
+				  <button class="button secondary" type="submit">Add watch</button>
+				</div>
+			  </form>
+			  <div id="watchList" class="debugger-list" aria-live="polite"></div>
+			</section>
+			<section aria-labelledby="debugLogTitle">
+			  <h3 id="debugLogTitle">Debugger log</h3>
+			  <p class="debugger-help">Logpoints appear here and never write to program output.</p>
+			  <ol id="debugLog" class="debug-log" aria-live="polite"></ol>
+			</section>
+		  </div>
+		</section>
 
         <section class="panel console-panel">
           <div class="panel-header compact-header">
@@ -141,9 +270,18 @@
             </div>
           </div>
           <label class="program-input-block" for="programInput">
-            <span>Program input <span class="program-input-hint">IO.in_string / in_int</span></span>
+            <span>Preloaded input <span class="program-input-hint">consumed before live input</span></span>
             <textarea id="programInput" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="One line per in_string / in_int call"></textarea>
           </label>
+          <form id="liveInputForm" class="live-input-form" hidden>
+            <label id="liveInputLabel" for="liveInputLine">Waiting for program input</label>
+            <div class="live-input-row">
+              <input id="liveInputLine" type="text" autocomplete="off" spellcheck="false" aria-describedby="liveInputHint">
+              <button id="sendInputButton" class="button primary" type="submit">Send</button>
+            </div>
+            <span id="liveInputHint" class="program-input-hint">Enter submits one line to the pending read.</span>
+          </form>
+          <ol id="inputHistory" class="input-history" aria-label="Submitted program input" aria-live="polite"></ol>
           <pre id="consoleOutput" class="console-output" aria-live="polite"><span class="console-muted">Compile or advance a phase to begin.</span></pre>
         </section>
       </section>

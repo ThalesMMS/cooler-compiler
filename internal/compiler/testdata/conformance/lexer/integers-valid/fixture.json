@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-integers-valid",
+  "title": "Decimal integer and leading-zero boundaries",
+  "ruleIds": ["LEX-INTEGERS"],
+  "validity": "valid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [],
+  "expectedTokens": [
+    {"type": "INT_CONST", "lexeme": "0", "literal": "0"},
+    {"type": "INT_CONST", "lexeme": "007", "literal": "007"},
+    {"type": "INT_CONST", "lexeme": "2147483647", "literal": "2147483647"},
+    {"type": "INT_CONST", "lexeme": "00000000002147483647", "literal": "00000000002147483647"}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

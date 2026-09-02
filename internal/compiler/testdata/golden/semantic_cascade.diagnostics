@@ -1,0 +1,11 @@
+COL3100|semantic|error|3:5|38-45|identifier missing is not declared
+COL3140|semantic|error|4:10|60-67|cannot allocate undefined type Missing
+COL3100|semantic|error|4:24|74-90|identifier missing_argument is not declared
+COL3100|semantic|error|5:8|100-117|identifier missing_condition is not declared
+COL3100|semantic|error|5:31|123-135|identifier missing_left is not declared
+COL3100|semantic|error|5:53|145-161|identifier missing_receiver is not declared
+COL3121|semantic|error|6:16|188-195|let binding item has undefined type Missing
+COL3100|semantic|error|6:27|199-218|identifier missing_initializer is not declared
+COL3100|semantic|error|7:10|244-256|identifier missing_case is not declared
+COL3132|semantic|error|7:35|269-276|case branch has undefined type Missing
+COL3151|semantic|error|8:9|306-307|'not' expects Bool but received Int

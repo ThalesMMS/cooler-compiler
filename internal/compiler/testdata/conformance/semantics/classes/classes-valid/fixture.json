@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-classes-valid",
+  "title": "Inheritance, exact overriding, attributes, and Main.main",
+  "ruleIds": [
+    "SEM-CLASS-INHERITANCE",
+    "SEM-CLASS-FEATURES",
+    "SEM-CLASS-OVERRIDES",
+    "SEM-CLASS-ENTRYPOINT"
+  ],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "2",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-multifile-valid",
+  "title": "Multifile debugger positions retain native source identity",
+  "provenance": "Cooler SourceUnit debugger mapping contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "7done\n",
+  "expectedSourceUnits": ["helper.cl", "main.cl"],
+  "debuggerScenario": {
+    "maxActions": 16,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "run-to-cursor", "cursor": {"sourceId": "debugger-multifile-valid-source-2", "line": 4}, "expect": {
+        "stopReason": "run-to-cursor", "sourceId": "debugger-multifile-valid-source-2", "line": 4, "method": "Main.main", "synthetic": false
+      }},
+      {"op": "run-to-cursor", "cursor": {"sourceId": "debugger-multifile-valid-source-2", "line": 6}, "expect": {
+        "errorContains": "no executable instruction"
+      }},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "helper", "sourceId": "debugger-multifile-valid-source-1", "line": 2, "enabled": true}
+      ], "expect": {
+        "stopReason": "breakpoint", "sourceId": "debugger-multifile-valid-source-1", "line": 2,
+        "method": "Helper.value", "breakpointVerified": {"helper": true}
+      }},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0}},
+      {"op": "run", "steps": 100000, "expect": {"stopReason": "halt", "halted": true, "output": ["7", "done\n"]}}
+    ]
+  },
+  "sources": ["helper.cl", "main.cl"]
+}

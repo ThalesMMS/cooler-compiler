@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-controls-valid",
+  "title": "Instruction, source step, run, limit, and stop precedence controls",
+  "provenance": "Cooler debugger source-step control contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "2\n",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 24,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"pipelinePhase": "runtime", "complete": true, "blocked": false, "stopReason": "ready"}},
+      {"op": "step-into", "expect": {"stopReason": "step-into", "method": "Main.$init", "synthetic": false}},
+      {"op": "advance-to-location", "count": 100, "expect": {"method": "Main.main", "instruction": 3, "frameDepth": 1, "synthetic": false}},
+      {"op": "step-over", "expect": {"stopReason": "step-over", "method": "Main.main", "instruction": 6, "frameDepth": 1, "synthetic": false}},
+      {"op": "step-into", "expect": {"stopReason": "step-into", "method": "Main.main", "line": 9, "frameDepth": 1, "synthetic": false}},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0}},
+      {"op": "advance-to-location", "count": 100, "expect": {"method": "Helper.twice", "instruction": 0, "frameDepth": 2, "synthetic": false}},
+      {"op": "step-out", "expect": {"stopReason": "step-out", "method": "Main.main", "frameDepth": 1, "synthetic": false}},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0}},
+      {"op": "step-into", "steps": 1, "expect": {"stopReason": "instruction-limit", "paused": true, "halted": false}},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0}},
+      {"op": "run", "steps": 100000, "expect": {"stopReason": "halt", "halted": true, "paused": false, "output": ["2", "\n"]}}
+    ]
+  },
+  "sources": ["main.cl"]
+}

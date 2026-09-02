@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-deep-cycle-features-invalid",
+  "title": "Deep inheritance cycle plus independently invalid attributes and methods",
+  "ruleIds": ["SEM-CLASS-INHERITANCE", "SEM-CLASS-FEATURES"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3012", "stage": "semantic", "severity": "error"},
+    {"code": "COL3020", "stage": "semantic", "severity": "error"},
+    {"code": "COL3030", "stage": "semantic", "severity": "error"},
+    {"code": "COL3021", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original adversarial COOL manual audit fixture, AGPL-3.0-or-later"
+}

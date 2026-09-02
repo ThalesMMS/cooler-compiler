@@ -1,0 +1,192 @@
+# COOL language server
+
+`cooler-lsp` is a local Language Server Protocol 3.17 process for `.cl` and
+`.cool` files. It uses the stable public Go compiler facade in semantic-check
+mode; it does not import the private compiler implementation or introduce a
+second COOL type checker.
+
+```bash
+go run ./cmd/cooler-lsp
+```
+
+The default transport is LSP JSON-RPC over stdin/stdout. Stdout is reserved for
+framed protocol messages. Operational logs and `--version` output go to stderr.
+The command does not open a socket, make network requests, or add a hosted
+service.
+
+## Protocol and capabilities
+
+The server implements:
+
+- `initialize`, `initialized`, `shutdown`, and `exit`;
+- incremental UTF-16 `didOpen`, `didChange`, and `didClose` synchronization;
+- versioned `publishDiagnostics` for input, lexer, parser, and semantic stages;
+- document/workspace symbols, hover, definition, references, completion,
+  semantic tokens, and safe quick-fix code actions;
+- `$/cancelRequest`, stale document-version rejection, watched file
+  creation/change/deletion, and configuration-triggered reanalysis.
+
+Diagnostics preserve stable `COLdddd` codes, severity, source-unit URI,
+related cross-file locations, and hints. Ordinary edits use
+`compiler.ModeCheck`; IR, optimizer, codegen, and runtime diagnostics are not
+produced. A quick fix is exposed only when the compiler supplies an exact
+source span and replacement. Currently that includes focused duplicate-class
+renames.
+
+Symbols cover classes, methods, attributes, formals, `let` bindings, and case
+variables. Resolution uses typed AST nodes and symbols from the public API:
+lexical bindings shadow attributes, inherited members resolve to their
+declaring source, implicit dispatch selects the effective override, explicit
+receivers use their static type, and `SELF_TYPE` hover text names its receiver
+context. Built-in hovers and completion carry concise documentation but have no
+fake filesystem definition.
+
+Semantic tokens classify classes, methods, attributes, parameters, local/case
+variables, types, keywords, strings, numbers, nested and line comments, and
+operators. Declaration, readonly, and default-library modifiers are emitted
+where applicable.
+
+## Workspace policy
+
+COOL has no module or import system. The server therefore compiles one ordered
+project:
+
+1. every `.cl`/`.cool` file below each initialized workspace root is discovered;
+2. open editor buffers replace the corresponding disk content;
+3. unsaved files outside a root participate while open;
+4. source units are sorted by normalized file URI, which deterministically
+   controls declaration and diagnostic order without creating namespaces.
+
+Watched create/change/delete notifications update closed disk documents. Open
+buffers always win until `didClose`, when the current disk file is reloaded or
+the removed document leaves the project. Renames are the client's normal
+delete/create pair. Configuration changes invalidate the analysis cache.
+File URI paths are decoded exactly once. Windows UNC authorities are preserved
+and round-trip canonically; a non-local authority is rejected on Unix instead
+of being silently reinterpreted as a local path.
+
+The complete typed project must be reconsidered after a content change because
+one class can affect inheritance and dispatch everywhere. The public facade
+exposes immutable results rather than mutable parser/class-table state, so a
+changed generation is compiled afresh for correctness. Repeated diagnostics,
+hover, symbol, completion, and navigation requests share that generation's
+compiled result and semantic index instead of recompiling per request. No
+private or unsafe compiler object crosses the public API boundary.
+
+## Debounce, cancellation, and stale results
+
+Edit notifications cancel the previous debounce/analysis and schedule a new
+analysis after 75 ms. Compilation has a five-second default deadline. A result
+is cached or published only when its workspace generation and open-document
+versions still match. Published diagnostics include the LSP document version,
+so clients can reject an older notification even if a new edit is already in
+transport.
+
+Requests are independently cancellable. A cancellation received just before
+request dispatch is remembered, avoiding a scheduler race. Panics are recovered
+at each request/notification boundary and logged to stderr; they do not escape
+and terminate the editor process.
+
+At most 64 ordinary requests execute concurrently by default; excess requests
+receive a bounded JSON-RPC server error instead of creating another goroutine.
+Active request IDs must be LSP strings or integers whose encoded form is at
+most 256 bytes, duplicate active IDs are rejected, and at most 256 early
+cancellations are retained. `shutdown` cancels and drains earlier work before
+its response, invalidates pending diagnostics, and ignores later notifications
+except the required `exit`. Document/configuration notifications are likewise
+ignored until initialization has completed.
+
+A lexer or parser error is retained with its own source URI. Lexing/parsing is
+performed for every source unit before the normal compiler barrier, so one
+malformed file does not erase independent frontend diagnostics in another.
+Semantic analysis resumes after those syntax errors are corrected.
+
+## Resource limits
+
+Defaults are deliberately local and bounded:
+
+| Resource | Default |
+| --- | ---: |
+| JSON-RPC payload | 4 MiB |
+| Header bytes | 16 KiB |
+| Encoded request ID | 256 bytes |
+| Concurrent ordinary requests | 64 |
+| Remembered early cancellations | 256 |
+| Incremental changes per notification | 4,096 |
+| Workspace roots | 32 |
+| Filesystem entries visited at initialization | 100,000 |
+| Open documents | 256 |
+| Workspace COOL files | 1,024 |
+| One source file | 4 MiB |
+| Combined workspace source | 32 MiB |
+| Initial workspace scan | 5 seconds |
+| One analysis | 5 seconds |
+
+The command flags `--max-message-bytes`, `--max-open-documents`,
+`--max-workspace-files`, `--max-workspace-roots`, `--max-content-changes`,
+`--max-workspace-entries`, `--workspace-scan-timeout`, and
+`--analysis-timeout` lower or raise the operational limits. Compiler/VM limits
+remain governed by the public compiler API; the LSP never executes user
+programs.
+
+Malformed framed JSON receives JSON-RPC `-32700` and the process continues.
+Invalid requests/params and unknown methods receive the standard errors.
+Malformed, duplicate, or oversized framing terminates the stdio session because
+safely finding the next frame would require trusting an attacker-controlled
+header or body length. Header input is rejected while it is read, before an
+unbounded line can be accumulated.
+
+Workspace discovery, disk reload, and watched-file reads enforce their byte
+ceilings while reading rather than trusting a prior file size, and reject
+non-regular source paths such as devices, pipes, and symlinks. One watched-file
+batch retains at most the configured workspace file count and combined source
+bytes, with duplicate URIs collapsed to the final event. Open, changed,
+reloaded, and watched documents also preserve the combined retained-source
+ceiling across batches. An incremental edit that exceeds its change-count
+ceiling marks the buffer desynchronized and requires a bounded full-text update
+before analysis resumes.
+
+## Neovim smoke test
+
+Build the binary and note its absolute path:
+
+```bash
+go build -o ./bin/cooler-lsp ./cmd/cooler-lsp
+```
+
+With Neovim 0.10+, open a COOL file and run this Lua (replace the command path):
+
+```lua
+vim.filetype.add({ extension = { cl = "cool", cool = "cool" } })
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "cool",
+  callback = function()
+    vim.lsp.start({
+      name = "cooler-lsp",
+      cmd = { "/absolute/path/to/bin/cooler-lsp" },
+      root_dir = vim.fs.root(0, { ".git" }) or vim.fn.getcwd(),
+    })
+  end,
+})
+```
+
+Use `:LspInfo` to confirm initialization, introduce `missing` in an expression
+to see `COL3100`, hover an identifier with `K`, navigate with `gd`, find
+references with `gr`, request completion with `Ctrl-X Ctrl-O`, and run
+`:lua vim.lsp.buf.document_symbol()` for hierarchy. `:messages` shows stderr
+logs; protocol stdout remains invisible to the editor UI.
+
+## Local validation
+
+The package tests replay framed JSON-RPC lifecycle, malformed-message,
+diagnostic, and cancellation sequences. Feature tests cover multifile
+inheritance, overrides, `SELF_TYPE`, shadowing, cross-file related information,
+completion filtering, semantic tokens, quick fixes, UTF-16 edits, stale
+generations, concurrent cache reuse, and a 51-file workspace stress case.
+
+```bash
+go test -race ./internal/lsp ./cmd/cooler-lsp
+make release-check
+```
+
+No editor extension, CI workflow, or network service is required.

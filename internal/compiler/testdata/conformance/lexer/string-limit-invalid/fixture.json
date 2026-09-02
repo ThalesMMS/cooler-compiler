@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-string-limit-invalid",
+  "title": "One-past-maximum string rejection and closing-quote recovery",
+  "ruleIds": ["LEX-STRING-LIMITS", "LEX-DIAGNOSTICS", "LEX-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "none",
+  "expectedDiagnostics": [
+    {"code": "COL1006", "stage": "lexer", "severity": "error"}
+  ],
+  "expectedTokens": [
+    {"type": "CLASS", "lexeme": "class", "literal": ""}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

@@ -2,23 +2,38 @@
 
 (() => {
   "use strict";
-  async function loadCoolerApp() {
-    const parts = await Promise.all([
-      "/app-a.js",
-      "/app-b.js",
-      "/app-c.js",
-    ].map(async (path) => {
-      const response = await fetch(path);
-      if (!response.ok) {
-        throw new Error(`${path} ${response.status} ${response.statusText}`);
-      }
-      return response.text();
-    }));
-    const script = document.createElement("script");
-    script.textContent = parts.join("\n");
-    document.head.appendChild(script);
+
+  const capabilityMeta = document.querySelector('meta[name="cooler-capability"]');
+  const capability = capabilityMeta?.content || "";
+  capabilityMeta?.remove();
+  Object.defineProperty(window, "CoolerCapability", {
+    value: capability,
+    configurable: false,
+    enumerable: false,
+    writable: false,
+  });
+
+  function presentEntrypointFailure(error) {
+    const detail = error instanceof Error ? error.message : String(error || "unknown error");
+    const message = `Could not load Cooler Compiler Lab: ${detail}`;
+    const status = document.getElementById("globalStatus");
+    if (status) status.textContent = message;
+    const failure = document.createElement("div");
+    failure.className = "toast error bootstrap-error";
+    failure.setAttribute("role", "alert");
+    failure.textContent = message;
+    const region = document.getElementById("toastRegion");
+    if (region) region.appendChild(failure);
+    else document.body.prepend(failure);
   }
-  loadCoolerApp().catch((error) => {
+
+  if (!capability) {
+    presentEntrypointFailure(new Error("missing process capability; reopen the application from the current Cooler process"));
+    return;
+  }
+
+  import("./app-bootstrap.mjs").then(({ bootstrapCoolerApp }) => bootstrapCoolerApp()).catch((error) => {
     console.error("Could not load Cooler GUI app:", error);
+    presentEntrypointFailure(error);
   });
 })();

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-int32-boundaries-valid",
+  "title": "Signed 32-bit arithmetic, complement, division, comparison, and output boundaries",
+  "ruleIds": ["RUN-INT-OVERFLOW"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "-2147483648/2147483647/-2/-2147483648/-2147483648/TT/-2147483648/-2147483647",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler deterministic-int32 fixture, AGPL-3.0-or-later"
+}

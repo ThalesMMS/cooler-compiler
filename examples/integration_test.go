@@ -21,7 +21,13 @@ func TestValidExamplesCompileAndMatchOutput(t *testing.T) {
 		}
 		t.Run(example.ID, func(t *testing.T) {
 			var result compiler.Result
-			if example.Input != "" {
+			if len(example.Files) > 0 {
+				units := make([]compiler.SourceUnit, len(example.Files))
+				for index, file := range example.Files {
+					units[index] = compiler.SourceUnit{ID: "example-" + example.ID + "-" + file.Name, Name: file.Name, Content: file.Source}
+				}
+				result = compiler.CompileProject(units, compiler.ProjectOptions{Input: example.Input})
+			} else if example.Input != "" {
 				result = compiler.CompileWithInput(example.Source, example.Input)
 			} else {
 				result = compiler.Compile(example.Source)

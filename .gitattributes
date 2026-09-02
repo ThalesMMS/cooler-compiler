@@ -1,3 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Auto-detect text files and keep every cross-platform checkout deterministic.
+* text=auto eol=lf
+*.bat text eol=crlf
+examples/** text eol=lf
 internal/compiler/testdata/** text eol=lf
+internal/lsp/testdata/** text eol=lf

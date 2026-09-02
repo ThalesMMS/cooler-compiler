@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-comments-whitespace-valid",
+  "title": "Line, nested block, delimiter isolation, and ASCII whitespace",
+  "ruleIds": ["LEX-COMMENTS", "LEX-WHITESPACE"],
+  "validity": "valid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [],
+  "expectedTokens": [
+    {"type": "CLASS", "lexeme": "class", "literal": ""}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

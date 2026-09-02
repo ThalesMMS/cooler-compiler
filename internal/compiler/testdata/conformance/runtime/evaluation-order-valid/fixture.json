@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-evaluation-order-valid",
+  "title": "Dynamic/static/implicit dispatch with arguments before receiver and left-to-right operands",
+  "ruleIds": ["RUN-OBJECT-DISPATCH"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "Child/Base/ABR12/LQ7/4",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

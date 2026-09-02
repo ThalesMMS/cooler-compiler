@@ -87,12 +87,6 @@ func Catalog() ([]Example, error) {
 			}
 			stackSrc := string(content)
 			atoiSrc := string(atoi)
-			joined := stackSrc
-			if !strings.HasSuffix(joined, "\n") {
-				joined += "\n"
-			}
-			joined += atoiSrc
-			ex.Source = joined
 			ex.Input = string(stackTest)
 			ex.Files = []ExampleFile{
 				{Name: "13_stack_machine.cl", Source: stackSrc},

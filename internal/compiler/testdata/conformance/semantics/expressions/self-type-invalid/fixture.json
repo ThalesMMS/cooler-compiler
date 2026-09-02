@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-self-type-invalid",
+  "title": "SELF_TYPE declaration, conformance, assignment, static dispatch, and case restrictions",
+  "ruleIds": ["SEM-EXPR-SELF-TYPE"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3033", "stage": "semantic", "severity": "error"},
+    {"code": "COL3061", "stage": "semantic", "severity": "error"},
+    {"code": "COL3103", "stage": "semantic", "severity": "error"},
+    {"code": "COL3170", "stage": "semantic", "severity": "error"},
+    {"code": "COL3131", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

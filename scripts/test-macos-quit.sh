@@ -15,10 +15,18 @@ if [[ ! -d "$APP" ]]; then
   exit 1
 fi
 
+bundle_id="com.thalesmms.cooler-compiler"
+running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
+if [[ "$running_info" == *'"pid"='* ]]; then
+  echo "an application with bundle identifier $bundle_id is already running" >&2
+  exit 1
+fi
+
 open -n "$APP"
 app_pid=""
 for _ in {1..100}; do
-  app_pid="$(pgrep -nx coolergui || true)"
+  running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
+  app_pid="$(sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p' <<<"$running_info")"
   [[ -n "$app_pid" ]] && break
   sleep 0.1
 done
@@ -34,56 +42,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
-menu_ready=false
-for _ in {1..50}; do
-  if osascript - "$app_pid" >/dev/null 2>&1 <<'APPLESCRIPT'
-on run argv
-  set targetPID to (item 1 of argv) as integer
-  tell application "System Events"
-    set appProcess to first application process whose unix id is targetPID
-    if (count of menu bars of appProcess) is greater than 0 then return
-    error "menu bar is not ready"
-  end tell
-end run
-APPLESCRIPT
-  then
-    menu_ready=true
-    break
-  fi
-  sleep 0.1
-done
-if [[ "$menu_ready" != true ]]; then
-  echo "Cooler Compiler Lab did not expose a menu bar" >&2
-  exit 1
-fi
-
-osascript - "$app_pid" <<'APPLESCRIPT'
-on run argv
-  set targetPID to (item 1 of argv) as integer
-  tell application "System Events"
-    set appProcess to first application process whose unix id is targetPID
-    set frontmost of appProcess to true
-    tell appProcess
-      set appMenu to menu 1 of menu bar item "Cooler Compiler Lab" of menu bar 1
-      set quitItem to first menu item of appMenu whose name is "Quit Cooler Compiler Lab"
-      set shortcut to value of attribute "AXMenuItemCmdChar" of quitItem
-      if shortcut is not "Q" and shortcut is not "q" then
-        error "Quit menu item does not use Q as its key equivalent"
-      end if
-    end tell
-    keystroke "q" using command down
-  end tell
-end run
-APPLESCRIPT
+# A direct Apple Quit event exercises the application's normal termination path
+# without requiring the test runner to have Accessibility permission. The menu's
+# Command-Q binding is separately guarded by a source-level regression test.
+osascript -e "tell application id \"$bundle_id\" to quit"
 
 for _ in {1..100}; do
   if ! kill -0 "$app_pid" 2>/dev/null; then
     trap - EXIT
-    echo "Command-Q terminated Cooler Compiler Lab"
+    echo "Apple Quit event terminated Cooler Compiler Lab"
     exit 0
   fi
   sleep 0.1
 done
 
-echo "Cooler Compiler Lab remained running after Command-Q" >&2
+echo "Cooler Compiler Lab remained running after the Apple Quit event" >&2
 exit 1

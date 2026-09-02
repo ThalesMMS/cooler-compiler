@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-input-bytes-invalid",
+  "title": "Maximum supplied input bytes",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6053", "stage": "runtime", "severity": "error"}
+  ],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {"maxInputBytes": 2},
+  "runSteps": [100],
+  "inputLines": ["xx"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

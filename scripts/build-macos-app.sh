@@ -3,12 +3,23 @@
 
 set -euo pipefail
 
-VERSION="${1:-0.1.0}"
+VERSION="${1:-1.0.0}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${DIST_DIR:-$ROOT/dist}"
+COMMIT="${COMMIT:-$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null || true)}"
+SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$ROOT" show -s --format=%ct HEAD 2>/dev/null || true)}"
 APP="$DIST_DIR/Cooler Compiler Lab.app"
 MACOS="$APP/Contents/MacOS"
 RESOURCES="$APP/Contents/Resources"
+
+if [[ -z "$COMMIT" ]]; then
+  printf '[WARN] Git source identity unavailable; embedding commit=unknown\n' >&2
+  COMMIT="unknown"
+fi
+if [[ -z "$SOURCE_DATE_EPOCH" ]]; then
+  printf '[WARN] Git source timestamp unavailable; embedding build date 0\n' >&2
+  SOURCE_DATE_EPOCH="0"
+fi
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "macOS application packaging must run on macOS" >&2
@@ -19,7 +30,9 @@ rm -rf "$APP"
 mkdir -p "$MACOS" "$RESOURCES"
 
 cd "$ROOT"
-CGO_ENABLED=1 go build -trimpath -ldflags "-s -w -X main.version=$VERSION" -o "$MACOS/coolergui" ./cmd/coolergui
+CGO_ENABLED=1 go build -buildvcs=false -trimpath \
+  -ldflags "-s -w -X main.version=$VERSION -X main.commit=$COMMIT -X main.buildDate=$SOURCE_DATE_EPOCH" \
+  -o "$MACOS/coolergui" ./cmd/coolergui
 cp "$ROOT/assets/AppIcon.icns" "$RESOURCES/AppIcon.icns"
 for notice_file in LICENSE NOTICE THIRD_PARTY_NOTICES.md; do
   cp "$ROOT/$notice_file" "$RESOURCES/$notice_file"

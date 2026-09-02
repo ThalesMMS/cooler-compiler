@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-locations-valid",
+  "title": "Rune columns and UTF-16 offsets across Unicode and newline",
+  "ruleIds": ["LEX-SOURCE-SPANS"],
+  "validity": "valid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [],
+  "expectedTokens": [
+    {"type": "STR_CONST", "lexeme": "\"😀\"", "literal": "😀", "span": {"startLine": 1, "startColumn": 1, "endLine": 1, "endColumn": 4, "startOffset": 0, "endOffset": 4}},
+    {"type": "CLASS", "lexeme": "class", "literal": "", "span": {"startLine": 2, "startColumn": 1, "endLine": 2, "endColumn": 6, "startOffset": 5, "endOffset": 10}}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

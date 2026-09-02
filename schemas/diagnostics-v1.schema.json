@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ThalesMMS/cooler-compiler/schemas/diagnostics-v1.schema.json",
+  "title": "Cooler diagnostics v1",
+  "type": "array",
+  "items": { "$ref": "#/$defs/diagnostic" },
+  "$defs": {
+    "span": {
+      "type": "object",
+      "required": ["startLine", "startColumn", "endLine", "endColumn", "startOffset", "endOffset"],
+      "properties": {
+        "startLine": { "type": "integer", "minimum": 1 },
+        "startColumn": { "type": "integer", "minimum": 1 },
+        "endLine": { "type": "integer", "minimum": 1 },
+        "endColumn": { "type": "integer", "minimum": 1 },
+        "startOffset": { "type": "integer", "minimum": 0 },
+        "endOffset": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "related": {
+      "type": "object",
+      "required": ["label", "line", "column", "span"],
+      "properties": {
+        "label": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "span": { "$ref": "#/$defs/span" }
+      },
+      "additionalProperties": false
+    },
+    "quickFix": {
+      "type": "object",
+      "required": ["title", "replacement", "span"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "replacement": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" }
+      },
+      "additionalProperties": false
+    },
+    "suggestion": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "detail": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["stage", "severity", "message", "line", "column", "span"],
+      "properties": {
+        "code": { "type": "string" },
+        "stage": { "type": "string", "minLength": 1 },
+        "severity": { "enum": ["error", "warning", "info"] },
+        "message": { "type": "string" },
+        "hint": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "span": { "$ref": "#/$defs/span" },
+        "related": { "type": "array", "items": { "$ref": "#/$defs/related" } },
+        "quickFixes": { "type": "array", "items": { "$ref": "#/$defs/quickFix" } },
+        "suggestions": { "type": "array", "items": { "$ref": "#/$defs/suggestion" } }
+      },
+      "additionalProperties": false
+    }
+  }
+}

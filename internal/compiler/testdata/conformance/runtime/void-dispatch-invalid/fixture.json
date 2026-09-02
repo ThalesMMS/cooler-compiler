@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-void-dispatch-invalid",
+  "title": "Dispatch on void runtime diagnostic",
+  "ruleIds": ["RUN-OBJECT-DISPATCH", "RUN-DISPATCH-FAILURES"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6020", "stage": "runtime", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

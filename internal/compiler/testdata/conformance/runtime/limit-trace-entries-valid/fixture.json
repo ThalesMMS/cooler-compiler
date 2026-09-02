@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-trace-entries-valid",
+  "title": "Retained trace entry eviction",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {"maxTraceEntries": 2},
+  "runSteps": [100],
+  "expectedTraceOffsetMinimum": 1,
+  "expectedRetainedTraceMaximum": 2,
+  "expectedArtifacts": ["runtimeTrace"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

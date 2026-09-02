@@ -9,13 +9,14 @@ import (
 )
 
 const (
-	typeObject = "Object"
-	typeIO     = "IO"
-	typeInt    = "Int"
-	typeString = "String"
-	typeBool   = "Bool"
-	typeSelf   = "SELF_TYPE"
-	typeNo     = "<no_type>"
+	typeObject  = "Object"
+	typeIO      = "IO"
+	typeInt     = "Int"
+	typeString  = "String"
+	typeBool    = "Bool"
+	typeSelf    = "SELF_TYPE"
+	typeNo      = "<no_type>"
+	typeInvalid = "<error_type>"
 )
 
 type AttrInfo struct {
@@ -39,13 +40,15 @@ type MethodInfo struct {
 }
 
 type ClassInfo struct {
-	Name       string
-	Parent     string
-	Decl       *ClassDecl
-	Builtin    bool
-	Attributes map[string]*AttrInfo
-	Methods    map[string]*MethodInfo
-	Span       Span
+	Name           string
+	Parent         string
+	Decl           *ClassDecl
+	Builtin        bool
+	Attributes     map[string]*AttrInfo
+	AttributeOrder []string
+	Methods        map[string]*MethodInfo
+	MethodOrder    []string
+	Span           Span
 }
 
 type ClassTable struct {
@@ -159,7 +162,6 @@ type analyzer struct {
 	symbols      []Symbol
 	diagnostics  []Diagnostic
 	currentClass string
-	scopeCounter int
 }
 
 func Analyze(program *Program) Analysis {
@@ -214,6 +216,7 @@ func newClassTable() *ClassTable {
 			FormalTypes: formalTypes, ReturnType: returnType,
 			Builtin: true, Span: emptySpan(),
 		}
+		class.MethodOrder = append(class.MethodOrder, name)
 	}
 	addMethod(object, "abort", nil, nil, typeObject)
 	addMethod(object, "type_name", nil, nil, typeString)
@@ -235,12 +238,7 @@ func (a *analyzer) installBuiltinSymbols() {
 	for _, className := range a.table.Order {
 		class := a.table.Classes[className]
 		a.addSymbol(className, "class", className, false, true, "<prelude>", className, class.Span)
-		methodNames := make([]string, 0, len(class.Methods))
-		for name := range class.Methods {
-			methodNames = append(methodNames, name)
-		}
-		sort.Strings(methodNames)
-		for _, name := range methodNames {
+		for _, name := range orderedMethodNames(class) {
 			method := class.Methods[name]
 			a.addSymbol(method.Name, "builtin method", methodSignature(method), false, true, className, className, method.Span)
 		}
@@ -256,6 +254,7 @@ func (a *analyzer) collectClasses() {
 		if existing, found := a.table.Classes[decl.Name]; found {
 			d := errorDiagnostic("semantic", "COL3002", fmt.Sprintf("class %s is defined more than once", decl.Name), "Rename or remove the duplicate class declaration.", decl.NameSpan)
 			d = withRelated(d, "first definition", existing.Span)
+			d = withQuickFix(d, "Rename duplicate declaration", decl.Name+"2", decl.NameSpan)
 			a.diagnostics = append(a.diagnostics, d)
 			continue
 		}
@@ -292,43 +291,48 @@ func (a *analyzer) validateInheritance() {
 		}
 	}
 
-	state := map[string]int{}
-	var visit func(string, []string)
-	visit = func(name string, path []string) {
-		if state[name] == 2 {
-			return
+	resolved := map[string]bool{}
+	for _, name := range a.table.Order {
+		if resolved[name] {
+			continue
 		}
-		if state[name] == 1 {
-			cycleStart := 0
-			for i, item := range path {
-				if item == name {
-					cycleStart = i
-					break
+		path := []string{}
+		positions := map[string]int{}
+		current := name
+		for current != "" && !resolved[current] {
+			if cycleStart, found := positions[current]; found {
+				members := append([]string(nil), path[cycleStart:]...)
+				cycle := append(append([]string(nil), members...), current)
+				class := a.table.Classes[current]
+				span := class.Span
+				if class.Decl != nil {
+					span = class.Decl.ParentSpan
 				}
-			}
-			cycle := append(path[cycleStart:], name)
-			class := a.table.Classes[name]
-			span := class.Span
-			if class.Decl != nil {
-				span = class.Decl.ParentSpan
-			}
-			a.error("COL3012", "inheritance cycle: "+strings.Join(cycle, " -> "), "Break the cycle by changing at least one inherits clause.", span)
-			for _, member := range cycle {
-				if info, ok := a.table.Classes[member]; ok && !info.Builtin {
+				d := errorDiagnostic("semantic", "COL3012", "inheritance cycle: "+strings.Join(cycle, " -> "), "Break the cycle by changing at least one inherits clause.", span)
+				for _, member := range members {
+					info := a.table.Classes[member]
+					if info == nil || info.Builtin {
+						continue
+					}
+					if info.Decl != nil && member != current {
+						d = withRelated(d, "cycle member "+member, info.Decl.ParentSpan)
+					}
 					info.Parent = typeObject
 				}
+				a.diagnostics = append(a.diagnostics, d)
+				break
 			}
-			return
+			positions[current] = len(path)
+			path = append(path, current)
+			class := a.table.Classes[current]
+			if class == nil {
+				break
+			}
+			current = class.Parent
 		}
-		state[name] = 1
-		class, ok := a.table.Classes[name]
-		if ok && class.Parent != "" {
-			visit(class.Parent, append(path, name))
+		for _, visited := range path {
+			resolved[visited] = true
 		}
-		state[name] = 2
-	}
-	for _, name := range a.table.Order {
-		visit(name, nil)
 	}
 }
 
@@ -364,6 +368,7 @@ func (a *analyzer) collectAttribute(class *ClassInfo, attr *AttributeDecl) {
 	}
 	info := &AttrInfo{Name: attr.Name, TypeName: attr.TypeName, Owner: class.Name, Decl: attr, Span: attr.Span}
 	class.Attributes[attr.Name] = info
+	class.AttributeOrder = append(class.AttributeOrder, attr.Name)
 	a.addSymbol(attr.Name, "attribute", attr.TypeName, true, attr.Init != nil, class.Name, class.Name, attr.NameSpan)
 }
 
@@ -404,12 +409,16 @@ func (a *analyzer) collectMethod(class *ClassInfo, method *MethodDecl) {
 		FormalTypes: formalTypes, ReturnType: method.ReturnType, Decl: method, Span: method.Span,
 	}
 	class.Methods[method.Name] = info
+	class.MethodOrder = append(class.MethodOrder, method.Name)
 	a.addSymbol(method.Name, "method", methodSignature(info), false, true, class.Name, class.Name, method.NameSpan)
 }
 
-func sortedMethodNames(class *ClassInfo) []string {
+func orderedMethodNames(class *ClassInfo) []string {
 	if class == nil {
 		return nil
+	}
+	if len(class.MethodOrder) == len(class.Methods) {
+		return append([]string(nil), class.MethodOrder...)
 	}
 	names := make([]string, 0, len(class.Methods))
 	for name := range class.Methods {
@@ -432,7 +441,7 @@ func (a *analyzer) validateFeatureInheritance() {
 				a.diagnostics = append(a.diagnostics, d)
 			}
 		}
-		methodNames := sortedMethodNames(class)
+		methodNames := orderedMethodNames(class)
 		for _, methodName := range methodNames {
 			method := class.Methods[methodName]
 			inherited, found := a.lookupMethodFrom(class.Parent, methodName)
@@ -478,11 +487,11 @@ func (a *analyzer) checkBodies() {
 			}
 			env := newTypeEnv()
 			actual := a.checkExpr(attr.Decl.Init, env, class.Name+".<attribute "+attr.Name+">")
-			if !a.conforms(actual, attr.TypeName) {
+			if actual != typeInvalid && a.table.Has(attr.TypeName) && !a.conforms(actual, attr.TypeName) {
 				a.typeError("COL3060", fmt.Sprintf("initializer type %s does not conform to declared type %s of attribute %s", actual, attr.TypeName, attr.Name), attr.Decl.Init.GetSpan())
 			}
 		}
-		methodNames := sortedMethodNames(class)
+		methodNames := orderedMethodNames(class)
 		for _, methodName := range methodNames {
 			method := class.Methods[methodName]
 			if method.Decl == nil {
@@ -496,15 +505,18 @@ func (a *analyzer) checkBodies() {
 func (a *analyzer) checkMethod(class *ClassInfo, method *MethodInfo) {
 	env := newTypeEnv()
 	scope := class.Name + "." + method.Name
-	for i, formal := range method.Decl.Formals {
+	for _, formal := range method.Decl.Formals {
 		if formal.Name != "self" {
-			env.Define(formal.Name, formal.TypeName)
+			formalType := formal.TypeName
+			if formalType == typeSelf || !a.table.Has(formalType) {
+				formalType = typeInvalid
+			}
+			env.Define(formal.Name, formalType)
 		}
 		a.addSymbol(formal.Name, "formal", formal.TypeName, false, true, scope, class.Name, formal.NameSpan)
-		_ = i
 	}
 	actual := a.checkExpr(method.Decl.Body, env, scope)
-	if !a.conforms(actual, method.ReturnType) {
+	if actual != typeInvalid && a.table.Has(method.ReturnType) && !a.conforms(actual, method.ReturnType) {
 		d := errorDiagnostic("semantic", "COL3061", fmt.Sprintf("body type %s does not conform to declared return type %s of method %s", actual, method.ReturnType, method.Name), "Change the body expression or the declared return type.", method.Decl.Body.GetSpan())
 		d = withRelated(d, "declared return type", method.Decl.TypeSpan)
 		a.diagnostics = append(a.diagnostics, d)
@@ -544,7 +556,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 	}
 	switch e := expr.(type) {
 	case *NoExpr:
-		return set(typeObject)
+		return set(typeNo)
 	case *IntExpr:
 		return set(typeInt)
 	case *StringExpr:
@@ -556,18 +568,24 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 			return set(typeSelf)
 		}
 		if t, found := env.Lookup(e.Name); found {
+			if !a.table.Has(t) {
+				return set(typeInvalid)
+			}
 			return set(t)
 		}
 		if attr, found := a.table.LookupAttribute(a.currentClass, e.Name); found {
+			if !a.table.Has(attr.TypeName) {
+				return set(typeInvalid)
+			}
 			return set(attr.TypeName)
 		}
 		a.error("COL3100", fmt.Sprintf("identifier %s is not declared", e.Name), "Declare it in a let binding, formal parameter, or attribute.", e.GetSpan())
-		return set(typeObject)
+		return set(typeInvalid)
 	case *AssignExpr:
 		valueType := a.checkExpr(e.Value, env, scope)
 		if e.Name == "self" {
 			a.error("COL3101", "cannot assign to 'self'", "Assign to an attribute or local binding instead.", e.NameSpan)
-			return set(valueType)
+			return set(typeInvalid)
 		}
 		declared, found := env.Lookup(e.Name)
 		if !found {
@@ -577,110 +595,160 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 		}
 		if !found {
 			a.error("COL3102", fmt.Sprintf("assignment target %s is not declared", e.Name), "Declare the variable or attribute before assigning it.", e.NameSpan)
-			return set(valueType)
+			return set(typeInvalid)
+		}
+		if valueType == typeInvalid || !a.table.Has(declared) {
+			return set(typeInvalid)
 		}
 		if !a.conforms(valueType, declared) {
 			a.typeError("COL3103", fmt.Sprintf("assigned type %s does not conform to declared type %s of %s", valueType, declared, e.Name), e.Value.GetSpan())
+			return set(typeInvalid)
 		}
 		return set(valueType)
 	case *DispatchExpr:
 		return set(a.checkDispatch(e, env, scope))
 	case *IfExpr:
 		conditionType := a.checkExpr(e.Condition, env, scope)
-		if conditionType != typeBool {
+		valid := conditionType == typeBool
+		if conditionType != typeBool && conditionType != typeInvalid {
 			a.typeError("COL3110", fmt.Sprintf("if condition has type %s instead of Bool", conditionType), e.Condition.GetSpan())
 		}
 		thenType := a.checkExpr(e.Then, env, scope)
 		elseType := a.checkExpr(e.Else, env, scope)
-		return set(a.join(thenType, elseType))
+		result := a.join(thenType, elseType)
+		if !valid || result == typeInvalid {
+			return set(typeInvalid)
+		}
+		return set(result)
 	case *WhileExpr:
 		conditionType := a.checkExpr(e.Condition, env, scope)
-		if conditionType != typeBool {
+		if conditionType != typeBool && conditionType != typeInvalid {
 			a.typeError("COL3111", fmt.Sprintf("while condition has type %s instead of Bool", conditionType), e.Condition.GetSpan())
 		}
-		a.checkExpr(e.Body, env, scope)
+		bodyType := a.checkExpr(e.Body, env, scope)
+		if conditionType != typeBool || bodyType == typeInvalid {
+			return set(typeInvalid)
+		}
 		return set(typeObject)
 	case *BlockExpr:
 		result := typeObject
+		invalid := false
 		for _, child := range e.Expressions {
 			result = a.checkExpr(child, env, scope)
+			invalid = invalid || result == typeInvalid
+		}
+		if invalid {
+			return set(typeInvalid)
 		}
 		return set(result)
 	case *LetExpr:
 		env.Push()
 		defer env.Pop()
+		invalid := false
 		for _, binding := range e.Bindings {
 			if binding.Name == "self" {
 				a.error("COL3120", "'self' cannot be bound in a let expression", "Choose another binding name.", binding.NameSpan)
+				invalid = true
 			}
-			if !a.table.Has(binding.TypeName) {
+			knownType := a.table.Has(binding.TypeName)
+			if !knownType {
 				a.error("COL3121", fmt.Sprintf("let binding %s has undefined type %s", binding.Name, binding.TypeName), "Use a declared class or SELF_TYPE.", binding.TypeSpan)
+				invalid = true
 			}
 			if binding.Init != nil {
 				initType := a.checkExpr(binding.Init, env, scope)
-				if !a.conforms(initType, binding.TypeName) {
+				if initType == typeInvalid {
+					invalid = true
+				} else if knownType && !a.conforms(initType, binding.TypeName) {
 					a.typeError("COL3122", fmt.Sprintf("initializer type %s does not conform to declared type %s of let binding %s", initType, binding.TypeName, binding.Name), binding.Init.GetSpan())
+					invalid = true
 				}
 			}
 			if binding.Name != "self" {
-				env.Define(binding.Name, binding.TypeName)
+				declaredType := binding.TypeName
+				if !knownType {
+					declaredType = typeInvalid
+				}
+				env.Define(binding.Name, declaredType)
 			}
 			a.addSymbol(binding.Name, "let", binding.TypeName, true, binding.Init != nil, scope+"/let", a.currentClass, binding.NameSpan)
 		}
-		return set(a.checkExpr(e.Body, env, scope))
+		bodyType := a.checkExpr(e.Body, env, scope)
+		if invalid || bodyType == typeInvalid {
+			return set(typeInvalid)
+		}
+		return set(bodyType)
 	case *CaseExpr:
-		a.checkExpr(e.Value, env, scope)
+		invalid := a.checkExpr(e.Value, env, scope) == typeInvalid
 		seenTypes := map[string]CaseBranch{}
 		result := typeNo
 		for _, branch := range e.Branches {
 			if branch.Name == "self" {
 				a.error("COL3130", "'self' cannot be bound by a case branch", "Choose another branch variable name.", branch.NameSpan)
+				invalid = true
 			}
+			branchTypeName := branch.TypeName
 			if branch.TypeName == typeSelf {
 				a.error("COL3131", "SELF_TYPE cannot be used as a case branch type", "Use a concrete class name.", branch.TypeSpan)
+				branchTypeName = typeInvalid
+				invalid = true
 			} else if !a.table.Has(branch.TypeName) {
 				a.error("COL3132", fmt.Sprintf("case branch has undefined type %s", branch.TypeName), "Use a declared class.", branch.TypeSpan)
+				branchTypeName = typeInvalid
+				invalid = true
 			}
 			if previous, found := seenTypes[branch.TypeName]; found {
 				d := errorDiagnostic("semantic", "COL3133", fmt.Sprintf("case expression repeats branch type %s", branch.TypeName), "Every branch type must be unique.", branch.TypeSpan)
 				d = withRelated(d, "first branch", previous.TypeSpan)
 				a.diagnostics = append(a.diagnostics, d)
+				invalid = true
 			} else {
 				seenTypes[branch.TypeName] = branch
 			}
 			env.Push()
 			if branch.Name != "self" {
-				env.Define(branch.Name, branch.TypeName)
+				env.Define(branch.Name, branchTypeName)
 			}
 			a.addSymbol(branch.Name, "case", branch.TypeName, false, true, scope+"/case", a.currentClass, branch.NameSpan)
 			branchType := a.checkExpr(branch.Body, env, scope)
 			env.Pop()
+			invalid = invalid || branchType == typeInvalid
 			result = a.join(result, branchType)
 		}
 		if result == typeNo {
 			result = typeObject
 		}
+		if invalid || result == typeInvalid {
+			return set(typeInvalid)
+		}
 		return set(result)
 	case *NewExpr:
 		if !a.table.Has(e.TypeName) {
 			a.error("COL3140", fmt.Sprintf("cannot allocate undefined type %s", e.TypeName), "Declare the class or allocate SELF_TYPE.", e.TypeSpan)
-			return set(typeObject)
+			return set(typeInvalid)
 		}
 		return set(e.TypeName)
 	case *IsVoidExpr:
-		a.checkExpr(e.Value, env, scope)
+		if a.checkExpr(e.Value, env, scope) == typeInvalid {
+			return set(typeInvalid)
+		}
 		return set(typeBool)
 	case *UnaryExpr:
 		valueType := a.checkExpr(e.Value, env, scope)
+		if valueType == typeInvalid {
+			return set(typeInvalid)
+		}
 		switch e.Operator {
 		case TokenTilde:
 			if valueType != typeInt {
 				a.typeError("COL3150", fmt.Sprintf("'~' expects Int but received %s", valueType), e.Value.GetSpan())
+				return set(typeInvalid)
 			}
 			return set(typeInt)
 		case TokenNot:
 			if valueType != typeBool {
 				a.typeError("COL3151", fmt.Sprintf("'not' expects Bool but received %s", valueType), e.Value.GetSpan())
+				return set(typeInvalid)
 			}
 			return set(typeBool)
 		default:
@@ -689,10 +757,14 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 	case *BinaryExpr:
 		left := a.checkExpr(e.Left, env, scope)
 		right := a.checkExpr(e.Right, env, scope)
+		if left == typeInvalid || right == typeInvalid {
+			return set(typeInvalid)
+		}
 		switch e.Operator {
 		case TokenPlus, TokenMinus, TokenStar, TokenSlash:
 			if left != typeInt || right != typeInt {
 				a.typeError("COL3160", fmt.Sprintf("arithmetic operator %s expects Int operands but received %s and %s", e.Operator, left, right), e.GetSpan())
+				return set(typeInvalid)
 			}
 			if e.Operator == TokenSlash {
 				if literal, ok := e.Right.(*IntExpr); ok && literal.Value == 0 {
@@ -703,12 +775,14 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 		case TokenLess, TokenLessEqual:
 			if left != typeInt || right != typeInt {
 				a.typeError("COL3162", fmt.Sprintf("comparison operator %s expects Int operands but received %s and %s", e.Operator, left, right), e.GetSpan())
+				return set(typeInvalid)
 			}
 			return set(typeBool)
 		case TokenEqual:
 			if isBasicComparable(left) || isBasicComparable(right) {
 				if left != right {
 					a.typeError("COL3163", fmt.Sprintf("equality between %s and %s is not allowed for basic COOL types", left, right), e.GetSpan())
+					return set(typeInvalid)
 				}
 			}
 			return set(typeBool)
@@ -716,7 +790,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 			return set(typeObject)
 		}
 	default:
-		return set(typeObject)
+		return set(typeInvalid)
 	}
 }
 
@@ -727,18 +801,28 @@ func (a *analyzer) checkDispatch(e *DispatchExpr, env *typeEnv, scope string) st
 	}
 	lookupClass := a.resolveSelf(receiverType)
 	staticReturnReceiver := receiverType
+	invalid := receiverType == typeInvalid
 	if e.StaticTypeName != "" {
 		if e.StaticTypeName == typeSelf {
 			a.error("COL3170", "SELF_TYPE cannot be used as a static dispatch type", "Use a concrete ancestor class after '@'.", e.GetSpan())
+			invalid = true
 		} else if !a.table.Has(e.StaticTypeName) {
 			a.error("COL3171", fmt.Sprintf("static dispatch uses undefined type %s", e.StaticTypeName), "Use a declared ancestor class.", e.GetSpan())
+			invalid = true
 		} else {
-			if !a.conforms(receiverType, e.StaticTypeName) {
+			if receiverType != typeInvalid && !a.conforms(receiverType, e.StaticTypeName) {
 				a.typeError("COL3172", fmt.Sprintf("receiver type %s does not conform to static dispatch type %s", receiverType, e.StaticTypeName), e.Receiver.GetSpan())
+				invalid = true
 			}
 			lookupClass = e.StaticTypeName
 			staticReturnReceiver = e.StaticTypeName
 		}
+	}
+	if invalid {
+		for _, arg := range e.Arguments {
+			a.checkExpr(arg, env, scope)
+		}
+		return typeInvalid
 	}
 	method, found := a.table.LookupMethod(lookupClass, e.Method)
 	if !found {
@@ -746,16 +830,33 @@ func (a *analyzer) checkDispatch(e *DispatchExpr, env *typeEnv, scope string) st
 		for _, arg := range e.Arguments {
 			a.checkExpr(arg, env, scope)
 		}
-		return typeObject
+		return typeInvalid
 	}
 	if len(e.Arguments) != len(method.FormalTypes) {
 		a.error("COL3174", fmt.Sprintf("method %s expects %d arguments but received %d", e.Method, len(method.FormalTypes), len(e.Arguments)), "Pass exactly one expression for each formal parameter.", e.GetSpan())
+		invalid = true
 	}
 	for i, arg := range e.Arguments {
 		actual := a.checkExpr(arg, env, scope)
-		if i < len(method.FormalTypes) && !a.conforms(actual, method.FormalTypes[i]) {
-			a.typeError("COL3175", fmt.Sprintf("argument %d of %s has type %s but expected %s", i+1, e.Method, actual, method.FormalTypes[i]), arg.GetSpan())
+		if actual == typeInvalid {
+			invalid = true
+			continue
 		}
+		if i < len(method.FormalTypes) {
+			expected := method.FormalTypes[i]
+			if expected == typeSelf || !a.table.Has(expected) {
+				invalid = true
+			} else if !a.conforms(actual, expected) {
+				a.typeError("COL3175", fmt.Sprintf("argument %d of %s has type %s but expected %s", i+1, e.Method, actual, expected), arg.GetSpan())
+				invalid = true
+			}
+		}
+	}
+	if !a.table.Has(method.ReturnType) {
+		invalid = true
+	}
+	if invalid {
+		return typeInvalid
 	}
 	if method.ReturnType == typeSelf {
 		return staticReturnReceiver
@@ -771,7 +872,7 @@ func (a *analyzer) resolveSelf(typeName string) string {
 }
 
 func (a *analyzer) conforms(actual, expected string) bool {
-	if actual == typeNo {
+	if actual == typeNo || actual == typeInvalid || expected == typeInvalid {
 		return true
 	}
 	if expected == typeSelf {
@@ -782,6 +883,9 @@ func (a *analyzer) conforms(actual, expected string) bool {
 }
 
 func (a *analyzer) join(left, right string) string {
+	if left == typeInvalid || right == typeInvalid {
+		return typeInvalid
+	}
 	if left == typeNo {
 		return right
 	}

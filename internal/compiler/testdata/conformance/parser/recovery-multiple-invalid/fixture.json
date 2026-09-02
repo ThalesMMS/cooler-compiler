@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-recovery-multiple-invalid",
+  "title": "Independent feature, formal, control, let, case, and dispatch recovery",
+  "ruleIds": ["PAR-PROGRAM-STRUCTURE", "PAR-ASSIGNMENT", "PAR-DISPATCH", "PAR-CONDITIONALS", "PAR-LOOPS", "PAR-BLOCKS", "PAR-LET", "PAR-CASE", "PAR-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "parser",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [
+    {"code": "COL2020", "stage": "parser", "severity": "error"},
+    {"code": "COL2012", "stage": "parser", "severity": "error"},
+    {"code": "COL2015", "stage": "parser", "severity": "error"},
+    {"code": "COL2060", "stage": "parser", "severity": "error"},
+    {"code": "COL2062", "stage": "parser", "severity": "error"},
+    {"code": "COL2091", "stage": "parser", "severity": "error"},
+    {"code": "COL2102", "stage": "parser", "severity": "error"},
+    {"code": "COL2104", "stage": "parser", "severity": "error"},
+    {"code": "COL2053", "stage": "parser", "severity": "error"},
+    {"code": "COL2045", "stage": "parser", "severity": "error"}
+  ],
+  "expectedArtifacts": ["tokens", "ast"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-heap-reverse-valid",
+  "title": "Heap graphs and bounded reverse history preserve deterministic object state",
+  "provenance": "Cooler heap inspection and reverse timeline contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 16,
+    "maxInstructions": 100000,
+    "reverseLimits": {
+      "checkpointInterval": 2,
+      "maxCheckpoints": 3,
+      "maxCheckpointBytes": 1048576,
+      "maxEvents": 12,
+      "maxEventBytes": 4096
+    },
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "set-reverse-limits", "expect": {}},
+      {"op": "step-instructions", "count": 200, "expect": {
+        "minimumExecutedSteps": 20, "halted": true, "stopReason": "halt", "earliestReversibleMinimum": 1,
+        "timelineCheckpointMaximum": 3, "timelineEventMaximum": 12
+      }},
+      {"op": "heap", "heap": {"mode": "search", "class": "Box"}, "expect": {
+        "heapObjectIds": ["Box#2", "Box#3", "Box#4"], "heapTotalObjects": 4,
+        "heapReferences": {"Box#2.next": "Box#3", "Box#3.next": "Box#2", "Box#4.next": "Box#3"},
+        "heapFieldOwners": {"Box#2.inherited": "Parent", "Box#3.inherited": "Parent", "Box#4.inherited": "Parent"},
+        "heapFieldValues": {"Box#2.inherited": "7", "Box#3.inherited": "7", "Box#4.inherited": "7", "Box#2.value": "1", "Box#4.value": "1"},
+        "heapTruncated": false
+      }},
+      {"op": "heap", "heap": {"mode": "search", "class": "Box", "limits": {"maxObjects": 1}}, "expect": {
+        "heapObjectIds": ["Box#2"], "heapTotalObjects": 4, "heapTruncated": true
+      }},
+      {"op": "heap", "heap": {"mode": "graph"}, "expect": {
+        "heapObjectIds": ["Main#1", "Box#2", "Box#3", "Box#4"], "heapRootLabels": ["frame[0].self", "stack[0]"],
+        "heapReferences": {"Box#2.next": "Box#3", "Box#3.next": "Box#2", "Box#4.next": "Box#3"}, "heapTotalObjects": 4
+      }},
+      {"op": "step-back", "reverseMode": "instruction", "expect": {
+        "stopReason": "reverse-step", "stateHashMatchesRecorded": true
+      }},
+      {"op": "step-instruction", "expect": {
+        "timelineRevisionMinimum": 2, "futureDiscarded": true
+      }}
+    ]
+  },
+  "sources": ["main.cl"]
+}

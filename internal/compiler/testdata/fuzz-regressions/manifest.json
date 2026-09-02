@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "seeds": [
+    {
+      "file": "empty-token-stream.cl",
+      "bugClass": "invalid-span",
+      "issue": 31,
+      "expectation": "The recovered Program AST span is 1-based and source-linked."
+    },
+    {
+      "file": "crlf-unicode.cl",
+      "bugClass": "unicode-and-line-endings",
+      "issue": 31,
+      "expectation": "UTF-16 spans, output, and JSON remain deterministic after LF/CRLF conversion."
+    },
+    {
+      "file": "integer-overflow.cl",
+      "bugClass": "historical-integer-boundary",
+      "issue": 31,
+      "expectation": "The out-of-range source literal produces a controlled deterministic diagnostic."
+    },
+    {
+      "file": "verifier-invalid-diagnostic-span.json",
+      "bugClass": "invalid-diagnostic-span",
+      "issue": 31,
+      "expectation": "A corrupt bytecode span is reported at a sanitized valid location."
+    }
+  ]
+}

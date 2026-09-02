@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-trace-bytes-valid",
+  "title": "Retained trace byte eviction",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {"maxTraceBytes": 1},
+  "runSteps": [100],
+  "expectedTraceOffsetMinimum": 1,
+  "expectedRetainedTraceMaximum": 0,
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

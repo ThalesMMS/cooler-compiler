@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "project-multifile-valid",
+  "title": "Ordered multifile program with explicit input",
+  "ruleIds": ["BUILTIN-IO", "TOOL-BACKEND-ARTIFACTS", "TOOL-MULTIFILE", "TOOL-MULTIFILE-MAPPING"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "multifile",
+  "expectedArtifacts": ["tokens", "ast", "symbols", "ir", "assembly", "controlFlow", "runtimeTrace"],
+  "expectedSourceUnits": ["helper.cl", "main.cl"],
+  "sources": ["helper.cl", "main.cl"],
+  "inputLines": ["multifile"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "builtin-io-edge-valid",
+  "title": "IO output escapes plus invalid, signed, supplied, and exhausted input",
+  "ruleIds": ["BUILTIN-IO", "TOOL-INTERACTIVE-INPUT"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "A\nB/0/-42/hello/",
+  "sources": ["main.cl"],
+  "inputLines": ["not-an-int", " -42 ", "hello"],
+  "provenance": "Original Cooler local-input fixture, AGPL-3.0-or-later"
+}

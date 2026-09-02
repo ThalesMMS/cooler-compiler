@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-entrypoint-inherited-invalid",
+  "title": "Main must declare rather than inherit main",
+  "ruleIds": ["SEM-CLASS-ENTRYPOINT"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3051", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

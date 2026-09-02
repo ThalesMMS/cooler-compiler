@@ -1,4 +1,2 @@
 COL3041|semantic|error|6:3|84-118|method calculate in class Main does not match the inherited signature
 COL3100|semantic|error|9:5|141-148|identifier missing is not declared
-COL3173|semantic|error|9:13|149-155|type Object has no method concat
-COL3061|semantic|error|9:5|141-160|body type Object does not conform to declared return type Int of method main

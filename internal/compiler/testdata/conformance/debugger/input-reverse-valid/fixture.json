@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-input-reverse-valid",
+  "title": "Preloaded and interactive input boundaries reset, replay, and branch deterministically",
+  "provenance": "Cooler interactive input and reverse debugger contract",
+  "ruleIds": ["TOOL-DEBUGGER", "TOOL-INTERACTIVE-INPUT"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "preloaded||",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 24,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "set-input", "input": "preloaded\n", "expect": {"inputEvents": 0}},
+      {"op": "set-interactive", "interactive": true, "expect": {"inputEvents": 0}},
+      {"op": "run", "steps": 100000, "expect": {
+        "stopReason": "waiting-input", "waitingInput": true, "waitingBuiltin": "in_string",
+        "waitingInputPosition": 1, "waitingSequence": 1, "inputEvents": 1,
+        "halted": false, "output": ["preloaded", "|"]
+      }},
+      {"op": "repeat-wait", "steps": 100000, "expect": {
+        "stopReason": "waiting-input", "waitingInput": true, "waitingInputPosition": 1,
+        "waitingSequence": 1, "inputEvents": 1, "output": ["preloaded", "|"]
+      }},
+      {"op": "provide-input", "count": 2, "input": "stale", "expect": {
+        "errorContains": "stale", "waitingInput": true, "waitingSequence": 1, "inputEvents": 1
+      }},
+      {"op": "provide-input", "input": "first", "expect": {"waitingInput": false, "inputEvents": 2}},
+      {"op": "provide-input", "count": 1, "input": "duplicate", "expect": {
+        "errorContains": "not waiting", "waitingInput": false, "inputEvents": 2
+      }},
+      {"op": "run", "steps": 100000, "expect": {
+        "stopReason": "waiting-input", "waitingInput": true, "waitingInputPosition": 2,
+        "waitingSequence": 2, "inputEvents": 2, "output": ["preloaded", "|", "first", "|"]
+      }},
+      {"op": "provide-input", "input": "second", "expect": {"waitingInput": false, "inputEvents": 3}},
+      {"op": "run", "steps": 100000, "expect": {
+        "stopReason": "halt", "halted": true, "inputEvents": 3,
+        "output": ["preloaded", "|", "first", "|", "second"]
+      }},
+      {"op": "step-back", "reverseMode": "instruction", "expect": {
+        "stopReason": "reverse-step", "halted": false, "waitingInput": false
+      }},
+      {"op": "reverse-continue", "expect": {
+        "stopReason": "reverse-continue", "waitingInput": true, "waitingInputPosition": 2,
+        "inputEvents": 2, "output": ["preloaded", "|", "first", "|"]
+      }},
+      {"op": "provide-input", "input": "branch", "expect": {"waitingInput": false, "inputEvents": 3}},
+      {"op": "run", "steps": 100000, "expect": {
+        "stopReason": "halt", "halted": true, "inputEvents": 3,
+        "output": ["preloaded", "|", "first", "|", "branch"],
+        "timelineRevisionMinimum": 2, "futureDiscarded": true
+      }},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0, "inputEvents": 0, "output": []}},
+      {"op": "run", "steps": 100000, "expect": {
+        "stopReason": "waiting-input", "waitingInput": true, "waitingInputPosition": 1,
+        "waitingSequence": 1, "inputEvents": 1, "output": ["preloaded", "|"]
+      }},
+      {"op": "finish-input", "expect": {"waitingInput": false, "inputEvents": 1}},
+      {"op": "run", "steps": 100000, "expect": {
+        "stopReason": "halt", "halted": true, "inputEvents": 1,
+        "output": ["preloaded", "|", "", "|", ""]
+      }}
+    ]
+  },
+  "sources": ["main.cl"]
+}

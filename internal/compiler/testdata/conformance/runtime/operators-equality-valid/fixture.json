@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-operators-equality-valid",
+  "title": "Runtime operators and equality for basic values, object identity, and void",
+  "ruleIds": ["RUN-ARITHMETIC", "RUN-COMPARISON-EQUALITY", "RUN-COMPLEMENTS"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "TFTFTFTFTFTF/-1/5/TTT",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

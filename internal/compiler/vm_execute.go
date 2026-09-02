@@ -3,10 +3,11 @@
 package compiler
 
 func (vm *VM) executeOne() {
+	vm.ensurePolicy()
 	if vm.halted {
 		return
 	}
-	if vm.executed >= defaultVMMaxSteps {
+	if vm.executed >= vm.policy.MaxInstructionsTotal {
 		vm.fail("COL6002", "VM instruction limit exceeded", "Reduce the loop or recursion depth.", vm.nextSpan())
 		return
 	}
@@ -32,7 +33,9 @@ func (vm *VM) executeOne() {
 	case opPushInt:
 		vm.push(intValue(instruction.Int), instruction.Span)
 	case opPushString:
-		vm.push(stringValue(instruction.Text), instruction.Span)
+		if vm.checkStringSize(instruction.Text, instruction.Span) {
+			vm.push(stringValue(instruction.Text), instruction.Span)
+		}
 	case opPushBool:
 		vm.push(boolValue(instruction.Bool), instruction.Span)
 	case opPushVoid:
@@ -55,7 +58,11 @@ func (vm *VM) executeOne() {
 	case opPop:
 		_, _ = vm.pop(instruction.Span)
 	case opEnterScope:
-		frame.scopes = append(frame.scopes, map[string]runtimeValueInternal{})
+		if len(frame.scopes) >= vm.policy.MaxScopeDepth {
+			vm.fail("COL6050", "VM lexical scope limit exceeded", "Reduce nested let, case, or block scopes.", instruction.Span)
+		} else {
+			frame.scopes = append(frame.scopes, map[string]runtimeValueInternal{})
+		}
 	case opExitScopeKeep:
 		value, ok := vm.pop(instruction.Span)
 		if ok {
@@ -70,6 +77,10 @@ func (vm *VM) executeOne() {
 		value, ok := vm.pop(instruction.Span)
 		if ok {
 			if len(frame.scopes) == 0 {
+				if vm.policy.MaxScopeDepth < 1 {
+					vm.fail("COL6050", "VM lexical scope limit exceeded", "Increase the configured scope bound.", instruction.Span)
+					break
+				}
 				frame.scopes = append(frame.scopes, map[string]runtimeValueInternal{})
 			}
 			frame.scopes[len(frame.scopes)-1][instruction.Text] = value
@@ -84,7 +95,7 @@ func (vm *VM) executeOne() {
 			if value.kind != valueInt {
 				vm.fail("COL6005", "integer complement received "+value.typeName(), "Only Int values can be used with '~'.", instruction.Span)
 			} else {
-				vm.push(intValue(-value.i), instruction.Span)
+				vm.push(intValue(value.i.complement()), instruction.Span)
 			}
 		}
 	case opNot:
@@ -126,5 +137,13 @@ func (vm *VM) executeOne() {
 	default:
 		vm.fail("COL6008", "unknown VM opcode "+string(instruction.Op), "Regenerate the program bytecode.", instruction.Span)
 	}
+	if vm.waitingInput != nil && instruction.Op == opCall {
+		frame.ip--
+		vm.executed--
+		vm.record("WAITING_INPUT", instruction.Span, vm.lastNote)
+		return
+	}
+	vm.instructionRecord = true
 	vm.record(string(instruction.Op), instruction.Span, vm.lastNote)
+	vm.instructionRecord = false
 }

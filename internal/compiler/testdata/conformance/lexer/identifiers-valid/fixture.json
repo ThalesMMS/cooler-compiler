@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-identifiers-valid",
+  "title": "Identifier, keyword, Boolean, self, and SELF_TYPE tokenization",
+  "ruleIds": ["LEX-IDENTIFIERS", "LEX-KEYWORDS", "LEX-BOOLEANS"],
+  "validity": "valid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [],
+  "expectedTokens": [
+    {"type": "OBJECT_ID", "lexeme": "alpha_09", "literal": "alpha_09"},
+    {"type": "TYPE_ID", "lexeme": "Alpha_09", "literal": "Alpha_09"},
+    {"type": "OBJECT_ID", "lexeme": "self", "literal": "self"},
+    {"type": "TYPE_ID", "lexeme": "SELF_TYPE", "literal": "SELF_TYPE"},
+    {"type": "OBJECT_ID", "lexeme": "className", "literal": "className"},
+    {"type": "CLASS", "lexeme": "cLaSs", "literal": ""},
+    {"type": "BOOL_CONST", "lexeme": "true", "literal": "true"},
+    {"type": "BOOL_CONST", "lexeme": "tRuE", "literal": "true"},
+    {"type": "BOOL_CONST", "lexeme": "false", "literal": "false"},
+    {"type": "BOOL_CONST", "lexeme": "fAlSe", "literal": "false"},
+    {"type": "TYPE_ID", "lexeme": "True", "literal": "True"},
+    {"type": "TYPE_ID", "lexeme": "FALSE", "literal": "FALSE"}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

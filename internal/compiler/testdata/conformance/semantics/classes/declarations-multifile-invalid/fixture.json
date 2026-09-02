@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-declarations-multifile-invalid",
+  "title": "Reserved, basic, duplicate, undefined-parent, and forbidden-parent class declarations across source units",
+  "ruleIds": ["SEM-CLASS-INHERITANCE"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3002", "stage": "semantic", "severity": "error", "source": "base.cl", "span": {"startLine": 1, "startColumn": 7, "endLine": 1, "endColumn": 13, "startOffset": 6, "endOffset": 12}, "related": [{"label": "first definition", "span": {"startLine": 1, "startColumn": 1, "endLine": 1, "endColumn": 1, "startOffset": 0, "endOffset": 0}}]},
+    {"code": "COL3001", "stage": "semantic", "severity": "error", "source": "duplicates.cl", "span": {"startLine": 1, "startColumn": 7, "endLine": 1, "endColumn": 16, "startOffset": 6, "endOffset": 15}},
+    {"code": "COL3002", "stage": "semantic", "severity": "error", "source": "duplicates.cl", "span": {"startLine": 2, "startColumn": 7, "endLine": 2, "endColumn": 16, "startOffset": 26, "endOffset": 35}, "related": [{"label": "first definition", "source": "base.cl", "span": {"startLine": 2, "startColumn": 1, "endLine": 2, "endColumn": 20, "startOffset": 17, "endOffset": 36}}]},
+    {"code": "COL3010", "stage": "semantic", "severity": "error", "source": "duplicates.cl", "span": {"startLine": 3, "startColumn": 26, "endLine": 3, "endColumn": 32, "startOffset": 65, "endOffset": 71}},
+    {"code": "COL3011", "stage": "semantic", "severity": "error", "source": "duplicates.cl", "span": {"startLine": 4, "startColumn": 30, "endLine": 4, "endColumn": 37, "startOffset": 105, "endOffset": 112}}
+  ],
+  "expectedSourceUnits": ["base.cl", "duplicates.cl", "main.cl"],
+  "sources": ["base.cl", "duplicates.cl", "main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

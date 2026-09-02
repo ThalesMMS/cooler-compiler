@@ -1,0 +1,4 @@
+{
+  "source": "class Main { main() : Object { 0 }; };",
+  "mutations": [12]
+}

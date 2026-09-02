@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-grammar-valid",
+  "title": "Classes, features, formals, dispatch, control, let, case, and allocation grammar",
+  "ruleIds": ["PAR-PROGRAM-STRUCTURE", "PAR-ASSIGNMENT", "PAR-DISPATCH", "PAR-CONDITIONALS", "PAR-LOOPS", "PAR-BLOCKS", "PAR-LET", "PAR-CASE", "PAR-UNARY-BINARY"],
+  "validity": "valid",
+  "runThrough": "parser",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [],
+  "expectedAst": [
+    {"path": [1, 4, 3], "kind": "Binary", "text": "PLUS"},
+    {"path": [1, 4, 3, 1], "kind": "Binary", "text": "STAR"},
+    {"path": [1, 5, 0, 0], "kind": "Assignment", "text": "value <-"},
+    {"path": [1, 5, 0, 0, 0], "kind": "Dispatch", "text": "many(...)"},
+    {"path": [1, 5, 0, 3], "kind": "If"},
+    {"path": [1, 5, 0, 4], "kind": "While"},
+    {"path": [1, 5, 0, 5], "kind": "Let"},
+    {"path": [1, 5, 0, 6], "kind": "Case"},
+    {"path": [1, 5, 0, 7], "kind": "New", "text": "new SELF_TYPE"}
+  ],
+  "expectedArtifacts": ["tokens", "ast"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

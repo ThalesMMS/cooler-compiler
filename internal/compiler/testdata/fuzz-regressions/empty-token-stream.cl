@@ -1,0 +1,2 @@
+-- Regression: pipeline AST roots must retain a valid source span even when
+-- lexing produces no useful tokens.

@@ -1,11 +1,65 @@
+version: "2"
+
 run:
   timeout: 5m
+  relative-path-mode: cfg
+  tests: true
+
 linters:
+  default: none
   enable:
+    - containedctx
+    - contextcheck
     - errcheck
+    - errorlint
+    - gocheckcompilerdirectives
+    - godoclint
     - govet
     - ineffassign
+    - noctx
+    - nolintlint
     - staticcheck
+    - testableexamples
     - unused
+  settings:
+    godoclint:
+      default: all
+    staticcheck:
+      checks:
+        - all
+        # QF checks are optional source-style rewrites. Correctness, security,
+        # dead-code, and unreachable-code checks remain enabled.
+        - -QF*
+        # Public package documentation is enforced by godoclint below. ST1000
+        # reports the same missing package comment once for every source file.
+        - -ST1000
+  exclusions:
+    generated: strict
+    warn-unused: true
+    rules:
+      # The stable public Go contract is the compiler package. Command and
+      # internal identifiers are implementation details, documented around
+      # invariants rather than with repetitive exported-symbol prose.
+      - path-except: ^compiler[\\/]
+        linters:
+          - godoclint
+      # Test functions are not stable public API symbols.
+      - path: _test\.go$
+        linters:
+          - godoclint
+      # Closing a fully consumed in-memory HTTP response is teardown; all
+      # request, decode, write, file, archive, and subprocess errors stay live.
+      - path: _test\.go$
+        source: \.Body\.Close\(\)
+        linters:
+          - errcheck
+      # httptest.NewRequest is a bounded in-memory constructor with no blocking
+      # transport to cancel. Real test network requests still require context.
+      - path: _test\.go$
+        source: httptest\.NewRequest\(
+        linters:
+          - noctx
+
 issues:
+  max-issues-per-linter: 0
   max-same-issues: 0

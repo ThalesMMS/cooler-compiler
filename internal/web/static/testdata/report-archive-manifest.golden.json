@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "1.0.0",
+  "manifestType": "cooler-report-archive",
+  "compilerVersion": "0.1.1",
+  "compilerCommit": "abc123",
+  "documentName": "main.cl",
+  "sourceUnits": [
+    {
+      "id": "source-1",
+      "name": "main.cl",
+      "order": 0,
+      "byteSize": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "main/source.cl"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "main/source.cl",
+      "byteSize": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "main/diagnostics.json",
+      "byteSize": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "main/diagnostics.txt",
+      "byteSize": 15,
+      "sha256": "98f14325c58e4dd63044ef826f87b9a8fe096eec9935a36e87ef42fbb3aeadc4"
+    },
+    {
+      "path": "main/tokens.json",
+      "byteSize": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "main/ast.json",
+      "byteSize": 5,
+      "sha256": "38e0b9de817f645c4bec37c0d4a3e58baecccb040f5718dc069a72c7385a0bed"
+    },
+    {
+      "path": "main/symbols.json",
+      "byteSize": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "main/ir.txt",
+      "byteSize": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "main/assembly.txt",
+      "byteSize": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "main/vm-trace.json",
+      "byteSize": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "main/output.txt",
+      "byteSize": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "main/compile-report.json",
+      "byteSize": 1187,
+      "sha256": "09e3eae5ae3eb8cc6f97d58a425aa25659ec67f0dfffeb2de2637ba9646605b4"
+    }
+  ],
+  "creation": {
+    "timestampPolicy": "fixed-dos-epoch",
+    "generatedTextNewlines": "LF",
+    "sourceAndProgramOutput": "preserved"
+  }
+}

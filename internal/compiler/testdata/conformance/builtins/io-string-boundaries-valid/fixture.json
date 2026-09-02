@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "builtin-io-string-boundaries-valid",
+  "title": "String input removes line delimiters, preserves embedded NUL, and exhausts to empty",
+  "ruleIds": ["BUILTIN-IO", "TOOL-INTERACTIVE-INPUT"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "[left\u0000right]/[]",
+  "inputLines": ["left\u0000right"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler input-boundary fixture, AGPL-3.0-or-later"
+}

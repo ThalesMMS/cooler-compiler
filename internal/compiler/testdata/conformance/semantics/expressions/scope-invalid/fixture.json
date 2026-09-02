@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-scope-invalid",
+  "title": "Undeclared assignment target rejection",
+  "ruleIds": ["SEM-EXPR-ASSIGNMENT", "SEM-EXPR-SCOPES"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3102", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

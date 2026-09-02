@@ -35,39 +35,6 @@
     return next.slice(0, Math.max(1, limit));
   }
 
-  function concatSources(files) {
-    let joined = "";
-    const mapped = [];
-    for (const file of Array.isArray(files) ? files : []) {
-      const source = String(file?.source ?? "");
-      const name = String(file?.name ?? "untitled.cl");
-      if (joined.length > 0 && !joined.endsWith("\n")) joined += "\n";
-      const startLine = (joined.match(/\n/g) || []).length + 1;
-      const startOffset = joined.length;
-      mapped.push({ name, startLine, startOffset, source });
-      joined += source;
-    }
-    return { source: joined, files: mapped };
-  }
-
-  function mapDiagnosticLocation(files, fallback, line) {
-    if (!Array.isArray(files) || files.length === 0) {
-      return { name: fallback, line, index: -1 };
-    }
-    if (line <= 0) {
-      return { name: files[0].name, line, index: 0 };
-    }
-    let chosen = files[0];
-    let index = 0;
-    for (let i = 1; i < files.length; i++) {
-      if (files[i].startLine <= line) {
-        chosen = files[i];
-        index = i;
-      }
-    }
-    return { name: chosen.name, line: line - chosen.startLine + 1, index };
-  }
-
   function applyQuickFix(source, fix) {
     const text = String(source ?? "");
     const start = clamp(Number(fix?.span?.startOffset || 0), 0, text.length);
@@ -108,7 +75,7 @@
 
   function astSpanData(span) {
     if (!span) return "";
-    return `data-start="${Number(span.startOffset || 0)}" data-end="${Number(span.endOffset || span.startOffset || 0)}" data-line="${Number(span.startLine || 1)}" data-column="${Number(span.startColumn || 1)}"`;
+    return `data-source-id="${escapeASTHTML(span.sourceId || "")}" data-start="${Number(span.startOffset || 0)}" data-end="${Number(span.endOffset || span.startOffset || 0)}" data-line="${Number(span.startLine || 1)}" data-column="${Number(span.startColumn || 1)}"`;
   }
 
   function escapeASTHTML(value) {
@@ -159,6 +126,7 @@
       let status = Number(runtime.executedSteps || 0) > 0 ? "ready" : stage.status;
       if ((runtime.diagnostics || []).some((diagnostic) => diagnostic.severity === "error")) status = "error";
       else if (runtime.halted) status = "ok";
+      else if (runtime.waitingInput) status = "waiting-input";
       else if (isBreakpointPause(runtime)) status = "paused";
       const count = Number(runtime.executedSteps || 0);
       return { ...stage, status, summary: `${count} executed instruction${count === 1 ? "" : "s"}` };
@@ -175,8 +143,30 @@
     return Boolean(expectedID) && expectedID === currentID && expectedEpoch === currentEpoch;
   }
 
-  function shouldDisableRunButton({ busy, autoRunning, pauseRequested, runtimeDone } = {}) {
-    return Boolean(pauseRequested || (busy && !autoRunning) || runtimeDone);
+  function shouldDisableRunButton({ busy, autoRunning, pauseRequested, runtimeDone, waitingInput } = {}) {
+    return Boolean(pauseRequested || (busy && !autoRunning) || runtimeDone || waitingInput);
+  }
+
+  function runButtonPresentation(mode) {
+    if (mode === "pause") {
+      return {
+        label: "Pause",
+        title: "Pause after the current VM batch",
+        icon: "pause",
+      };
+    }
+    if (mode === "pausing") {
+      return {
+        label: "Pausing…",
+        title: "Waiting for the current VM batch",
+        icon: "pause",
+      };
+    }
+    return {
+      label: "Run",
+      title: "Run until halt or breakpoint",
+      icon: "run",
+    };
   }
 
   function isBreakpointPause(runtime) {
@@ -186,7 +176,7 @@
 
   function shouldStopAutoRun(runtime, executedBefore) {
     if (!runtime) return true;
-    if (runtime.halted || isBreakpointPause(runtime)) return true;
+    if (runtime.halted || runtime.waitingInput || isBreakpointPause(runtime)) return true;
     if ((runtime.diagnostics || []).some((diagnostic) => diagnostic.severity === "error")) return true;
     return Number(runtime.executedSteps || 0) <= Number(executedBefore || 0);
   }
@@ -205,13 +195,19 @@
     applySnapshot,
     wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
   }) {
+    const compareBreakpoints = (left, right) => {
+      if (typeof left === "number" && typeof right === "number") return left - right;
+      const leftSource = String(left?.sourceId || "");
+      const rightSource = String(right?.sourceId || "");
+      return leftSource.localeCompare(rightSource) || Number(left?.line || left || 0) - Number(right?.line || right || 0);
+    };
     while (!isPauseRequested()) {
       const runtimeBefore = getRuntime();
       const executedBefore = Number(runtimeBefore?.executedSteps || 0);
       const payload = await requestChunk({
         id: sessionID,
         maxSteps: chunkSteps,
-        breakpoints: Array.from(getBreakpoints()).sort((a, b) => a - b),
+        breakpoints: Array.from(getBreakpoints()).sort(compareBreakpoints),
         light: true,
         traceFrom: traceEnd(runtimeBefore),
       });
@@ -224,11 +220,16 @@
     return { reason: "paused" };
   }
 
-  function buildCompileReport(result, documentName, exportedAt = new Date().toISOString()) {
-    return {
+  function buildCompileReport(result, documentName, exportedAt = null) {
+    const report = {
       project: "cooler-compiler",
+      schemaVersion: result?.schemaVersion || "1.4.0",
+      compilerVersion: result?.compilerVersion || "dev",
+      ...(result?.compilerCommit ? { compilerCommit: result.compilerCommit } : {}),
+      target: result?.target || {},
+      options: result?.options || {},
+      sourceUnits: result?.sourceUnits || [],
       sourceFile: normalizeFileName(documentName),
-      exportedAt,
       source: result?.source ?? "",
       stages: result?.stages ?? [],
       diagnostics: result?.diagnostics ?? [],
@@ -237,10 +238,27 @@
       symbols: result?.symbols ?? [],
       ir: result?.ir ?? [],
       assembly: result?.assembly ?? [],
+      assemblySpans: result?.assemblySpans ?? [],
       metrics: result?.metrics ?? {},
       controlFlow: result?.controlFlow ?? { blocks: [], edges: [] },
       runtime: result?.runtime ?? {},
+      ...(result?.visualizations ? { visualizations: result.visualizations } : {}),
+      optimization: result?.optimization ?? {
+        mode: result?.options?.optimization || "none",
+        enabled: false,
+        executionIR: "unoptimized",
+        passOrder: [],
+        baselineVerified: false,
+        optimizedVerified: false,
+        beforeIR: [],
+        afterIR: [],
+        beforeCFG: { blocks: [], edges: [] },
+        afterCFG: { blocks: [], edges: [] },
+        passes: [],
+      },
     };
+    if (exportedAt) report.exportedAt = exportedAt;
+    return report;
   }
 
   function formatDiagnosticsText(diagnostics) {
@@ -262,27 +280,89 @@
     return `${String(instruction.index ?? 0).padStart(4, "0")} ${instruction.op || ""}${args ? ` ${args}` : ""}${comment}`;
   }
 
-  function buildArchiveFiles(result, documentName, sourceFallback = "", exportedAt = new Date().toISOString()) {
+  async function buildArchiveFiles(result, documentName, sourceFallback = "", exportedAt = null) {
     const baseName = stripExtension(documentName);
     const folder = safeArchiveName(baseName);
     const runtime = result?.runtime || {};
-    const report = buildCompileReport({ ...result, source: result?.source || sourceFallback }, documentName, exportedAt);
-    return [
-      { name: `${folder}/source.cl`, content: result?.source || sourceFallback },
-      { name: `${folder}/diagnostics.json`, content: JSON.stringify(result?.diagnostics || [], null, 2) },
+    const projectSources = Array.isArray(sourceFallback) ? sourceFallback : [];
+    const legacySource = Array.isArray(sourceFallback) ? "" : sourceFallback;
+    const report = buildCompileReport({ ...result, source: result?.source || legacySource }, documentName, exportedAt);
+    const sourceFiles = projectSources.length > 0
+      ? projectSources.map((unit, index) => ({
+          name: `${folder}/sources/${String(index + 1).padStart(3, "0")}-${safeArchiveName(unit.name || unit.id || "source.cl")}`,
+          content: String(unit.content ?? ""),
+        }))
+      : [{ name: `${folder}/source.cl`, content: result?.source || legacySource }];
+    const files = [
+      ...sourceFiles,
+      { name: `${folder}/diagnostics.json`, content: jsonText(result?.diagnostics || []) },
       { name: `${folder}/diagnostics.txt`, content: formatDiagnosticsText(result?.diagnostics || []) },
-      { name: `${folder}/tokens.json`, content: JSON.stringify(result?.tokens || [], null, 2) },
-      { name: `${folder}/ast.json`, content: JSON.stringify(result?.ast ?? null, null, 2) },
-      { name: `${folder}/symbols.json`, content: JSON.stringify(result?.symbols || [], null, 2) },
+      { name: `${folder}/tokens.json`, content: jsonText(result?.tokens || []) },
+      { name: `${folder}/ast.json`, content: jsonText(result?.ast ?? null) },
+      { name: `${folder}/symbols.json`, content: jsonText(result?.symbols || []) },
       { name: `${folder}/ir.txt`, content: (result?.ir || []).map(formatIRLine).join("\n") },
       { name: `${folder}/assembly.txt`, content: (result?.assembly || []).join("\n") },
-      { name: `${folder}/vm-trace.json`, content: JSON.stringify(runtime.trace || [], null, 2) },
+      { name: `${folder}/vm-trace.json`, content: jsonText(runtime.trace || []) },
       { name: `${folder}/output.txt`, content: (runtime.output || []).join("") },
-      { name: `${folder}/compile-report.json`, content: JSON.stringify(report, null, 2) },
+      { name: `${folder}/compile-report.json`, content: jsonText(report) },
     ];
+    validateArchiveFiles(files);
+    const encoder = new TextEncoder();
+    const artifacts = [];
+    for (const file of files) {
+      const data = typeof file.content === "string" ? encoder.encode(file.content) : new Uint8Array(file.content || []);
+      artifacts.push({ path: file.name, byteSize: data.length, sha256: await sha256Hex(data) });
+    }
+    const manifest = {
+      schemaVersion: "1.0.0",
+      manifestType: "cooler-report-archive",
+      compilerVersion: report.compilerVersion,
+      ...(report.compilerCommit ? { compilerCommit: report.compilerCommit } : {}),
+      documentName: report.sourceFile,
+      sourceUnits: (report.sourceUnits || []).map((unit, index) => ({
+        ...unit,
+        ...(sourceFiles[index] ? { path: sourceFiles[index].name } : {}),
+      })),
+      artifacts,
+      creation: {
+        timestampPolicy: "fixed-dos-epoch",
+        generatedTextNewlines: "LF",
+        sourceAndProgramOutput: "preserved",
+      },
+    };
+    files.push({ name: `${folder}/manifest.json`, content: jsonText(manifest) });
+    validateArchiveFiles(files);
+    return files;
   }
 
-  function buildZipBlob(files, date = new Date()) {
+  function jsonText(value) {
+    return `${JSON.stringify(value, null, 2)}\n`;
+  }
+
+  async function sha256Hex(bytes) {
+    if (!globalThis.crypto?.subtle) throw new Error("SHA-256 is unavailable in this runtime");
+    const digest = new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256", bytes));
+    return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  function validateArchiveFiles(files) {
+    const names = new Set();
+    for (const file of files || []) {
+      const name = String(file?.name || "");
+      if (!name || name.includes("\\") || name.includes("\0") || name.startsWith("/") || /^[a-zA-Z]:/.test(name)) {
+        throw new Error(`unsafe ZIP entry path: ${name || "<empty>"}`);
+      }
+      const parts = name.split("/");
+      if (parts.some((part) => !part || part === "." || part === "..")) {
+        throw new Error(`unsafe ZIP entry path: ${name}`);
+      }
+      if (names.has(name)) throw new Error(`duplicate ZIP entry path: ${name}`);
+      names.add(name);
+    }
+  }
+
+  function buildZipBlob(files, date = new Date(Date.UTC(1980, 0, 1, 0, 0, 0))) {
+    validateArchiveFiles(files);
     const encoder = new TextEncoder();
     const localParts = [];
     const centralParts = [];
@@ -352,10 +432,10 @@
   }
 
   function zipTimestamp(date) {
-    const year = Math.max(1980, Math.min(2107, date.getFullYear()));
+    const year = Math.max(1980, Math.min(2107, date.getUTCFullYear()));
     return {
-      time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
-      date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+      time: (date.getUTCHours() << 11) | (date.getUTCMinutes() << 5) | Math.floor(date.getUTCSeconds() / 2),
+      date: ((year - 1980) << 9) | ((date.getUTCMonth() + 1) << 5) | date.getUTCDate(),
     };
   }
 
@@ -379,8 +459,6 @@
 
   return {
     applyQuickFix,
-    concatSources,
-    mapDiagnosticLocation,
     buildArchiveFiles,
     buildCompileReport,
     buildZipBlob,
@@ -391,7 +469,9 @@
     mergeRecentFiles,
     normalizeFileName,
     renderASTNode,
+    runButtonPresentation,
     safeArchiveName,
+    validateArchiveFiles,
     runVMChunks,
     shouldAcceptResponse,
     shouldDisableRunButton,

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-comparison-invalid",
+  "title": "Chained comparison rejection and parser recovery",
+  "ruleIds": ["PAR-UNARY-BINARY", "PAR-PRECEDENCE", "PAR-COMPARISON-NONASSOC", "PAR-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "parser",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [
+    {"code": "COL2031", "stage": "parser", "severity": "error"}
+  ],
+  "expectedArtifacts": ["tokens", "ast"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

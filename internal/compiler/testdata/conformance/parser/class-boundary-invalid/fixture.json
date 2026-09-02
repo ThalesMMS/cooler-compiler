@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-class-boundary-invalid",
+  "title": "Missing class close preserves the following class",
+  "ruleIds": ["PAR-PROGRAM-STRUCTURE", "PAR-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "parser",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [
+    {"code": "COL2006", "stage": "parser", "severity": "error"}
+  ],
+  "expectedArtifacts": ["tokens", "ast"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

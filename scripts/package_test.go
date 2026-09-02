@@ -3,6 +3,8 @@
 package scripts_test
 
 import (
+	"bufio"
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +12,56 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestMakefileInvokesShellScriptsThroughBash(t *testing.T) {
+	repoRoot, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	file, err := os.Open(filepath.Join(repoRoot, "Makefile"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("close Makefile: %v", err)
+		}
+	}()
+
+	scanner := bufio.NewScanner(file)
+	for line := 1; scanner.Scan(); line++ {
+		text := scanner.Text()
+		if strings.HasPrefix(text, "\t") && strings.Contains(text, "./scripts/") && !strings.Contains(text, "bash ./scripts/") {
+			t.Errorf("Makefile:%d executes a shell script through its shebang; use explicit bash so paths with spaces work: %s", line, text)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBuildReleaseAvoidsWindowsFindShadowing(t *testing.T) {
+	repoRoot, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	script, err := os.ReadFile(filepath.Join(repoRoot, "scripts", "build-release.sh"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(script)
+	if strings.Contains(text, "find \"") {
+		t.Fatal("build-release.sh invokes an ambiguous find executable; PowerShell-launched Bash can resolve FIND.EXE on Windows")
+	}
+	for _, want := range []string{
+		`rm -rf -- "$work_dir"`,
+		`output_entries=("$OUTPUT"/*)`,
+	} {
+		if !strings.Contains(text, want) {
+			t.Errorf("build-release.sh does not contain portable release-directory handling %q", want)
+		}
+	}
+}
 
 func TestMacOSPackagingInstallsApplicationResources(t *testing.T) {
 	if runtime.GOOS == "windows" {
@@ -68,7 +120,7 @@ exit 1
 `)
 	writeExecutable(t, filepath.Join(bin, "codesign"), "#!/bin/sh\nexit 0\n")
 
-	command := exec.Command("bash", filepath.Join(root, "scripts", "build-macos-app.sh"), "9.8.7")
+	command := exec.CommandContext(context.Background(), "bash", filepath.Join(root, "scripts", "build-macos-app.sh"), "9.8.7")
 	command.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
 	if output, err := command.CombinedOutput(); err != nil {
 		t.Fatalf("packaging failed: %v\n%s", err, output)
@@ -102,6 +154,26 @@ exit 1
 	} {
 		if !strings.Contains(string(plist), want) {
 			t.Fatalf("Info.plist does not contain %q", want)
+		}
+	}
+}
+
+func TestMacOSNativeMenuDefinesCommandQ(t *testing.T) {
+	repoRoot, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := os.ReadFile(filepath.Join(repoRoot, "cmd", "coolergui", "window_webview.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`initWithTitle:@"Quit Cooler Compiler Lab"`,
+		`action:@selector(terminate:)`,
+		`keyEquivalent:@"q"`,
+	} {
+		if !strings.Contains(string(source), want) {
+			t.Errorf("native macOS menu does not contain %q", want)
 		}
 	}
 }

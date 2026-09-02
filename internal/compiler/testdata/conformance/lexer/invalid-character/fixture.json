@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-invalid-character",
+  "title": "Invalid lexical character diagnostic",
+  "ruleIds": ["LEX-DIAGNOSTICS", "LEX-RECOVERY"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "none",
+  "expectedDiagnostics": [
+    {"code": "COL1001", "stage": "lexer", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

@@ -5,12 +5,18 @@ package compiler
 import (
 	"strconv"
 	"strings"
-	"unicode"
+	"unicode/utf8"
+)
+
+const (
+	maxCoolStringCharacters = 1024
+	maxLexerDiagnostics     = 100
 )
 
 type lexer struct {
-	source      string
+	sourceID    string
 	runes       []rune
+	invalidUTF8 []bool
 	start       int
 	current     int
 	line        int
@@ -21,10 +27,16 @@ type lexer struct {
 	startOffset int
 	tokens      []Token
 	diagnostics []Diagnostic
+	previousCR  bool
 }
 
 func Lex(source string) ([]Token, []Diagnostic) {
-	l := &lexer{source: source, runes: []rune(source), line: 1, column: 1}
+	return LexSource("", source)
+}
+
+func LexSource(sourceID, source string) ([]Token, []Diagnostic) {
+	runes, invalidUTF8 := decodeSource(source)
+	l := &lexer{sourceID: sourceID, runes: runes, invalidUTF8: invalidUTF8, line: 1, column: 1}
 	l.scan()
 	return l.tokens, l.diagnostics
 }
@@ -38,6 +50,7 @@ func (l *lexer) scan() {
 		l.scanToken()
 	}
 	span := Span{
+		SourceID:  l.sourceID,
 		StartLine: l.line, StartColumn: l.column,
 		EndLine: l.line, EndColumn: l.column,
 		StartOffset: l.offset16, EndOffset: l.offset16,
@@ -46,7 +59,12 @@ func (l *lexer) scan() {
 }
 
 func (l *lexer) scanToken() {
+	invalidUTF8 := l.invalidUTF8[l.current]
 	c := l.advance()
+	if invalidUTF8 {
+		l.addError("COL1008", "source contains malformed UTF-8", "Save COOL source as valid UTF-8.", l.currentSpan())
+		return
+	}
 	switch c {
 	case ' ', '\r', '\t', '\f', '\v':
 		return
@@ -109,6 +127,11 @@ func (l *lexer) scanToken() {
 		}
 	case '"':
 		l.stringLiteral()
+	case '_':
+		for isIdentifierPart(l.peek()) {
+			l.advance()
+		}
+		l.addError("COL1009", "identifier cannot begin with '_'", "Begin object identifiers with a lowercase ASCII letter and type identifiers with an uppercase ASCII letter.", l.currentSpan())
 	default:
 		switch {
 		case isASCIIDigit(c):
@@ -123,7 +146,7 @@ func (l *lexer) scanToken() {
 }
 
 func (l *lexer) lineComment() {
-	for !l.atEnd() && l.peek() != '\n' {
+	for !l.atEnd() && l.peek() != '\n' && l.peek() != '\r' {
 		l.advance()
 	}
 }
@@ -152,58 +175,98 @@ func (l *lexer) blockComment() {
 
 func (l *lexer) stringLiteral() {
 	var value strings.Builder
-	valid := true
+	characters := 0
+	failed := false
+	fail := func(code, message, hint string, span Span) {
+		if failed {
+			return
+		}
+		failed = true
+		l.addError(code, message, hint, span)
+	}
+	appendCharacter := func(r rune, span Span) {
+		if failed {
+			return
+		}
+		characters++
+		if characters > maxCoolStringCharacters {
+			fail("COL1006", "string constant is too long", "Keep string constants at or below 1024 characters.", span)
+			return
+		}
+		value.WriteRune(r)
+	}
 	for !l.atEnd() {
+		characterLine, characterColumn, characterOffset := l.line, l.column, l.offset16
+		invalidUTF8 := l.invalidUTF8[l.current]
 		c := l.advance()
+		characterSpan := l.spanFrom(characterLine, characterColumn, characterOffset)
+		if invalidUTF8 {
+			fail("COL1008", "string contains malformed UTF-8", "Save COOL source as valid UTF-8.", characterSpan)
+			continue
+		}
 		switch c {
 		case '"':
-			if valid {
+			if !failed {
 				l.addToken(TokenString, value.String())
 			}
 			return
-		case '\n':
-			l.addError("COL1002", "unterminated string constant", "Keep the string on one line or escape the newline with a backslash.", l.currentSpan())
+		case '\n', '\r':
+			fail("COL1002", "unterminated string constant", "Keep the string on one line or escape the newline with a backslash.", l.currentSpan())
 			return
 		case 0:
-			valid = false
-			l.addError("COL1005", "string contains a null character", "Remove the null character from the string.", l.currentSpan())
+			fail("COL1005", "string contains a null character", "Remove the null character from the string.", characterSpan)
 		case '\\':
 			if l.atEnd() {
-				break
+				continue
 			}
+			escapeIndex := l.current
 			escaped := l.advance()
+			escapeSpan := l.spanFrom(characterLine, characterColumn, characterOffset)
+			if l.invalidUTF8[escapeIndex] {
+				fail("COL1008", "string escape contains malformed UTF-8", "Save COOL source as valid UTF-8.", escapeSpan)
+				continue
+			}
 			switch escaped {
 			case 'b':
-				value.WriteByte('\b')
+				appendCharacter('\b', escapeSpan)
 			case 't':
-				value.WriteByte('\t')
+				appendCharacter('\t', escapeSpan)
 			case 'n':
-				value.WriteByte('\n')
+				appendCharacter('\n', escapeSpan)
 			case 'f':
-				value.WriteByte('\f')
+				appendCharacter('\f', escapeSpan)
 			case '\n':
-				value.WriteByte('\n')
+				appendCharacter('\n', escapeSpan)
+			case '\r':
+				if l.peek() == '\n' {
+					l.advance()
+					escapeSpan = l.spanFrom(characterLine, characterColumn, characterOffset)
+				}
+				appendCharacter('\n', escapeSpan)
+			case 0:
+				fail("COL1010", "string contains an escaped null character", "Remove the escaped null character from the string.", escapeSpan)
 			default:
 				// COOL treats \c as c for otherwise unrecognized escapes.
-				value.WriteRune(escaped)
+				appendCharacter(escaped, escapeSpan)
 			}
 		default:
-			value.WriteRune(c)
-		}
-		if value.Len() > 1024 {
-			valid = false
-			l.addError("COL1006", "string constant is too long", "Keep string constants at or below 1024 bytes.", l.currentSpan())
-			// Continue scanning to the closing quote so the lexer can recover.
+			appendCharacter(c, characterSpan)
 		}
 	}
-	l.addError("COL1002", "unterminated string constant", "Add a closing double quote.", l.currentSpan())
+	fail("COL1002", "unterminated string constant", "Add a closing double quote.", l.currentSpan())
 }
 
 func (l *lexer) number() {
 	for isASCIIDigit(l.peek()) {
 		l.advance()
 	}
-	l.addToken(TokenInt, string(l.runes[l.start:l.current]))
+	lexeme := string(l.runes[l.start:l.current])
+	literal := lexeme
+	if !validIntegerLiteral(lexeme) {
+		l.addError("COL1007", "integer constant is outside the signed 32-bit range", "Use a value from 0 through 2147483647; write negative values with '~'.", l.currentSpan())
+		literal = "0"
+	}
+	l.addToken(TokenInt, literal)
 }
 
 func (l *lexer) identifier() {
@@ -218,12 +281,12 @@ func (l *lexer) identifier() {
 	}
 	// The classic COOL rule makes keywords case-insensitive but requires true
 	// and false to start with a lowercase letter.
-	if (lower == "true" || lower == "false") && len(lexeme) > 0 && unicode.IsLower([]rune(lexeme)[0]) {
+	if (lower == "true" || lower == "false") && len(lexeme) > 0 && isASCIILower(rune(lexeme[0])) {
 		l.addToken(TokenBool, lower)
 		return
 	}
-	first := []rune(lexeme)[0]
-	if unicode.IsUpper(first) {
+	first := rune(lexeme[0])
+	if isASCIIUpper(first) {
 		l.addToken(TokenTypeID, lexeme)
 	} else {
 		l.addToken(TokenObjectID, lexeme)
@@ -244,14 +307,31 @@ func (l *lexer) addToken(t TokenType, literal string) {
 }
 
 func (l *lexer) addError(code, message, hint string, span Span) {
+	if len(l.diagnostics) >= maxLexerDiagnostics {
+		return
+	}
+	if len(l.diagnostics) == maxLexerDiagnostics-1 {
+		l.diagnostics = append(l.diagnostics, errorDiagnostic("lexer", "COL1010", "lexer diagnostic limit reached", "Fix the earliest lexical errors before requesting more diagnostics.", span))
+		return
+	}
 	l.diagnostics = append(l.diagnostics, errorDiagnostic("lexer", code, message, hint, span))
 }
 
 func (l *lexer) currentSpan() Span {
 	return Span{
+		SourceID:  l.sourceID,
 		StartLine: l.startLine, StartColumn: l.startColumn,
 		EndLine: l.line, EndColumn: l.column,
 		StartOffset: l.startOffset, EndOffset: l.offset16,
+	}
+}
+
+func (l *lexer) spanFrom(line, column, offset int) Span {
+	return Span{
+		SourceID:  l.sourceID,
+		StartLine: line, StartColumn: column,
+		EndLine: l.line, EndColumn: l.column,
+		StartOffset: offset, EndOffset: l.offset16,
 	}
 }
 
@@ -266,11 +346,19 @@ func (l *lexer) advance() rune {
 	r := l.runes[l.current]
 	l.current++
 	l.offset16 += utf16RuneLen(r)
-	if r == '\n' {
+	if r == '\r' {
 		l.line++
 		l.column = 1
+		l.previousCR = true
+	} else if r == '\n' {
+		if !l.previousCR {
+			l.line++
+		}
+		l.column = 1
+		l.previousCR = false
 	} else {
 		l.column++
+		l.previousCR = false
 	}
 	return r
 }
@@ -302,9 +390,26 @@ func isASCIIDigit(r rune) bool {
 }
 
 func isIdentifierStart(r rune) bool {
-	return r == '_' || unicode.IsLetter(r)
+	return isASCIIUpper(r) || isASCIILower(r)
 }
 
 func isIdentifierPart(r rune) bool {
-	return isIdentifierStart(r) || isASCIIDigit(r)
+	return isIdentifierStart(r) || isASCIIDigit(r) || r == '_'
+}
+
+func isASCIIUpper(r rune) bool { return r >= 'A' && r <= 'Z' }
+
+func isASCIILower(r rune) bool { return r >= 'a' && r <= 'z' }
+
+func decodeSource(source string) ([]rune, []bool) {
+	runes := make([]rune, 0, utf8.RuneCountInString(source))
+	invalid := make([]bool, 0, cap(runes))
+	for len(source) > 0 {
+		r, size := utf8.DecodeRuneInString(source)
+		malformed := r == utf8.RuneError && size == 1
+		runes = append(runes, r)
+		invalid = append(invalid, malformed)
+		source = source[size:]
+	}
+	return runes, invalid
 }

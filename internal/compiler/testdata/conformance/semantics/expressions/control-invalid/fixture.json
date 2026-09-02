@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-control-invalid",
+  "title": "If and while condition typing",
+  "ruleIds": ["SEM-EXPR-CONTROL-LUB"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3110", "stage": "semantic", "severity": "error"},
+    {"code": "COL3111", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

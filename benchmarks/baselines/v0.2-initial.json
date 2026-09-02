@@ -1,0 +1,2473 @@
+{
+  "schemaVersion": "1.0.0",
+  "name": "v0.2-initial",
+  "commit": "b0a7d9133e8cb553171d05eb75b68ed38b1c2ee9",
+  "toolchain": "go1.27.0",
+  "platform": {
+    "os": "darwin",
+    "arch": "arm64",
+    "cpu": "Apple M4 Pro"
+  },
+  "options": {
+    "count": 3,
+    "benchtime": "100ms",
+    "benchmark": "^Benchmark",
+    "webIterations": 100
+  },
+  "workloads": [
+    {
+      "name": "small",
+      "sourceBytes": 395,
+      "sourceUnits": 2
+    },
+    {
+      "name": "medium",
+      "sourceBytes": 12621,
+      "sourceUnits": 5
+    },
+    {
+      "name": "large",
+      "sourceBytes": 176304,
+      "sourceUnits": 11
+    },
+    {
+      "name": "deep-400",
+      "sourceBytes": 28756,
+      "sourceUnits": 0
+    },
+    {
+      "name": "nested-400",
+      "sourceBytes": 839,
+      "sourceUnits": 0
+    },
+    {
+      "name": "long-text-500",
+      "sourceBytes": 363540,
+      "sourceUnits": 0
+    },
+    {
+      "name": "arithmetic-1000",
+      "sourceBytes": 172,
+      "sourceUnits": 0
+    },
+    {
+      "name": "recursion-100",
+      "sourceBytes": 125,
+      "sourceUnits": 0
+    },
+    {
+      "name": "dispatch-dynamic-500",
+      "sourceBytes": 328,
+      "sourceUnits": 0
+    },
+    {
+      "name": "dispatch-static-500",
+      "sourceBytes": 341,
+      "sourceUnits": 0
+    },
+    {
+      "name": "allocation-500",
+      "sourceBytes": 183,
+      "sourceUnits": 0
+    },
+    {
+      "name": "case-200",
+      "sourceBytes": 14417,
+      "sourceUnits": 0
+    },
+    {
+      "name": "strings-100",
+      "sourceBytes": 5585,
+      "sourceUnits": 0
+    },
+    {
+      "name": "io-100",
+      "sourceBytes": 160,
+      "sourceUnits": 0
+    }
+  ],
+  "samples": [
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkCompileAPI/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 87147012,
+        "allocs/op": 104812,
+        "ns/op": 19057403,
+        "response-bytes/op": 3588192
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkCompileAPI/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 87078366,
+        "allocs/op": 104805,
+        "ns/op": 18559000,
+        "response-bytes/op": 3588192
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkCompileAPI/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 87110888,
+        "allocs/op": 104804,
+        "ns/op": 18439389,
+        "response-bytes/op": 3588192
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkCompileAPI/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1737883,
+        "allocs/op": 3658,
+        "ns/op": 953063,
+        "response-bytes/op": 135906
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkCompileAPI/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1767286,
+        "allocs/op": 3647,
+        "ns/op": 823356,
+        "response-bytes/op": 135906
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkCompileAPI/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1757193,
+        "allocs/op": 3649,
+        "ns/op": 838094,
+        "response-bytes/op": 135906
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkPipelinePhaseAPI",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 9623477,
+        "allocs/op": 7859,
+        "ns/op": 3512681,
+        "response-bytes/op": 1045161
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkPipelinePhaseAPI",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 9852359,
+        "allocs/op": 7860,
+        "ns/op": 3501578,
+        "response-bytes/op": 1045161
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkPipelinePhaseAPI",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 9739224,
+        "allocs/op": 7859,
+        "ns/op": 3429277,
+        "response-bytes/op": 1045161
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMRunBatchAPI",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 31332124,
+        "allocs/op": 53837,
+        "ns/op": 12259144,
+        "response-bytes/op": 2863937
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMRunBatchAPI",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 38211559,
+        "allocs/op": 53858,
+        "ns/op": 12621271,
+        "response-bytes/op": 2863937
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMRunBatchAPI",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 38211208,
+        "allocs/op": 53857,
+        "ns/op": 12867505,
+        "response-bytes/op": 2863937
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMSnapshotPayload/full",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 32252612,
+        "allocs/op": 27333,
+        "ns/op": 21652000
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMSnapshotPayload/full",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 38968824,
+        "allocs/op": 27345,
+        "ns/op": 21523850
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMSnapshotPayload/full",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 35610604,
+        "allocs/op": 27343,
+        "ns/op": 21838642
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMSnapshotPayload/light",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 14033139,
+        "allocs/op": 13666,
+        "ns/op": 9198490
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMSnapshotPayload/light",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 10157283,
+        "allocs/op": 13655,
+        "ns/op": 9088878
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/cmd/coolergui",
+      "benchmark": "BenchmarkVMSnapshotPayload/light",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 12741484,
+        "allocs/op": 13665,
+        "ns/op": 9247426
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 34155561,
+        "MB/s": 19.74,
+        "allocs/op": 247717,
+        "ns/op": 8932423
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 34155604,
+        "MB/s": 19.65,
+        "allocs/op": 247718,
+        "ns/op": 8971277
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 34155574,
+        "MB/s": 19.45,
+        "allocs/op": 247718,
+        "ns/op": 9064917
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1481964,
+        "MB/s": 24.92,
+        "allocs/op": 14623,
+        "ns/op": 506461
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1481954,
+        "MB/s": 25.42,
+        "allocs/op": 14623,
+        "ns/op": 496484
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1481958,
+        "MB/s": 25.11,
+        "allocs/op": 14623,
+        "ns/op": 502706
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 35521,
+        "MB/s": 28.87,
+        "allocs/op": 403,
+        "ns/op": 13684
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 35521,
+        "MB/s": 28.68,
+        "allocs/op": 403,
+        "ns/op": 13771
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkAssemblyFormatting/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 35521,
+        "MB/s": 28.52,
+        "allocs/op": 403,
+        "ns/op": 13848
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 160078104,
+        "MB/s": 3.2,
+        "allocs/op": 975038,
+        "ns/op": 55084730
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 160126780,
+        "MB/s": 3.21,
+        "allocs/op": 975034,
+        "ns/op": 54839417
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 160175988,
+        "MB/s": 3.24,
+        "allocs/op": 975037,
+        "ns/op": 54423479
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 8276540,
+        "MB/s": 4.16,
+        "allocs/op": 57045,
+        "ns/op": 3031536
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 8285440,
+        "MB/s": 4.16,
+        "allocs/op": 57045,
+        "ns/op": 3036291
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 8260366,
+        "MB/s": 4.16,
+        "allocs/op": 57044,
+        "ns/op": 3033560
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 149215,
+        "MB/s": 5.27,
+        "allocs/op": 1375,
+        "ns/op": 75023
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 149216,
+        "MB/s": 5.28,
+        "allocs/op": 1375,
+        "ns/op": 74811
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkBytecodeVerification/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 149215,
+        "MB/s": 5.28,
+        "allocs/op": 1375,
+        "ns/op": 74748
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 4140146,
+        "MB/s": 61.07,
+        "allocs/op": 16771,
+        "ns/op": 2887048
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 4140176,
+        "MB/s": 61.07,
+        "allocs/op": 16771,
+        "ns/op": 2886807
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 4140182,
+        "MB/s": 61.24,
+        "allocs/op": 16771,
+        "ns/op": 2878793
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 210961,
+        "MB/s": 78.47,
+        "allocs/op": 1571,
+        "ns/op": 160830
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 210960,
+        "MB/s": 79.29,
+        "allocs/op": 1571,
+        "ns/op": 159178
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 210962,
+        "MB/s": 79.34,
+        "allocs/op": 1571,
+        "ns/op": 159081
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 4256,
+        "MB/s": 78.12,
+        "allocs/op": 68,
+        "ns/op": 5056
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 4256,
+        "MB/s": 78.47,
+        "allocs/op": 68,
+        "ns/op": 5034
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCFGGeneration/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 4256,
+        "MB/s": 79.46,
+        "allocs/op": 68,
+        "ns/op": 4971
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1747620,
+        "MB/s": 349.05,
+        "allocs/op": 11330,
+        "ns/op": 505097
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1747623,
+        "MB/s": 354.17,
+        "allocs/op": 11330,
+        "ns/op": 497799
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1747624,
+        "MB/s": 345.18,
+        "allocs/op": 11330,
+        "ns/op": 510761
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 206035,
+        "MB/s": 187.42,
+        "allocs/op": 1428,
+        "ns/op": 67342
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 206034,
+        "MB/s": 187.28,
+        "allocs/op": 1428,
+        "ns/op": 67391
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 206031,
+        "MB/s": 188.81,
+        "allocs/op": 1428,
+        "ns/op": 66846
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 21814,
+        "MB/s": 73.34,
+        "allocs/op": 148,
+        "ns/op": 5386
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 21814,
+        "MB/s": 74.73,
+        "allocs/op": 148,
+        "ns/op": 5286
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkClassTable/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 21815,
+        "MB/s": 74.15,
+        "allocs/op": 148,
+        "ns/op": 5327
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 637927608,
+        "MB/s": 1.39,
+        "allocs/op": 1702139,
+        "ns/op": 126796167
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 637826312,
+        "MB/s": 1.49,
+        "allocs/op": 1702118,
+        "ns/op": 118071625
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 637927512,
+        "MB/s": 1.48,
+        "allocs/op": 1702139,
+        "ns/op": 119038958
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 37157957,
+        "MB/s": 1.83,
+        "allocs/op": 104449,
+        "ns/op": 6885086
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 37171160,
+        "MB/s": 1.81,
+        "allocs/op": 104451,
+        "ns/op": 6959403
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 37172738,
+        "MB/s": 1.82,
+        "allocs/op": 104450,
+        "ns/op": 6939721
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 987126,
+        "MB/s": 1.77,
+        "allocs/op": 3511,
+        "ns/op": 222801
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 987122,
+        "MB/s": 1.79,
+        "allocs/op": 3511,
+        "ns/op": 220536
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileComplete/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 987125,
+        "MB/s": 1.77,
+        "allocs/op": 3511,
+        "ns/op": 222967
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 657992192,
+        "MB/s": 1.35,
+        "allocs/op": 1702410,
+        "ns/op": 130363041
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 658092480,
+        "MB/s": 1.48,
+        "allocs/op": 1702419,
+        "ns/op": 119323167
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 657993088,
+        "MB/s": 1.49,
+        "allocs/op": 1702420,
+        "ns/op": 118260250
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 37247814,
+        "MB/s": 1.81,
+        "allocs/op": 104528,
+        "ns/op": 6987016
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 37235486,
+        "MB/s": 1.82,
+        "allocs/op": 104527,
+        "ns/op": 6935375
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 37245364,
+        "MB/s": 1.8,
+        "allocs/op": 104528,
+        "ns/op": 7017872
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1028235,
+        "MB/s": 1.7,
+        "allocs/op": 3526,
+        "ns/op": 231749
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1028234,
+        "MB/s": 1.74,
+        "allocs/op": 3526,
+        "ns/op": 227194
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkCompileProject/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1028237,
+        "MB/s": 1.7,
+        "allocs/op": 3526,
+        "ns/op": 232354
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 47095266,
+        "MB/s": 36.58,
+        "allocs/op": 47320,
+        "ns/op": 4819542
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 47095254,
+        "MB/s": 36.9,
+        "allocs/op": 47320,
+        "ns/op": 4778101
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 47095278,
+        "MB/s": 36.05,
+        "allocs/op": 47320,
+        "ns/op": 4890135
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 2640519,
+        "MB/s": 39.82,
+        "allocs/op": 3624,
+        "ns/op": 316928
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 2640502,
+        "MB/s": 39.83,
+        "allocs/op": 3624,
+        "ns/op": 316845
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 2640501,
+        "MB/s": 39.92,
+        "allocs/op": 3624,
+        "ns/op": 316162
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 79272,
+        "MB/s": 33.1,
+        "allocs/op": 173,
+        "ns/op": 11935
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 79272,
+        "MB/s": 33.09,
+        "allocs/op": 173,
+        "ns/op": 11936
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkIRLowering/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 79272,
+        "MB/s": 32.9,
+        "allocs/op": 173,
+        "ns/op": 12004
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 449270720,
+        "MB/s": 1.17,
+        "allocs/op": 190,
+        "ns/op": 151144833
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 114540104,
+        "MB/s": 1.21,
+        "allocs/op": 142,
+        "ns/op": 145311375
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 449268920,
+        "MB/s": 1.19,
+        "allocs/op": 188,
+        "ns/op": 148057917
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 12145770,
+        "MB/s": 1.36,
+        "allocs/op": 74,
+        "ns/op": 9275354
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 16401439,
+        "MB/s": 1.37,
+        "allocs/op": 83,
+        "ns/op": 9241035
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 13881151,
+        "MB/s": 1.37,
+        "allocs/op": 75,
+        "ns/op": 9234854
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 335723,
+        "MB/s": 0.97,
+        "allocs/op": 29,
+        "ns/op": 408323
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 335613,
+        "MB/s": 0.97,
+        "allocs/op": 29,
+        "ns/op": 406281
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkJSONSerialization/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 335535,
+        "MB/s": 0.97,
+        "allocs/op": 29,
+        "ns/op": 405538
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 54911902,
+        "MB/s": 30.29,
+        "allocs/op": 112879,
+        "ns/op": 5820994
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 54911113,
+        "MB/s": 31.07,
+        "allocs/op": 112878,
+        "ns/op": 5673540
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 54910868,
+        "MB/s": 31.4,
+        "allocs/op": 112878,
+        "ns/op": 5615223
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/long-text-500",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1835768,
+        "MB/s": 277.15,
+        "allocs/op": 36,
+        "ns/op": 1311722
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/long-text-500",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1835770,
+        "MB/s": 278.5,
+        "allocs/op": 36,
+        "ns/op": 1305372
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/long-text-500",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1835768,
+        "MB/s": 279.3,
+        "allocs/op": 36,
+        "ns/op": 1301598
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 3265920,
+        "MB/s": 27.16,
+        "allocs/op": 7683,
+        "ns/op": 464662
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 3265920,
+        "MB/s": 27.02,
+        "allocs/op": 7683,
+        "ns/op": 467102
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 3265918,
+        "MB/s": 26.92,
+        "allocs/op": 7683,
+        "ns/op": 468888
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 43089,
+        "MB/s": 35.88,
+        "allocs/op": 218,
+        "ns/op": 11009
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 43088,
+        "MB/s": 42.71,
+        "allocs/op": 218,
+        "ns/op": 9248
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkLex/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 43088,
+        "MB/s": 41.8,
+        "allocs/op": 218,
+        "ns/op": 9449
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 9660552,
+        "MB/s": 22.75,
+        "allocs/op": 62623,
+        "ns/op": 7751264
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 9660559,
+        "MB/s": 22.98,
+        "allocs/op": 62623,
+        "ns/op": 7671856
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 9660559,
+        "MB/s": 22.81,
+        "allocs/op": 62623,
+        "ns/op": 7728050
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 574606,
+        "MB/s": 25.75,
+        "allocs/op": 3701,
+        "ns/op": 490043
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 574605,
+        "MB/s": 25.81,
+        "allocs/op": 3701,
+        "ns/op": 489073
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 574602,
+        "MB/s": 25.91,
+        "allocs/op": 3701,
+        "ns/op": 487048
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/nested-400",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 776,
+        "MB/s": 6.75,
+        "allocs/op": 6,
+        "ns/op": 124298
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/nested-400",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 776,
+        "MB/s": 6.7,
+        "allocs/op": 6,
+        "ns/op": 125303
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/nested-400",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 776,
+        "MB/s": 6.73,
+        "allocs/op": 6,
+        "ns/op": 124606
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 10472,
+        "MB/s": 36.62,
+        "allocs/op": 73,
+        "ns/op": 10786
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 10472,
+        "MB/s": 37.95,
+        "allocs/op": 73,
+        "ns/op": 10407
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkParse/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 10472,
+        "MB/s": 37.19,
+        "allocs/op": 73,
+        "ns/op": 10621
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/renamed",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 43129624,
+        "allocs/op": 118780,
+        "ns/op": 7314259
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/renamed",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 43129557,
+        "allocs/op": 118779,
+        "ns/op": 7256856
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/renamed",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 43129652,
+        "allocs/op": 118780,
+        "ns/op": 7253752
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/reordered",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 43297509,
+        "allocs/op": 118781,
+        "ns/op": 7357667
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/reordered",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 43297444,
+        "allocs/op": 118780,
+        "ns/op": 7226171
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/reordered",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 43297420,
+        "allocs/op": 118781,
+        "ns/op": 7209273
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/stable",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 43129542,
+        "allocs/op": 118780,
+        "ns/op": 7136157
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/stable",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 43129665,
+        "allocs/op": 118780,
+        "ns/op": 7236102
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkProjectMetadataVariants/stable",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 43129602,
+        "allocs/op": 118780,
+        "ns/op": 7317169
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-128",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 4419024,
+        "MB/s": 41.82,
+        "allocs/op": 10308,
+        "ns/op": 456359
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-128",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 4419024,
+        "MB/s": 42.05,
+        "allocs/op": 10308,
+        "ns/op": 453871
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-128",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 4419025,
+        "MB/s": 41.94,
+        "allocs/op": 10308,
+        "ns/op": 455130
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-256",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 10011584,
+        "MB/s": 40.3,
+        "allocs/op": 20551,
+        "ns/op": 948282
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-256",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 10011585,
+        "MB/s": 40.61,
+        "allocs/op": 20551,
+        "ns/op": 940986
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-256",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 10011587,
+        "MB/s": 40.34,
+        "allocs/op": 20551,
+        "ns/op": 947254
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-32",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 810800,
+        "MB/s": 45.51,
+        "allocs/op": 2623,
+        "ns/op": 106456
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-32",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 810800,
+        "MB/s": 45.51,
+        "allocs/op": 2623,
+        "ns/op": 106450
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-32",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 810800,
+        "MB/s": 44.89,
+        "allocs/op": 2623,
+        "ns/op": 107921
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-8",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 173424,
+        "MB/s": 46.26,
+        "allocs/op": 700,
+        "ns/op": 27300
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-8",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 173424,
+        "MB/s": 47.07,
+        "allocs/op": 700,
+        "ns/op": 26833
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingLex/classes-8",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 173424,
+        "MB/s": 47.03,
+        "allocs/op": 700,
+        "ns/op": 26855
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-128",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 41527061,
+        "MB/s": 2.91,
+        "allocs/op": 111176,
+        "ns/op": 6566362
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-128",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 41527140,
+        "MB/s": 2.87,
+        "allocs/op": 111177,
+        "ns/op": 6653073
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-128",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 41527069,
+        "MB/s": 2.92,
+        "allocs/op": 111176,
+        "ns/op": 6528465
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-256",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 85782246,
+        "MB/s": 2.85,
+        "allocs/op": 221122,
+        "ns/op": 13387151
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-256",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 85782429,
+        "MB/s": 2.87,
+        "allocs/op": 221125,
+        "ns/op": 13314870
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-256",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 85793229,
+        "MB/s": 2.9,
+        "allocs/op": 221123,
+        "ns/op": 13167912
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-32",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 10208140,
+        "MB/s": 2.83,
+        "allocs/op": 29091,
+        "ns/op": 1711165
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-32",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 10208144,
+        "MB/s": 2.84,
+        "allocs/op": 29091,
+        "ns/op": 1705406
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-32",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 10208152,
+        "MB/s": 2.79,
+        "allocs/op": 29091,
+        "ns/op": 1734844
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-8",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 2835225,
+        "MB/s": 2.39,
+        "allocs/op": 8600,
+        "ns/op": 527722
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-8",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 2835219,
+        "MB/s": 2.49,
+        "allocs/op": 8600,
+        "ns/op": 506703
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkScalingProject/classes-8",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 2835220,
+        "MB/s": 2.49,
+        "allocs/op": 8600,
+        "ns/op": 507331
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/large",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 2458354,
+        "MB/s": 166.33,
+        "allocs/op": 9446,
+        "ns/op": 1059969
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/large",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 2458379,
+        "MB/s": 164.4,
+        "allocs/op": 9446,
+        "ns/op": 1072438
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/large",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 2458365,
+        "MB/s": 165.09,
+        "allocs/op": 9446,
+        "ns/op": 1067897
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/medium",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 255418,
+        "MB/s": 143.68,
+        "allocs/op": 1096,
+        "ns/op": 87840
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/medium",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 255426,
+        "MB/s": 142.51,
+        "allocs/op": 1096,
+        "ns/op": 88564
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/medium",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 255425,
+        "MB/s": 142.48,
+        "allocs/op": 1096,
+        "ns/op": 88583
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/small",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 14393,
+        "MB/s": 108.86,
+        "allocs/op": 74,
+        "ns/op": 3628
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/small",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 14393,
+        "MB/s": 108.74,
+        "allocs/op": 74,
+        "ns/op": 3633
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkSemanticBodies/small",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 14393,
+        "MB/s": 105.87,
+        "allocs/op": 74,
+        "ns/op": 3731
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkTypeQueries",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 5371209,
+        "MB/s": 8.18,
+        "allocs/op": 2600,
+        "ns/op": 3517240
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkTypeQueries",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 5371206,
+        "MB/s": 8.21,
+        "allocs/op": 2600,
+        "ns/op": 3504302
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkTypeQueries",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 5371200,
+        "MB/s": 8.14,
+        "allocs/op": 2600,
+        "ns/op": 3531969
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMAllocationAndInitialization",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 28446845,
+        "MB/s": 0.02,
+        "allocs/op": 147764,
+        "ns/op": 7533505
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMAllocationAndInitialization",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 28446953,
+        "MB/s": 0.02,
+        "allocs/op": 147766,
+        "ns/op": 8086673
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMAllocationAndInitialization",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 28446897,
+        "MB/s": 0.02,
+        "allocs/op": 147765,
+        "ns/op": 7502570
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMArithmeticLoop",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 40545354,
+        "MB/s": 0.02,
+        "allocs/op": 210430,
+        "ns/op": 10532542
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMArithmeticLoop",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 40545277,
+        "MB/s": 0.02,
+        "allocs/op": 210429,
+        "ns/op": 10325139
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMArithmeticLoop",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 40545384,
+        "MB/s": 0.02,
+        "allocs/op": 210429,
+        "ns/op": 10459667
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMCallsAndRecursion",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 52859905,
+        "MB/s": 0.01,
+        "allocs/op": 258937,
+        "ns/op": 15668755
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMCallsAndRecursion",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 52859853,
+        "MB/s": 0.01,
+        "allocs/op": 258937,
+        "ns/op": 15473953
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMCallsAndRecursion",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 52859941,
+        "MB/s": 0.01,
+        "allocs/op": 258938,
+        "ns/op": 15488391
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDeepCase",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 30217280,
+        "MB/s": 1.41,
+        "allocs/op": 316465,
+        "ns/op": 10198323
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDeepCase",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 30217290,
+        "MB/s": 1.42,
+        "allocs/op": 316465,
+        "ns/op": 10179108
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDeepCase",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 30217259,
+        "MB/s": 1.42,
+        "allocs/op": 316465,
+        "ns/op": 10174052
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDispatch/dynamic",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 30125299,
+        "MB/s": 0.04,
+        "allocs/op": 182118,
+        "ns/op": 8793151
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDispatch/dynamic",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 30125523,
+        "MB/s": 0.04,
+        "allocs/op": 182119,
+        "ns/op": 8769042
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDispatch/dynamic",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 30125456,
+        "MB/s": 0.04,
+        "allocs/op": 182118,
+        "ns/op": 8772024
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDispatch/static",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 30127947,
+        "MB/s": 0.04,
+        "allocs/op": 182117,
+        "ns/op": 8792810
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDispatch/static",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 30127878,
+        "MB/s": 0.04,
+        "allocs/op": 182117,
+        "ns/op": 8738349
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMDispatch/static",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 30128056,
+        "MB/s": 0.04,
+        "allocs/op": 182119,
+        "ns/op": 8783536
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMInputOutput",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 5231505,
+        "MB/s": 0.13,
+        "allocs/op": 18699,
+        "ns/op": 1224663
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMInputOutput",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 5231511,
+        "MB/s": 0.13,
+        "allocs/op": 18699,
+        "ns/op": 1223395
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMInputOutput",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 5231494,
+        "MB/s": 0.13,
+        "allocs/op": 18699,
+        "ns/op": 1209382
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMInstructionDispatch",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 382992,
+        "allocs/op": 3606,
+        "ns/op": 154918
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMInstructionDispatch",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 382992,
+        "allocs/op": 3606,
+        "ns/op": 157786
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMInstructionDispatch",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 382992,
+        "allocs/op": 3606,
+        "ns/op": 156772
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMObjectAllocation",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 192,
+        "allocs/op": 3,
+        "ns/op": 80.99
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMObjectAllocation",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 192,
+        "allocs/op": 3,
+        "ns/op": 78.13
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMObjectAllocation",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 192,
+        "allocs/op": 3,
+        "ns/op": 77.61
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMResetReplay/reset",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 32704,
+        "allocs/op": 27,
+        "ns/op": 3161
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMResetReplay/reset",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 32704,
+        "allocs/op": 27,
+        "ns/op": 3084
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMResetReplay/reset",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 32704,
+        "allocs/op": 27,
+        "ns/op": 3039
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMResetReplay/reset-and-replay",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 3976825,
+        "allocs/op": 18706,
+        "ns/op": 1072334
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMResetReplay/reset-and-replay",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 3976808,
+        "allocs/op": 18706,
+        "ns/op": 1073795
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMResetReplay/reset-and-replay",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 3976817,
+        "allocs/op": 18706,
+        "ns/op": 1050151
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMSnapshot/full",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1320228,
+        "allocs/op": 20,
+        "ns/op": 74893
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMSnapshot/full",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1320228,
+        "allocs/op": 20,
+        "ns/op": 54844
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMSnapshot/full",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1320228,
+        "allocs/op": 20,
+        "ns/op": 51776
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMSnapshot/light",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 1320228,
+        "allocs/op": 20,
+        "ns/op": 50704
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMSnapshot/light",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 1320228,
+        "allocs/op": 20,
+        "ns/op": 51027
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMSnapshot/light",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 1320228,
+        "allocs/op": 20,
+        "ns/op": 51412
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMStringBuiltins",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 4018889,
+        "MB/s": 6.44,
+        "allocs/op": 14539,
+        "ns/op": 867667
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMStringBuiltins",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 4018882,
+        "MB/s": 6.47,
+        "allocs/op": 14539,
+        "ns/op": 863213
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMStringBuiltins",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 4018890,
+        "MB/s": 6.49,
+        "allocs/op": 14539,
+        "ns/op": 860652
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceModes/minimized",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 5660949,
+        "MB/s": 0.08,
+        "allocs/op": 46828,
+        "ns/op": 2206681
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceModes/minimized",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 5660964,
+        "MB/s": 0.08,
+        "allocs/op": 46828,
+        "ns/op": 2163622
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceModes/minimized",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 5660963,
+        "MB/s": 0.08,
+        "allocs/op": 46828,
+        "ns/op": 2148318
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceModes/retained",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 8055655,
+        "MB/s": 0.08,
+        "allocs/op": 40011,
+        "ns/op": 2080934
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceModes/retained",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 8055630,
+        "MB/s": 0.08,
+        "allocs/op": 40011,
+        "ns/op": 2088167
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceModes/retained",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 8055674,
+        "MB/s": 0.08,
+        "allocs/op": 40011,
+        "ns/op": 2083876
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceRetention",
+      "iteration": 1,
+      "metrics": {
+        "B/op": 506,
+        "allocs/op": 1,
+        "ns/op": 90.26
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceRetention",
+      "iteration": 2,
+      "metrics": {
+        "B/op": 506,
+        "allocs/op": 1,
+        "ns/op": 89.3
+      }
+    },
+    {
+      "package": "github.com/ThalesMMS/cooler-compiler/internal/compiler",
+      "benchmark": "BenchmarkVMTraceRetention",
+      "iteration": 3,
+      "metrics": {
+        "B/op": 506,
+        "allocs/op": 1,
+        "ns/op": 88.36
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebBuildCompileReport/large",
+      "iteration": 1,
+      "metrics": {
+        "ns/op": 1528.7499999999452,
+        "payload-bytes/op": 630998
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebBuildCompileReport/large",
+      "iteration": 2,
+      "metrics": {
+        "ns/op": 1520.4199999999446,
+        "payload-bytes/op": 630998
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebBuildCompileReport/large",
+      "iteration": 3,
+      "metrics": {
+        "ns/op": 1504.9999999999386,
+        "payload-bytes/op": 630998
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebMergeTrace/heavy",
+      "iteration": 1,
+      "metrics": {
+        "ns/op": 2195.419999999899,
+        "trace-entries/op": 2750
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebMergeTrace/heavy",
+      "iteration": 2,
+      "metrics": {
+        "ns/op": 2266.2500000001273,
+        "trace-entries/op": 2750
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebMergeTrace/heavy",
+      "iteration": 3,
+      "metrics": {
+        "ns/op": 2211.6700000000833,
+        "trace-entries/op": 2750
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebRenderAST/large",
+      "iteration": 1,
+      "metrics": {
+        "ast-nodes/op": 1365,
+        "ns/op": 1211259.59
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebRenderAST/large",
+      "iteration": 2,
+      "metrics": {
+        "ast-nodes/op": 1365,
+        "ns/op": 1213658.34
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebRenderAST/large",
+      "iteration": 3,
+      "metrics": {
+        "ast-nodes/op": 1365,
+        "ns/op": 1209272.08
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebSerializeReport/large",
+      "iteration": 1,
+      "metrics": {
+        "ns/op": 485771.67,
+        "payload-bytes/op": 630998
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebSerializeReport/large",
+      "iteration": 2,
+      "metrics": {
+        "ns/op": 479803.74999999977,
+        "payload-bytes/op": 630998
+      }
+    },
+    {
+      "package": "web/client-utils",
+      "benchmark": "WebSerializeReport/large",
+      "iteration": 3,
+      "metrics": {
+        "ns/op": 482841.67,
+        "payload-bytes/op": 630998
+      }
+    }
+  ]
+}

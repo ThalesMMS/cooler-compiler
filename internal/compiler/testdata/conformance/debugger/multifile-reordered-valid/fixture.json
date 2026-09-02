@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-multifile-reordered-valid",
+  "title": "Reordered debugger tabs keep source-aware execution stable",
+  "provenance": "Cooler ordered SourceUnit and tab-reorder debugger contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "7done\n",
+  "expectedSourceUnits": ["main.cl", "helper.cl"],
+  "debuggerScenario": {
+    "maxActions": 8,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "run-to-cursor", "cursor": {"sourceId": "debugger-multifile-reordered-valid-source-1", "line": 4}, "expect": {
+        "stopReason": "run-to-cursor", "sourceId": "debugger-multifile-reordered-valid-source-1", "line": 4, "method": "Main.main", "synthetic": false
+      }},
+      {"op": "run", "steps": 100000, "expect": {"stopReason": "halt", "halted": true, "output": ["7", "done\n"]}}
+    ]
+  },
+  "sources": ["main.cl", "helper.cl"]
+}

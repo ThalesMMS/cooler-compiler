@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-expressions-valid",
+  "title": "Scopes, defaults, conformance, LUB, case, dispatch, and SELF_TYPE",
+  "ruleIds": [
+    "SEM-EXPR-ASSIGNMENT",
+    "SEM-EXPR-DISPATCH",
+    "SEM-EXPR-CONTROL-LUB",
+    "SEM-EXPR-LET-DEFAULTS",
+    "SEM-EXPR-CASE",
+    "SEM-EXPR-SELF-TYPE",
+    "SEM-EXPR-SCOPES",
+    "SEM-EXPR-CONFORMANCE",
+    "TOOL-BACKEND-ARTIFACTS"
+  ],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedAst": [
+    {"path": [0, 0, 0], "kind": "Identifier", "name": "self", "type": "SELF_TYPE"},
+    {"path": [2, 1, 0], "kind": "Let", "type": "A"},
+    {"path": [2, 1, 0, 4], "kind": "Block", "type": "A"},
+    {"path": [2, 1, 0, 4, 0], "kind": "Assignment", "type": "Int"},
+    {"path": [2, 1, 0, 4, 1], "kind": "If", "type": "SELF_TYPE"},
+    {"path": [2, 1, 0, 4, 2], "kind": "Case", "type": "SELF_TYPE"},
+    {"path": [2, 1, 0, 4, 2, 1], "kind": "CaseBranch", "name": "child", "type": "B"},
+    {"path": [2, 1, 0, 4, 3], "kind": "Dispatch", "text": "same(...)", "type": "A"}
+  ],
+  "expectedOutput": "defaults/B",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

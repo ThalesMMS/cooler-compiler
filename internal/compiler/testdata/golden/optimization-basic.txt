@@ -1,0 +1,56 @@
+BEFORE
+Main.main PUSH_INT     1            origins=[27]
+Main.main PUSH_INT     2            origins=[28]
+Main.main ADD                       origins=[29]
+Main.main PUSH_INT     3            origins=[30]
+Main.main EQUAL                     origins=[31]
+Main.main JUMP_IF_FALSE L15          origins=[32]
+Main.main PUSH_INT     6            origins=[33]
+Main.main PUSH_INT     7            origins=[34]
+Main.main MUL                       origins=[35]
+Main.main PUSH_INT     0            origins=[36]
+Main.main NEG                       origins=[37]
+Main.main ADD                       origins=[38]
+Main.main LOAD_SELF                 origins=[39]
+Main.main CALL         out_int,1    origins=[40]
+Main.main JUMP         L20          origins=[41]
+Main.main PUSH_INT     1            origins=[42]
+Main.main PUSH_INT     0            origins=[43]
+Main.main DIV                       origins=[44]
+Main.main LOAD_SELF                 origins=[45]
+Main.main CALL         out_int,1    origins=[46]
+Main.main RETURN                    origins=[47]
+
+AFTER
+Main.main PUSH_INT     42           origins=[33 34 35 36 37 38]
+Main.main LOAD_SELF                 origins=[39]
+Main.main CALL         out_int,1    origins=[40]
+Main.main RETURN                    origins=[47]
+
+PASSES
+constant-fold 51->42 changes=5 rejected=1 verified=true
+constant-conditions 42->35 changes=6 rejected=0 verified=true
+cfg-cleanup 35->34 changes=1 rejected=0 verified=true
+
+BEFORE CFG
+Object.$init:B0 0–1
+IO.$init:B0 2–6
+Int.$init:B0 7–11
+String.$init:B0 12–16
+Bool.$init:B0 17–21
+Main.$init:B0 22–26
+Main.main:B0 27–32 false->Main.main:B2,true->Main.main:B1
+Main.main:B1 33–41 jump->Main.main:B3
+Main.main:B2 42–46 fallthrough->Main.main:B3
+Main.main:B3 47–47
+$program.$entry:B0 48–50
+
+AFTER CFG
+Object.$init:B0 0–1
+IO.$init:B0 2–6
+Int.$init:B0 7–11
+String.$init:B0 12–16
+Bool.$init:B0 17–21
+Main.$init:B0 22–26
+Main.main:B0 27–30
+$program.$entry:B0 31–33

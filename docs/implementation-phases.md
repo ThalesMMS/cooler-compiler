@@ -25,6 +25,8 @@
 - lower methods and expressions to stack instructions;
 - flatten method bytecode into source-linked IR and pseudo-assembly;
 - derive basic blocks and control-flow edges.
+- verify every method's stack, scope, control-flow, call, terminal, and metadata
+  invariants before constructing a VM.
 
 ## 5. Implement the object VM
 

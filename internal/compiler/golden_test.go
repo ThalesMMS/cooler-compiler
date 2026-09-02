@@ -52,6 +52,15 @@ func TestGoldenTokensCommentsEscapesAndUTF16(t *testing.T) {
 	}
 }
 
+func TestGoldenTokensLexerConformance(t *testing.T) {
+	source := readTestdata(t, "valid", "lexer_conformance.cl")
+	tokens, diagnostics := Lex(source)
+	if hasErrors(diagnostics) {
+		t.Fatalf("unexpected lexer diagnostics: %+v", diagnostics)
+	}
+	assertGolden(t, filepath.Join("golden", "lexer_conformance.tokens"), formatGoldenTokens(tokens))
+}
+
 func TestGoldenASTAndIRBasicProgram(t *testing.T) {
 	source := readTestdata(t, "valid", "basic.cl")
 	result := Compile(source)
@@ -60,6 +69,89 @@ func TestGoldenASTAndIRBasicProgram(t *testing.T) {
 	}
 	assertGolden(t, filepath.Join("golden", "basic.ast"), formatGoldenAST(result.AST))
 	assertGolden(t, filepath.Join("golden", "basic.ir"), formatGoldenIR(result.IR))
+}
+
+func TestGoldenASTParserGrammar(t *testing.T) {
+	program, diagnostics := parseSource(t, readTestdata(t, "valid", "parser_grammar.cl"))
+	if len(diagnostics) != 0 {
+		t.Fatalf("unexpected parser diagnostics: %+v", diagnostics)
+	}
+	assertGolden(t, filepath.Join("golden", "parser_grammar.ast"), formatGoldenAST(program.ToAST()))
+}
+
+func TestGoldenASTParserPrecedence(t *testing.T) {
+	program, diagnostics := parseSource(t, readTestdata(t, "parser_precedence.cl"))
+	if len(diagnostics) != 0 {
+		t.Fatalf("unexpected parser diagnostics: %+v", diagnostics)
+	}
+	assertGolden(t, filepath.Join("golden", "parser_precedence.ast"), formatGoldenAST(program.ToAST()))
+}
+
+func TestGoldenTypedSemanticAST(t *testing.T) {
+	source := readTestdata(t, "valid", "semantic_expressions.cl")
+	result := Compile(source)
+	if hasErrors(result.Diagnostics) {
+		t.Fatalf("unexpected diagnostics: %+v", result.Diagnostics)
+	}
+	assertGolden(t, filepath.Join("golden", "semantic_expressions.ast"), formatGoldenAST(result.AST))
+}
+
+func TestGoldenSemanticErrorTypes(t *testing.T) {
+	source := readTestdata(t, "invalid", "semantic_cascade.cl")
+	result := Compile(source)
+	if !hasErrors(result.Diagnostics) {
+		t.Fatal("expected semantic errors")
+	}
+	assertGolden(t, filepath.Join("golden", "semantic_cascade.ast"), formatGoldenAST(result.AST))
+	assertGolden(t, filepath.Join("golden", "semantic_cascade.diagnostics"), formatGoldenDiagnostics(result.Diagnostics))
+}
+
+func TestGoldenRuntimeConformanceOutput(t *testing.T) {
+	tests := []struct {
+		name  string
+		path  []string
+		input string
+	}{
+		{"dispatch", []string{"conformance", "runtime", "evaluation-order-valid", "main.cl"}, ""},
+		{"copy", []string{"conformance", "runtime", "copy-valid", "main.cl"}, ""},
+		{"operators", []string{"conformance", "runtime", "operators-equality-valid", "main.cl"}, ""},
+		{"case", []string{"conformance", "runtime", "case-order-valid", "main.cl"}, ""},
+		{"unicode", []string{"conformance", "builtins", "string-unicode-valid", "main.cl"}, ""},
+		{"io", []string{"conformance", "builtins", "io-edge-valid", "main.cl"}, "not-an-int\n -42 \nhello\n"},
+	}
+	lines := []string{}
+	for _, test := range tests {
+		source := readTestdata(t, test.path...)
+		result := CompileWithInput(source, test.input)
+		if hasErrors(result.Diagnostics) {
+			t.Fatalf("%s diagnostics: %+v", test.name, result.Diagnostics)
+		}
+		lines = append(lines, test.name+"|"+outputText(result.Runtime.Output))
+	}
+	assertGolden(t, filepath.Join("golden", "runtime_conformance.output"), strings.Join(lines, "\n"))
+}
+
+func TestGoldenRuntimeFailureDiagnostics(t *testing.T) {
+	tests := []struct {
+		name string
+		path []string
+	}{
+		{"division", []string{"conformance", "runtime", "division-invalid", "main.cl"}},
+		{"dispatch-void", []string{"conformance", "runtime", "void-dispatch-invalid", "main.cl"}},
+		{"case-void", []string{"conformance", "runtime", "case-void-invalid", "main.cl"}},
+		{"case-no-match", []string{"conformance", "runtime", "case-no-match-invalid", "main.cl"}},
+		{"abort", []string{"conformance", "builtins", "abort-invalid", "main.cl"}},
+		{"substr", []string{"conformance", "builtins", "string-substr-invalid", "main.cl"}},
+	}
+	lines := []string{}
+	for _, test := range tests {
+		result := Compile(readTestdata(t, test.path...))
+		if len(result.Runtime.Diagnostics) != 1 {
+			t.Fatalf("%s runtime diagnostics: %+v", test.name, result.Runtime.Diagnostics)
+		}
+		lines = append(lines, test.name+"|"+formatGoldenDiagnostics(result.Runtime.Diagnostics))
+	}
+	assertGolden(t, filepath.Join("golden", "runtime_failures.diagnostics"), strings.Join(lines, "\n"))
 }
 
 func TestValidFixturesCompileAndRun(t *testing.T) {

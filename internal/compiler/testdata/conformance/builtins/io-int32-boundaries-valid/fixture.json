@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "builtin-io-int32-boundaries-valid",
+  "title": "Signed 32-bit input boundaries, out-of-range recovery, and decimal output",
+  "ruleIds": ["RUN-INT-OVERFLOW", "BUILTIN-IO", "TOOL-INTERACTIVE-INPUT"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "2147483647/-2147483648/0/0/0/1",
+  "sources": ["main.cl"],
+  "inputLines": ["2147483647", "-2147483648", "2147483648", "-2147483649", "999999999999999999999999999999", " +1 "],
+  "provenance": "Original Cooler deterministic-int32 input fixture, AGPL-3.0-or-later"
+}

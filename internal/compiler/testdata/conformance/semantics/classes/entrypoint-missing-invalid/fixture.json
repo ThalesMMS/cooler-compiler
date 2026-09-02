@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-entrypoint-missing-invalid",
+  "title": "Missing Main remains diagnosed alongside unrelated class errors",
+  "ruleIds": ["SEM-CLASS-INHERITANCE", "SEM-CLASS-ENTRYPOINT"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3011", "stage": "semantic", "severity": "error"},
+    {"code": "COL3050", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

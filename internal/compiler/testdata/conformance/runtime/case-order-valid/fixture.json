@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-case-order-valid",
+  "title": "Case evaluates once, ignores branch source order, and binds the original closest-match value",
+  "ruleIds": ["RUN-CASE-SELECTION"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "SDeep",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

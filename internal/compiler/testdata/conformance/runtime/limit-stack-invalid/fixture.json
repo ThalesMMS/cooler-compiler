@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-stack-invalid",
+  "title": "Operand stack depth limit",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6010", "stage": "runtime", "severity": "error"}
+  ],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {"maxOperandStackDepth": 1},
+  "runSteps": [100],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

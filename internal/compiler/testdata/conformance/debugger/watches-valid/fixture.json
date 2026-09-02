@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-watches-valid",
+  "title": "Watches inspect formals, attributes, self, primitives, void, and reject mutation",
+  "provenance": "Cooler side-effect-free debugger expression contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 8,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "set-watches", "watches": [
+        {"id": "formal", "expression": "n"},
+        {"id": "attribute", "expression": "value"},
+        {"id": "combined", "expression": "n + value"},
+        {"id": "self", "expression": "self"},
+        {"id": "primitive", "expression": "true"},
+        {"id": "void", "expression": "isvoid void"},
+        {"id": "unsafe", "expression": "n <- 99"}
+      ], "expect": {}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "recursive", "line": 4, "condition": "n = 1", "enabled": true}
+      ], "expect": {
+        "stopReason": "breakpoint", "paused": true, "method": "Main.down", "frameDepth": 4,
+        "watchValues": {
+          "formal": "1", "attribute": "2", "combined": "3", "self": "Main#1",
+          "primitive": "true", "void": "true"
+        },
+        "watchDiagnostics": ["unsafe"],
+        "breakpointVerified": {"recursive": true}
+      }}
+    ]
+  },
+  "sources": ["main.cl"]
+}

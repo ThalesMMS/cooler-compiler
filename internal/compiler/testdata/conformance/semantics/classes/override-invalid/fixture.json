@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-override-invalid",
+  "title": "Inherited attribute and method override rejection",
+  "ruleIds": ["SEM-CLASS-OVERRIDES"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3040", "stage": "semantic", "severity": "error"},
+    {"code": "COL3041", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

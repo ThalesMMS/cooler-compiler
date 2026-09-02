@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-runtime-error-invalid",
+  "title": "Runtime errors take terminal precedence in debugger runs",
+  "provenance": "Cooler debugger stop-precedence and runtime diagnostic contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "invalid",
+  "expectedDiagnostics": [
+    {"stage": "semantic", "severity": "warning", "code": "COL3161"},
+    {"stage": "runtime", "severity": "error", "code": "COL6015"}
+  ],
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedOutput": "",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 4,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready", "diagnostics": ["COL3161"]}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "false", "line": 2, "condition": "false", "enabled": true}
+      ], "expect": {"stopReason": "runtime-error", "halted": true, "diagnostics": ["COL3161", "COL6015"]}}
+    ]
+  },
+  "sources": ["main.cl"]
+}

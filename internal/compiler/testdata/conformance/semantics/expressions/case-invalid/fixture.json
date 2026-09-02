@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-case-invalid",
+  "title": "Case branch names, types, uniqueness, and recovery",
+  "ruleIds": ["SEM-EXPR-CASE"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3130", "stage": "semantic", "severity": "error"},
+    {"code": "COL3131", "stage": "semantic", "severity": "error"},
+    {"code": "COL3132", "stage": "semantic", "severity": "error"},
+    {"code": "COL3133", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

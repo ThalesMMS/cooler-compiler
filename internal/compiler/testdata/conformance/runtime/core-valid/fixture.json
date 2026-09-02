@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-core-valid",
+  "title": "Object initialization, dynamic dispatch, and closest case branch",
+  "ruleIds": ["RUN-OBJECT-INITIALIZATION", "RUN-OBJECT-DISPATCH", "RUN-CASE-SELECTION", "TOOL-BACKEND-ARTIFACTS"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "B3",
+  "expectedArtifacts": ["ir", "controlFlow", "runtimeTrace"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

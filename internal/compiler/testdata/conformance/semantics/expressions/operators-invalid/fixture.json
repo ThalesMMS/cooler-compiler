@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-operators-invalid",
+  "title": "Unary, arithmetic, ordering, and equality operand rejection",
+  "ruleIds": ["SEM-EXPR-COMPLEMENTS", "SEM-EXPR-ARITHMETIC", "SEM-EXPR-COMPARISON-EQUALITY"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3150", "stage": "semantic", "severity": "error"},
+    {"code": "COL3151", "stage": "semantic", "severity": "error"},
+    {"code": "COL3160", "stage": "semantic", "severity": "error"},
+    {"code": "COL3162", "stage": "semantic", "severity": "error"},
+    {"code": "COL3163", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

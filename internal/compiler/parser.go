@@ -4,13 +4,18 @@ package compiler
 
 import (
 	"fmt"
-	"strconv"
+)
+
+const (
+	maxParserExpressionDepth = 512
+	maxParserDiagnostics     = 100
 )
 
 type parser struct {
-	tokens      []Token
-	current     int
-	diagnostics []Diagnostic
+	tokens          []Token
+	current         int
+	diagnostics     []Diagnostic
+	expressionDepth int
 }
 
 func Parse(tokens []Token) (*Program, []Diagnostic) {
@@ -36,7 +41,7 @@ func (p *parser) parseProgram() *Program {
 		if len(p.tokens) > 0 {
 			span = p.tokens[0].Span
 		}
-		p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", "COL2002", "program contains no class declarations", "Declare at least 'class Main { main() : Object { 0 }; };'.", span))
+		p.addError("COL2002", "program contains no class declarations", "Declare at least 'class Main { main() : Object { 0 }; };'.", span)
 		program.Span = span
 		return program
 	}
@@ -66,15 +71,23 @@ func (p *parser) parseClass() *ClassDecl {
 	}
 
 	class := &ClassDecl{Name: name.Lexeme, Parent: parent, NameSpan: name.Span, ParentSpan: parentSpan}
-	for !p.check(TokenRBrace) && !p.atEnd() {
+	for !p.check(TokenRBrace) && !p.check(TokenClass) && !p.atEnd() {
 		feature := p.parseFeature()
 		if feature != nil {
 			class.Features = append(class.Features, feature)
 		}
 	}
 	close, closeOK := p.consume(TokenRBrace, "COL2006", "expected '}' after the class features", "Close the class body before its final semicolon.")
-	semi, semiOK := p.consume(TokenSemicolon, "COL2007", "expected ';' after the class declaration", "COOL class declarations end with '};'.")
+	semi, semiOK := Token{}, false
+	if closeOK {
+		semi, semiOK = p.consume(TokenSemicolon, "COL2007", "expected ';' after the class declaration", "COOL class declarations end with '};'.")
+	} else if p.match(TokenSemicolon) {
+		semi, semiOK = p.previous(), true
+	}
 	end := classToken.Span
+	if len(class.Features) > 0 {
+		end = class.Features[len(class.Features)-1].GetSpan()
+	}
 	if closeOK {
 		end = close.Span
 	}
@@ -175,17 +188,31 @@ func (p *parser) parseAttribute(name Token) Feature {
 }
 
 func (p *parser) parseExpression() Expr {
-	return p.parseAssignment()
+	return p.parseExpressionLevel(p.parseAssignment)
+}
+
+func (p *parser) parseExpressionLevel(next func() Expr) Expr {
+	if p.expressionDepth >= maxParserExpressionDepth {
+		token := p.peek()
+		p.addError("COL2110", "expression nesting exceeds the parser limit", "Reduce nesting below 512 expression levels.", token.Span)
+		if !p.atEnd() {
+			p.advance()
+		}
+		return &NoExpr{exprBase: exprBase{Span: token.Span}}
+	}
+	p.expressionDepth++
+	defer func() { p.expressionDepth-- }()
+	return next()
 }
 
 func (p *parser) parseAssignment() Expr {
 	left := p.parseNot()
 	if p.match(TokenAssign) {
 		operator := p.previous()
-		value := p.parseAssignment()
+		value := p.parseExpressionLevel(p.parseAssignment)
 		identifier, ok := left.(*IdentifierExpr)
 		if !ok {
-			p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", "COL2030", "the left side of '<-' must be an object identifier", "Assign to a local variable, formal parameter, or attribute.", operator.Span))
+			p.addError("COL2030", "the left side of '<-' must be an object identifier", "Assign to a local variable, formal parameter, or attribute.", operator.Span)
 			return value
 		}
 		return &AssignExpr{
@@ -201,7 +228,7 @@ func (p *parser) parseAssignment() Expr {
 func (p *parser) parseNot() Expr {
 	if p.match(TokenNot) {
 		op := p.previous()
-		value := p.parseNot()
+		value := p.parseExpressionLevel(p.parseNot)
 		return &UnaryExpr{exprBase: exprBase{Span: joinSpans(op.Span, value.GetSpan())}, Operator: TokenNot, OpSpan: op.Span, Value: value}
 	}
 	return p.parseComparison()
@@ -246,7 +273,7 @@ func (p *parser) parseMultiplication() Expr {
 func (p *parser) parseIsVoid() Expr {
 	if p.match(TokenIsVoid) {
 		op := p.previous()
-		value := p.parseIsVoid()
+		value := p.parseExpressionLevel(p.parseIsVoid)
 		return &IsVoidExpr{exprBase: exprBase{Span: joinSpans(op.Span, value.GetSpan())}, Value: value}
 	}
 	return p.parseNegation()
@@ -255,7 +282,7 @@ func (p *parser) parseIsVoid() Expr {
 func (p *parser) parseNegation() Expr {
 	if p.match(TokenTilde) {
 		op := p.previous()
-		value := p.parseNegation()
+		value := p.parseExpressionLevel(p.parseNegation)
 		return &UnaryExpr{exprBase: exprBase{Span: joinSpans(op.Span, value.GetSpan())}, Operator: TokenTilde, OpSpan: op.Span, Value: value}
 	}
 	return p.parseDispatch()
@@ -392,12 +419,12 @@ func (p *parser) parsePrimary() Expr {
 	}
 	if p.match(TokenInt) {
 		tok := p.previous()
-		value64, err := strconv.ParseInt(tok.Literal, 10, 32)
-		if err != nil {
-			p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", "COL2052", "integer constant is outside the signed 32-bit range", "Use a value from 0 through 2147483647; write negative values with '~'.", tok.Span))
-			value64 = 0
+		value, ok := parseCoolIntLiteral(tok.Literal)
+		if !ok {
+			p.addError("COL2052", "integer constant is outside the signed 32-bit range", "Use a value from 0 through 2147483647; write negative values with '~'.", tok.Span)
+			value = 0
 		}
-		return &IntExpr{exprBase: exprBase{Span: tok.Span}, Value: int(value64), Raw: tok.Lexeme}
+		return &IntExpr{exprBase: exprBase{Span: tok.Span}, Value: value, Raw: tok.Lexeme}
 	}
 	if p.match(TokenString) {
 		tok := p.previous()
@@ -473,7 +500,7 @@ func (p *parser) parseBlock(start Token) Expr {
 		end = close.Span
 	}
 	if len(expressions) == 0 {
-		p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", "COL2082", "a COOL block must contain at least one expression", "Add an expression followed by ';' inside the block.", joinSpans(start.Span, end)))
+		p.addError("COL2082", "a COOL block must contain at least one expression", "Add an expression followed by ';' inside the block.", joinSpans(start.Span, end))
 	}
 	return &BlockExpr{exprBase: exprBase{Span: joinSpans(start.Span, end)}, Expressions: expressions}
 }
@@ -546,7 +573,7 @@ func (p *parser) parseCase(start Token) Expr {
 		end = esac.Span
 	}
 	if len(branches) == 0 {
-		p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", "COL2107", "a case expression must contain at least one branch", "Add a branch such as 'x : Object => x;'.", joinSpans(start.Span, end)))
+		p.addError("COL2107", "a case expression must contain at least one branch", "Add a branch such as 'x : Object => x;'.", joinSpans(start.Span, end))
 	}
 	return &CaseExpr{exprBase: exprBase{Span: joinSpans(start.Span, end)}, Value: value, Branches: branches}
 }
@@ -568,7 +595,18 @@ func (p *parser) report(token Token, code, message, hint string) {
 	} else {
 		message = fmt.Sprintf("%s; found %s", message, actual)
 	}
-	p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", code, message, hint, token.Span))
+	p.addError(code, message, hint, token.Span)
+}
+
+func (p *parser) addError(code, message, hint string, span Span) {
+	if len(p.diagnostics) >= maxParserDiagnostics {
+		return
+	}
+	if len(p.diagnostics) == maxParserDiagnostics-1 {
+		p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", "COL2111", "parser diagnostic limit reached", "Fix the earliest syntax errors before requesting more diagnostics.", span))
+		return
+	}
+	p.diagnostics = append(p.diagnostics, errorDiagnostic("parser", code, message, hint, span))
 }
 
 func (p *parser) synchronizeToClass() {
@@ -582,10 +620,10 @@ func (p *parser) synchronizeToClass() {
 
 func (p *parser) synchronizeFeature() {
 	for !p.atEnd() {
-		if p.previous().Type == TokenSemicolon {
+		if p.check(TokenRBrace) || p.check(TokenObjectID) || p.check(TokenClass) {
 			return
 		}
-		if p.check(TokenRBrace) || p.check(TokenObjectID) {
+		if p.match(TokenSemicolon) {
 			return
 		}
 		p.advance()

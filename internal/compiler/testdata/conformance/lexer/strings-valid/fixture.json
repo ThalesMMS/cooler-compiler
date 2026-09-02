@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-strings-valid",
+  "title": "Control, ordinary, Unicode, and escaped-newline string characters",
+  "ruleIds": ["LEX-STRINGS", "LEX-STRING-LIMITS", "LEX-UTF8"],
+  "validity": "valid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [],
+  "expectedTokens": [
+    {"type": "STR_CONST", "lexeme": "\"\\b\\t\\n\\f\\\"\\\\\\q\"", "literal": "\b\t\n\f\"\\q"},
+    {"type": "STR_CONST", "lexeme": "\"olá😀\"", "literal": "olá😀"},
+    {"type": "STR_CONST", "lexeme": "\"left\\\nright\"", "literal": "left\nright"}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

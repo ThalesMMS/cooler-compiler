@@ -3,3 +3,5 @@ bin/
 dist/
 coverage.out
 *.prof
+.fuzz-tmp/
+fuzz-corpus-tmp/

@@ -1,0 +1,21 @@
+INHERITANCE
+Object <-  [basic/valid]
+IO <- Object [basic/valid]
+Int <- Object [basic/valid]
+String <- Object [basic/valid]
+Bool <- Object [basic/valid]
+A <- Object [user/valid]
+B <- A [user/valid]
+Main <- B [user/valid]
+
+B ATTRIBUTES
+0 A.x : Object inherited=true
+1 B.y : Int inherited=false
+
+B DISPATCH
+0 Object.abort self=false override=
+1 Object.type_name self=false override=
+2 Object.copy self=true override=
+3 B.f self=true override=A.f
+
+LOOKUP Object -> A -> B

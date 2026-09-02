@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-total-invalid",
+  "title": "Total instruction lifetime limit",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6002", "stage": "runtime", "severity": "error"}
+  ],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {
+    "maxInstructionsPerRun": 8,
+    "maxInstructionsTotal": 8
+  },
+  "runSteps": [8, 1],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

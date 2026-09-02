@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-integers-invalid",
+  "title": "One-past-maximum and overflow-safe long integer rejection",
+  "ruleIds": ["LEX-INTEGERS", "LEX-DIAGNOSTICS", "LEX-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "none",
+  "expectedDiagnostics": [
+    {"code": "COL1007", "stage": "lexer", "severity": "error"},
+    {"code": "COL1007", "stage": "lexer", "severity": "error"}
+  ],
+  "expectedTokens": [
+    {"type": "INT_CONST", "lexeme": "2147483648", "literal": "0"},
+    {"type": "INT_CONST", "lexeme": "999999999999999999999999", "literal": "0"}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

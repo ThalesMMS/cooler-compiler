@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-breakpoints-invalid",
+  "title": "Maximum breakpoint count",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6055", "stage": "runtime", "severity": "error"}
+  ],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {"maxBreakpoints": 1},
+  "runSteps": [100],
+  "breakpoints": [1, 2],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

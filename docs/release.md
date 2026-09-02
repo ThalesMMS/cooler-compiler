@@ -3,6 +3,7 @@
 Cooler intentionally uses local release verification instead of CI or hosted automation. Run the complete release gate from any directory inside a clean clone with:
 
 ```bash
+./scripts/install-golangci-lint.sh
 make release-check
 ```
 
@@ -17,17 +18,19 @@ Required tools:
 - GNU or BSD Make;
 - Bash;
 - Node.js 20 or newer, including the built-in `node:test` runner.
+- the exact `golangci-lint` version pinned in
+  [`tools/golangci-lint.version`](../tools/golangci-lint.version), installed with
+  `scripts/install-golangci-lint.sh` or supplied through `GOLANGCI_LINT`.
 
-The required gate runs `go mod verify`, `git diff --check`, a read-only `gofmt -l` audit, uncached Go tests, `go vet`, JavaScript syntax checks and tests, and CGO-disabled CLI/GUI builds for the supported Linux, Windows, and macOS targets. The Go suite includes the embedded catalog/resource tests, every valid example's exact output, intentional-error examples, the stack-machine input fixture, and multifile CLI/input behavior.
+The required gate runs `go mod verify`, `git diff --check`, a read-only `gofmt -l` audit, uncached Go tests, `go vet`, the pinned `golangci-lint`, shell-script syntax checks, JavaScript syntax checks and tests, CGO-disabled CLI/GUI builds for the supported Linux, Windows, and macOS targets, and two byte-for-byte identical packaged release builds. Tool acquisition is deliberately separate: release verification never downloads a linter or other dependency. The Go suite includes the embedded catalog/resource tests, every valid example's exact output, intentional-error examples, the stack-machine input fixture, multifile CLI/input behavior, schemas, archive safety, manifests, and package digests.
 
 ## Optional checks
 
 The same command detects and runs these checks when their platform or tool is available:
 
 - `go test -race ./...` when CGO and a C compiler are enabled;
-- native macOS application packaging when running on macOS with `codesign`;
+- native macOS application packaging and Quit integration when running on macOS with `codesign`;
 - the native Windows WebView2 cross-build when MinGW-w64's `x86_64-w64-mingw32-gcc` and `g++` are on `PATH`;
-- `golangci-lint run ./...` when `golangci-lint` is installed.
 
 Override `WINDOWS_CC` and `WINDOWS_CXX` when the MinGW-w64 compiler names differ.
 
@@ -41,6 +44,31 @@ Every check ends with one of three markers:
 
 Any required failure exits immediately with a nonzero status. An optional check may be skipped, but if it is available and fails, the final status is also nonzero. A successful run ends with `[PASS] release verification completed`.
 
-The fallback release artifacts are built only to prove reproducibility and are discarded with the temporary directory. Use `make build-all` when you want to retain them in `dist/`.
+Gate artifacts are discarded with the temporary directory. `make build-all`
+retains raw cross-built binaries. From a clean reviewed commit and an empty
+`dist/`, produce the actual deterministic release packages and provenance with:
 
-Release notes should link to the README's canonical [Scope and compatibility](../README.md#scope-and-compatibility) section so “complete within Cooler v0.1's educational scope” is not confused with drop-in reference-toolchain compatibility.
+```bash
+make release-artifacts VERSION=1.0.0
+```
+
+The four packages, `release-manifest.json`, and `SHA256SUMS` are described by
+the versioned [artifact contract](artifact-contract.md). The builder refuses a
+dirty tree so its recorded source commit cannot silently misidentify the code.
+
+Cross-building an artifact does not establish that it runs on its target. The
+versioned [v1.0.0 target-runtime validation record](release-validation-v1.0.0.md)
+defines the required Windows, Linux, and macOS evidence for this release. The
+historical [v0.1.1 record](release-validation-v0.1.1.md) remains evidence only
+for the exact older packages named there. Checks remain deliberately local and
+manual; every distributed v1.0.0 package must be exercised on its real target
+before its row can be marked runtime-tested. Runtime smoke scripts accept the
+distributed archive, verify it against `SHA256SUMS`, extract it, and then
+execute its contents.
+
+The [draft v1.0.0 release notes](release-notes-v1.0.0.md) cover the package
+matrix, clean-clone installation, checksum/provenance verification, migration,
+packaged-LSP setup, known boundaries, and public repository update. They link
+to the README's canonical [Scope and compatibility](../README.md#scope-and-compatibility)
+section so “complete within Cooler's educational scope” is not confused with
+drop-in reference-toolchain compatibility.

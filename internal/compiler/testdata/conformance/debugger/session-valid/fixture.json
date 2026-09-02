@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-session-valid",
+  "title": "Incremental debugger preparation, promotion, and reset",
+  "provenance": "Cooler debugger protocol and pipeline session contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 16,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "snapshot-pipeline", "expect": {"complete": false, "blocked": false}},
+      {"op": "next-phase", "expect": {"pipelinePhase": "lexer", "complete": false, "blocked": false}},
+      {"op": "next-phase", "expect": {"pipelinePhase": "parser", "complete": false, "blocked": false}},
+      {"op": "next-phase", "expect": {"pipelinePhase": "semantic", "complete": false, "blocked": false}},
+      {"op": "next-phase", "expect": {"pipelinePhase": "ir", "complete": false, "blocked": false}},
+      {"op": "next-phase", "expect": {"pipelinePhase": "codegen", "complete": false, "blocked": false}},
+      {"op": "next-phase", "expect": {"pipelinePhase": "runtime", "complete": true, "blocked": false}},
+      {"op": "promote", "expect": {"stopReason": "ready", "executedSteps": 0, "halted": false, "paused": false}},
+      {"op": "step-instruction", "expect": {"stopReason": "instruction-step", "executedSteps": 1}},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0, "halted": false, "paused": false, "output": []}}
+    ]
+  },
+  "sources": ["main.cl"]
+}

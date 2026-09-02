@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-copy-valid",
+  "title": "Object.copy shallow fields, distinct identity, and preserved dynamic class",
+  "ruleIds": ["RUN-OBJECT-INITIALIZATION", "BUILTIN-OBJECT"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "7FTFancyHolder",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

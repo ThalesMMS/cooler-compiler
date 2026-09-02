@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-division-invalid",
+  "title": "Division by zero runtime diagnostic",
+  "ruleIds": ["RUN-ARITHMETIC", "RUN-ARITHMETIC-FAILURES"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL3161", "stage": "semantic", "severity": "warning"},
+    {"code": "COL6015", "stage": "runtime", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

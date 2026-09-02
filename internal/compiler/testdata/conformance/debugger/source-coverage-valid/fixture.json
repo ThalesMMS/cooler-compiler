@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-source-coverage-valid",
+  "title": "Source stepping covers recursion, case, and loops without synthetic stops",
+  "provenance": "Cooler source-step mapping contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "2",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 4,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "scan-source-steps", "count": 200, "steps": 100000, "expect": {
+        "stopReason": "halt", "halted": true, "output": ["2"],
+        "requiredMethods": ["Main.descend", "Main.main"],
+        "requiredLines": [4, 5], "minimumFrameDepth": 3, "noSyntheticStops": true
+      }}
+    ]
+  },
+  "sources": ["main.cl"]
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-blocked-invalid",
+  "title": "Semantic errors block debugger promotion deterministically",
+  "provenance": "Cooler debugger protocol and semantic diagnostic contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "invalid",
+  "expectedDiagnostics": [
+    {"stage": "semantic", "severity": "error", "code": "COL3100"}
+  ],
+  "expectedLastSuccessfulStage": "parser",
+  "expectedOutput": "",
+  "expectedSourceUnits": ["main.cl"],
+  "debuggerScenario": {
+    "maxActions": 4,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"pipelinePhase": "semantic", "complete": false, "blocked": true, "diagnostics": ["COL3100"]}},
+      {"op": "promote", "expect": {"executedSteps": 0, "diagnostics": ["COL3100"]}}
+    ]
+  },
+  "sources": ["main.cl"]
+}

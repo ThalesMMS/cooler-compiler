@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-classes-multifile-valid",
+  "title": "Deterministic class, inherited feature, exact override, and entry-point behavior across source units",
+  "ruleIds": [
+    "SEM-CLASS-INHERITANCE",
+    "SEM-CLASS-FEATURES",
+    "SEM-CLASS-OVERRIDES",
+    "SEM-CLASS-ENTRYPOINT"
+  ],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedAst": [
+    {"path": [0], "kind": "Class", "name": "Base", "type": "Object"},
+    {"path": [0, 1], "kind": "Method", "name": "identify", "type": "Int"},
+    {"path": [1], "kind": "Class", "name": "Middle", "type": "Base"},
+    {"path": [2], "kind": "Class", "name": "Child", "type": "Middle"},
+    {"path": [2, 0, 1], "kind": "Binary", "text": "PLUS", "type": "Int"},
+    {"path": [3], "kind": "Class", "name": "Main", "type": "IO"},
+    {"path": [3, 0, 0, 0], "kind": "Dispatch", "text": "identify(...)", "type": "Int"}
+  ],
+  "expectedOutput": "3",
+  "expectedSourceUnits": ["base.cl", "child.cl", "main.cl"],
+  "sources": ["base.cl", "child.cl", "main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

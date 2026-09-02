@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "runtime-limit-input-lines-invalid",
+  "title": "Maximum supplied input lines",
+  "ruleIds": ["RUN-SAFETY-LIMITS"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6054", "stage": "runtime", "severity": "error"}
+  ],
+  "expectedRuntimeStatus": "halted",
+  "vmPolicy": {"maxInputLines": 1},
+  "runSteps": [100],
+  "inputLines": ["one", "two"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

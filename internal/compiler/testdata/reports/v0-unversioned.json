@@ -1,0 +1,12 @@
+{
+  "source": "class Main {};",
+  "stages": [],
+  "tokens": [],
+  "symbols": [],
+  "ir": [],
+  "assembly": [],
+  "metrics": {},
+  "controlFlow": { "blocks": [], "edges": [] },
+  "runtime": { "trace": [], "executedSteps": 0, "output": [], "stack": [], "frames": [], "halted": true },
+  "diagnostics": []
+}

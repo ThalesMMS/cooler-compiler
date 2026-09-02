@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-identifiers-invalid",
+  "title": "Invalid underscore initial and non-ASCII identifier letter",
+  "ruleIds": ["LEX-IDENTIFIERS", "LEX-DIAGNOSTICS", "LEX-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "none",
+  "expectedDiagnostics": [
+    {"code": "COL1009", "stage": "lexer", "severity": "error"},
+    {"code": "COL1001", "stage": "lexer", "severity": "error"}
+  ],
+  "expectedTokens": [
+    {"type": "OBJECT_ID", "lexeme": "caf", "literal": "caf"}
+  ],
+  "expectedArtifacts": ["tokens"],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

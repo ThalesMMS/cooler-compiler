@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "debugger-observations-valid",
+  "title": "Conditional breakpoints, hit counts, watches, logpoints, and trace deltas",
+  "provenance": "Cooler debugger observation and bounded trace contract",
+  "ruleIds": ["TOOL-DEBUGGER"],
+  "validity": "valid",
+  "expectedDiagnostics": [],
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedOutput": "",
+  "expectedSourceUnits": ["main.cl"],
+  "vmPolicy": {"maxTraceEntries": 2},
+  "debuggerScenario": {
+    "maxActions": 24,
+    "maxInstructions": 100000,
+    "actions": [
+      {"op": "complete", "expect": {"stopReason": "ready"}},
+      {"op": "set-watches", "watches": [
+        {"id": "i", "expression": "i"},
+        {"id": "bad", "expression": "i <- 9"}
+      ], "expect": {}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "loop", "line": 5, "column": 9, "condition": "i = 1", "enabled": true}
+      ], "expect": {
+        "stopReason": "breakpoint", "paused": true, "halted": false,
+        "watchValues": {"i": "1"}, "watchDiagnostics": ["bad"],
+        "breakpointHits": {"loop": 2}, "breakpointVerified": {"loop": true}
+      }},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0, "breakpointHits": {"loop": 0}, "debugLog": []}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "loop-log", "line": 5, "column": 9, "logMessage": "i={i}", "enabled": true}
+      ], "expect": {
+        "stopReason": "halt", "halted": true, "debugLog": ["i=0", "i=1", "i=2"],
+        "minimumTraceOffset": 1, "retainedTraceMaximum": 2
+      }},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0, "debugLog": []}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "third", "line": 5, "column": 9, "hitCount": 3, "enabled": true}
+      ], "expect": {
+        "stopReason": "breakpoint", "paused": true, "executedSteps": 42,
+        "breakpointHits": {"third": 3}, "breakpointVerified": {"third": true}
+      }},
+      {"op": "reset", "expect": {"stopReason": "ready", "executedSteps": 0}},
+      {"op": "run", "steps": 100000, "breakpoints": [
+        {"id": "unresolved", "line": 100, "enabled": true}
+      ], "expect": {
+        "stopReason": "halt", "halted": true,
+        "breakpointHits": {"unresolved": 0}, "breakpointVerified": {"unresolved": false}
+      }}
+    ]
+  },
+  "sources": ["main.cl"]
+}

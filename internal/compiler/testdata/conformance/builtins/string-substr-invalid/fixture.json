@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "builtin-string-substr-invalid",
+  "title": "String substring bounds runtime diagnostic",
+  "ruleIds": ["RUN-BUILTIN-FAILURES", "BUILTIN-STRING"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "codegen",
+  "expectedDiagnostics": [
+    {"code": "COL6046", "stage": "runtime", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-precedence-valid",
+  "title": "Complete precedence ladder, dispatch chains, right assignment, and parenthesized comparisons",
+  "ruleIds": ["PAR-ASSIGNMENT", "PAR-DISPATCH", "PAR-UNARY-BINARY", "PAR-PRECEDENCE", "PAR-COMPARISON-NONASSOC"],
+  "validity": "valid",
+  "runThrough": "parser",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [],
+  "expectedAst": [
+    {"path": [0, 0, 4, 0], "kind": "Assignment", "text": "a <-"},
+    {"path": [0, 0, 4, 0, 0], "kind": "Assignment", "text": "b <-"},
+    {"path": [0, 0, 4, 0, 0, 0], "kind": "Unary", "text": "NOT"},
+    {"path": [0, 0, 4, 0, 0, 0, 0], "kind": "Binary", "text": "LESS"},
+    {"path": [0, 0, 4, 1], "kind": "Binary", "text": "STAR"},
+    {"path": [0, 0, 4, 1, 0], "kind": "Binary", "text": "PLUS"},
+    {"path": [0, 0, 4, 2], "kind": "Binary", "text": "EQUAL"},
+    {"path": [0, 0, 4, 2, 0], "kind": "Binary", "text": "LESS"},
+    {"path": [0, 0, 4, 2, 1], "kind": "Binary", "text": "LESS"}
+  ],
+  "expectedArtifacts": ["tokens", "ast"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

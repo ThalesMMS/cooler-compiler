@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0.0",
+  "entries": [
+    {
+      "id": "classic-io-eof-bytes",
+      "ruleId": "BUILTIN-IO",
+      "fixtureId": "builtin-io-edge-valid",
+      "reason": "Cooler's bounded host input protocol returns an empty String after the supplied lines are exhausted; the classic SPIM 6.5 trap handler exposes EOF as repeated 0xff bytes.",
+      "evidence": "The 2026-09-01 strict 90-fixture run matched the supplied integer and string inputs, then observed repeated 0xff bytes only on the final exhausted in_string call.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "A\\nB/0/-42/hello/",
+      "expectedReference": "A\\nB/0/-42/hello/ followed by repeated 0xff bytes at EOF",
+      "removalCondition": "Remove when the declared host input protocol adopts the classic trap handler's EOF bytes or the reference runtime returns an empty String for this fixture."
+    },
+    {
+      "id": "classic-io-int-overflow",
+      "ruleId": "BUILTIN-IO",
+      "fixtureId": "builtin-io-int32-boundaries-valid",
+      "reason": "Cooler rejects overflowing decimal input deterministically as 0, while the classic trap handler saturates positive and negative overflows to signed 32-bit endpoints.",
+      "evidence": "The 2026-09-01 strict run observed Cooler 2147483647/-2147483648/0/0/0/1 and SPIM 2147483647/-2147483648/2147483647/-2147483648/2147483647/1.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "2147483647/-2147483648/0/0/0/1",
+      "expectedReference": "2147483647/-2147483648/2147483647/-2147483648/2147483647/1",
+      "removalCondition": "Remove if Cooler's documented input contract changes to classic saturation or the reference runtime rejects overflow as 0."
+    },
+    {
+      "id": "classic-io-nul-and-eof",
+      "ruleId": "BUILTIN-IO",
+      "fixtureId": "builtin-io-string-boundaries-valid",
+      "reason": "Cooler preserves an embedded NUL in its host String and returns empty input at EOF; the classic C-string trap handler truncates at NUL and then exposes EOF as 0xff bytes.",
+      "evidence": "The 2026-09-01 strict run observed Cooler [left\\x00right]/[] and SPIM [left]/[ followed by repeated 0xff bytes.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "[left\\x00right]/[]",
+      "expectedReference": "[left]/[ followed by repeated 0xff bytes",
+      "removalCondition": "Remove if Cooler adopts NUL-terminated strings and classic EOF bytes or the reference runtime gains the declared host String behavior."
+    },
+    {
+      "id": "classic-string-byte-indexing",
+      "ruleId": "BUILTIN-STRING",
+      "fixtureId": "builtin-string-unicode-valid",
+      "reason": "Cooler deliberately defines Unicode String length and substr by code point; the ASCII-era reference runtime counts and indexes UTF-8 bytes.",
+      "evidence": "The 2026-09-01 strict run observed Cooler 2/é/😀é and SPIM 6/\\x9f/😀é for the same UTF-8 source literal.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "2/é/😀é",
+      "expectedReference": "6/\\x9f/😀é",
+      "removalCondition": "Remove only if the project changes its documented Unicode code-point contract or the reference runtime becomes code-point based."
+    },
+    {
+      "id": "debugger-input-host-protocol",
+      "ruleId": "TOOL-DEBUGGER",
+      "fixtureId": "debugger-input-reverse-valid",
+      "reason": "The fixture's preloaded and reversible input is a Cooler debugger-host protocol; direct SPIM execution has no debugger replay channel and reads exhausted stdin as 0xff bytes.",
+      "evidence": "The 2026-09-01 strict run observed the straight-line Cooler output || and SPIM output containing repeated 0xff bytes between separators.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "|| in straight-line differential execution; debugger scenarios separately assert preloaded|| and replay",
+      "expectedReference": "separator-delimited repeated 0xff bytes because no debugger input channel exists",
+      "removalCondition": "Remove if the differential harness gains an equivalent reference debugger replay channel or the fixture stops depending on Cooler debugger input."
+    },
+    {
+      "id": "debugger-lifecycle-pause",
+      "ruleId": "TOOL-DEBUGGER",
+      "fixtureId": "debugger-lifecycle-valid",
+      "reason": "Cooler intentionally pauses this program under debugger lifecycle control; standalone SPIM has no corresponding pause protocol and continues until the containment timeout.",
+      "evidence": "The 2026-09-01 strict run recorded Cooler runtimeExit=paused and a contained five-second reference runtime timeout.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "paused debugger session",
+      "expectedReference": "reference runtime timeout without an external debugger pause protocol",
+      "removalCondition": "Remove if an equivalent reference debugger lifecycle adapter is added or the fixture becomes a terminating standalone program."
+    },
+    {
+      "id": "classic-arithmetic-overflow",
+      "ruleId": "RUN-INT-OVERFLOW",
+      "fixtureId": "runtime-int32-boundaries-valid",
+      "reason": "Cooler deliberately makes signed 32-bit arithmetic wrap deterministically; SPIM 6.5 raises an arithmetic-overflow exception on the first overflowing add.",
+      "evidence": "The 2026-09-01 strict run completed Cooler's modular boundary sequence while SPIM stopped with Exception 12 [Arithmetic overflow].",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "-2147483648/2147483647/-2/-2147483648/-2147483648/TT/-2147483648/-2147483647",
+      "expectedReference": "runtime arithmetic-overflow before producing the sequence",
+      "removalCondition": "Remove if the documented modular arithmetic policy changes to trapping overflow or the reference execution is configured for matching wraparound."
+    },
+    {
+      "id": "vm-policy-instruction-pause",
+      "ruleId": "RUN-SAFETY-LIMITS",
+      "fixtureId": "runtime-limit-paused",
+      "reason": "Cooler's deterministic instruction budget pauses an otherwise nonterminating loop; the reference runtime has no matching host safety budget.",
+      "evidence": "The 2026-09-01 strict run recorded Cooler runtimeExit=paused and a contained five-second SPIM timeout.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "paused at the configured instruction limit",
+      "expectedReference": "reference runtime timeout while continuing the loop",
+      "removalCondition": "Remove if SPIM is wrapped in a semantically equivalent instruction budget or the fixture becomes terminating."
+    },
+    {
+      "id": "vm-policy-total-budget-pause",
+      "ruleId": "RUN-SAFETY-LIMITS",
+      "fixtureId": "runtime-limit-total-invalid",
+      "reason": "Cooler's cumulative execution budget pauses the repeated run deterministically; standalone SPIM has no equivalent session-total budget.",
+      "evidence": "The 2026-09-01 strict run recorded Cooler runtimeExit=paused and a contained five-second reference timeout.",
+      "issue": "https://github.com/ThalesMMS/cooler-compiler-dev/issues/55",
+      "expectedCooler": "paused at the configured cumulative instruction limit",
+      "expectedReference": "reference runtime timeout without a cumulative host-session budget",
+      "removalCondition": "Remove if the reference adapter gains an equivalent cumulative budget or the fixture no longer exercises a nonterminating run."
+    }
+  ]
+}

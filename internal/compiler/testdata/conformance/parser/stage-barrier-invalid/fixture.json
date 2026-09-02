@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-stage-barrier-invalid",
+  "title": "Parser recovery blocks independent semantic diagnostics",
+  "ruleIds": ["PAR-RECOVERY"],
+  "validity": "invalid",
+  "runThrough": "semantic",
+  "expectedLastSuccessfulStage": "lexer",
+  "expectedDiagnostics": [
+    {"code": "COL2030", "stage": "parser", "severity": "error", "source": "main.cl", "span": {"startLine": 7, "startColumn": 7, "endLine": 7, "endColumn": 9, "startOffset": 76, "endOffset": 78}}
+  ],
+  "expectedAst": [
+    {"path": [0, 0], "kind": "Attribute", "name": "bad", "type": "Missing"},
+    {"path": [1, 0, 0, 1], "kind": "Identifier", "name": "unknown"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original adversarial stage-barrier fixture, AGPL-3.0-or-later"
+}

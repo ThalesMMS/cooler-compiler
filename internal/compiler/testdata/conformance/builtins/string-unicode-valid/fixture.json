@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "builtin-string-unicode-valid",
+  "title": "String length and substring use Unicode code-point indexing",
+  "ruleIds": ["BUILTIN-STRING"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "2/é/😀é",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler Unicode-extension fixture, AGPL-3.0-or-later"
+}

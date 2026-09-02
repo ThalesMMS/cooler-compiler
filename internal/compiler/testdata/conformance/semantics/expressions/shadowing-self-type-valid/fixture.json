@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-shadowing-self-type-valid",
+  "title": "Attribute, formal, let, and case shadowing with nested SELF_TYPE dispatch and void joins",
+  "ruleIds": ["SEM-EXPR-ASSIGNMENT", "SEM-EXPR-DISPATCH", "SEM-EXPR-CONTROL-LUB", "SEM-EXPR-LET-DEFAULTS", "SEM-EXPR-CASE", "SEM-EXPR-SELF-TYPE", "SEM-EXPR-SCOPES", "SEM-EXPR-CONFORMANCE", "RUN-OBJECT-DISPATCH"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedAst": [
+    {"path": [0, 1, 0], "kind": "Dispatch", "text": "identity(...)", "type": "SELF_TYPE"},
+    {"path": [0, 1, 0, 0], "kind": "Dispatch", "text": "identity(...)", "type": "SELF_TYPE"},
+    {"path": [2, 1, 0], "kind": "Formal", "name": "label", "type": "String"},
+    {"path": [2, 1, 1, 0], "kind": "LetBinding", "name": "label", "type": "String"},
+    {"path": [2, 1, 1, 1], "kind": "Identifier", "name": "label", "type": "String"},
+    {"path": [2, 2, 1], "kind": "If", "type": "Object"},
+    {"path": [2, 2, 1, 2], "kind": "Let", "type": "Object"},
+    {"path": [2, 3, 0, 2, 1], "kind": "CaseBranch", "name": "label", "type": "Base"},
+    {"path": [2, 3, 0, 2, 1, 0, 0, 0], "kind": "Dispatch", "text": "chain(...)", "type": "Base"},
+    {"path": [2, 3, 0, 4, 0], "kind": "IsVoid", "type": "Bool"}
+  ],
+  "expectedOutput": "formal/let/Child/T",
+  "sources": ["main.cl"],
+  "provenance": "Original adversarial COOL manual audit fixture, AGPL-3.0-or-later"
+}

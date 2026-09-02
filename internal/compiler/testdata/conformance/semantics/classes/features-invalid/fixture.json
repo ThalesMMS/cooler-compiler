@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-features-invalid",
+  "title": "Attribute, method, formal, initializer, and inherited-feature validation",
+  "ruleIds": ["SEM-CLASS-FEATURES", "SEM-CLASS-OVERRIDES"],
+  "validity": "invalid",
+  "expectedLastSuccessfulStage": "parser",
+  "expectedDiagnostics": [
+    {"code": "COL3020", "stage": "semantic", "severity": "error"},
+    {"code": "COL3021", "stage": "semantic", "severity": "error"},
+    {"code": "COL3022", "stage": "semantic", "severity": "error"},
+    {"code": "COL3030", "stage": "semantic", "severity": "error"},
+    {"code": "COL3031", "stage": "semantic", "severity": "error"},
+    {"code": "COL3032", "stage": "semantic", "severity": "error"},
+    {"code": "COL3033", "stage": "semantic", "severity": "error"},
+    {"code": "COL3034", "stage": "semantic", "severity": "error"},
+    {"code": "COL3035", "stage": "semantic", "severity": "error"},
+    {"code": "COL3040", "stage": "semantic", "severity": "error"},
+    {"code": "COL3041", "stage": "semantic", "severity": "error"},
+    {"code": "COL3060", "stage": "semantic", "severity": "error"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

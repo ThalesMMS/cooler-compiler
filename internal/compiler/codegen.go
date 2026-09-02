@@ -50,16 +50,19 @@ type caseTarget struct {
 }
 
 type byteInstruction struct {
-	Op         opcode
-	Text       string
-	Int        int
-	Bool       bool
-	Target     int
-	ArgCount   int
-	StaticType string
-	Cases      []caseTarget
-	Span       Span
-	Comment    string
+	Op              opcode
+	Text            string
+	Int             coolInt
+	Bool            bool
+	Target          int
+	ArgCount        int
+	StaticType      string
+	ValueType       string
+	Cases           []caseTarget
+	Span            Span
+	OperandSpan     Span
+	Comment         string
+	OriginalIndexes []int
 }
 
 type compiledMethod struct {
@@ -78,6 +81,7 @@ type runtimeAttribute struct {
 	Name     string
 	TypeName string
 	Owner    string
+	Span     Span
 }
 
 type runtimeClass struct {
@@ -87,15 +91,17 @@ type runtimeClass struct {
 }
 
 type executable struct {
-	Table       *ClassTable
-	Classes     map[string]*runtimeClass
-	Methods     map[string]*compiledMethod
-	MethodOrder []*compiledMethod
-	Entry       *compiledMethod
-	IR          []IRInstruction
-	Assembly    []string
-	ControlFlow ControlFlowGraph
-	Diagnostics []Diagnostic
+	Table         *ClassTable
+	Classes       map[string]*runtimeClass
+	Methods       map[string]*compiledMethod
+	MethodOrder   []*compiledMethod
+	Entry         *compiledMethod
+	IR            []IRInstruction
+	Assembly      []string
+	AssemblySpans []Span
+	ControlFlow   ControlFlowGraph
+	Diagnostics   []Diagnostic
+	verified      bool
 }
 
 func methodKey(owner, name string) string {
@@ -106,6 +112,8 @@ func Generate(program *Program, analysis Analysis) *executable {
 	exec := generateExecutable(program, analysis)
 	materializeIR(exec)
 	materializeAssembly(exec)
+	exec.Diagnostics = append(exec.Diagnostics, verifyExecutable(exec)...)
+	exec.verified = !hasErrors(exec.Diagnostics)
 	return exec
 }
 
@@ -154,7 +162,7 @@ func (g *generator) buildRuntimeClasses() {
 			}
 			attrs := orderedAttributes(ancestor)
 			for _, attr := range attrs {
-				class.Attributes = append(class.Attributes, runtimeAttribute{Name: attr.Name, TypeName: attr.TypeName, Owner: attr.Owner})
+				class.Attributes = append(class.Attributes, runtimeAttribute{Name: attr.Name, TypeName: attr.TypeName, Owner: attr.Owner, Span: attr.Span})
 			}
 		}
 		g.exec.Classes[name] = class
@@ -165,14 +173,10 @@ func orderedAttributes(class *ClassInfo) []*AttrInfo {
 	if class == nil {
 		return nil
 	}
-	if class.Decl != nil {
-		result := []*AttrInfo{}
-		for _, feature := range class.Decl.Features {
-			attr, ok := feature.(*AttributeDecl)
-			if !ok {
-				continue
-			}
-			if info, found := class.Attributes[attr.Name]; found && info.Decl == attr {
+	if len(class.AttributeOrder) == len(class.Attributes) {
+		result := make([]*AttrInfo, 0, len(class.AttributeOrder))
+		for _, name := range class.AttributeOrder {
+			if info, found := class.Attributes[name]; found {
 				result = append(result, info)
 			}
 		}
@@ -285,6 +289,10 @@ func (g *generator) emitText(op opcode, text string, span Span, comment string) 
 	return g.emitInstruction(byteInstruction{Op: op, Text: text, Span: span, Comment: comment})
 }
 
+func (g *generator) emitBinding(name, valueType string, span Span, comment string) int {
+	return g.emitInstruction(byteInstruction{Op: opBind, Text: name, ValueType: valueType, Span: span, Comment: comment})
+}
+
 func (g *generator) emitInstruction(instruction byteInstruction) int {
 	if instruction.Span.StartLine == 0 {
 		instruction.Span = emptySpan()
@@ -307,7 +315,7 @@ func (g *generator) patchTarget(index, target int) {
 func (g *generator) emitCall(method string, argCount int, staticType string, span Span, comment string) int {
 	return g.emitInstruction(byteInstruction{
 		Op: opCall, Text: method, ArgCount: argCount,
-		StaticType: staticType, Span: span, Comment: comment,
+		StaticType: staticType, Span: span, OperandSpan: span, Comment: comment,
 	})
 }
 
@@ -336,15 +344,18 @@ func (g *generator) compileExpr(expr Expr) {
 		g.emit(opDup, e.GetSpan(), "assignment expression keeps its value")
 		g.emitText(opStore, e.Name, e.NameSpan, "store "+e.Name)
 	case *DispatchExpr:
+		for _, arg := range e.Arguments {
+			g.compileExpr(arg)
+		}
 		if e.Receiver == nil {
 			g.emit(opLoadSelf, e.GetSpan(), "implicit self receiver")
 		} else {
 			g.compileExpr(e.Receiver)
 		}
-		for _, arg := range e.Arguments {
-			g.compileExpr(arg)
+		call := g.emitCall(e.Method, len(e.Arguments), e.StaticTypeName, e.GetSpan(), "dispatch "+e.Method)
+		if e.Receiver != nil {
+			g.current.Code[call].OperandSpan = e.Receiver.GetSpan()
 		}
-		g.emitCall(e.Method, len(e.Arguments), e.StaticTypeName, e.GetSpan(), "dispatch "+e.Method)
 	case *IfExpr:
 		g.compileExpr(e.Condition)
 		falseJump := g.emitJump(opJumpIfFalse, e.Condition.GetSpan(), "select else branch")
@@ -382,13 +393,13 @@ func (g *generator) compileExpr(expr Expr) {
 			} else {
 				g.emitDefault(binding.TypeName, binding.Span)
 			}
-			g.emitText(opBind, binding.Name, binding.NameSpan, "bind "+binding.Name)
+			g.emitBinding(binding.Name, binding.TypeName, binding.NameSpan, "bind "+binding.Name)
 		}
 		g.compileExpr(e.Body)
 		g.emit(opExitScopeKeep, e.GetSpan(), "leave let scope and preserve result")
 	case *CaseExpr:
 		g.compileExpr(e.Value)
-		selectIndex := g.emitInstruction(byteInstruction{Op: opCaseSelect, Span: e.GetSpan(), Comment: "select most specific matching branch"})
+		selectIndex := g.emitInstruction(byteInstruction{Op: opCaseSelect, Span: e.GetSpan(), OperandSpan: e.Value.GetSpan(), Comment: "select most specific matching branch"})
 		endJumps := []int{}
 		cases := make([]caseTarget, 0, len(e.Branches))
 		for _, branch := range e.Branches {
@@ -466,20 +477,21 @@ func materializeIR(exec *executable) {
 	edges := []ControlFlowEdge{}
 	for _, method := range exec.MethodOrder {
 		methodStart := globalIndex
-		for _, instruction := range method.Code {
-			args := instructionArgs(instruction)
+		for localIndex := range method.Code {
+			instruction := &method.Code[localIndex]
+			if len(instruction.OriginalIndexes) == 0 {
+				instruction.OriginalIndexes = []int{globalIndex}
+			}
+			args := instructionArgs(*instruction)
 			ir := IRInstruction{
 				Index: globalIndex, Method: method.DisplayName, Op: string(instruction.Op),
 				Args: args, Comment: instruction.Comment,
 				Line: instruction.Span.StartLine, Column: instruction.Span.StartColumn,
-				Span: instruction.Span,
+				Span: instruction.Span, Synthetic: method.Synthetic || instruction.Span.SourceID == "",
+				OriginalIndexes: append([]int(nil), instruction.OriginalIndexes...),
 			}
 			exec.IR = append(exec.IR, ir)
 			globalIndex++
-		}
-		methodEnd := globalIndex - 1
-		if methodEnd < methodStart {
-			methodEnd = methodStart
 		}
 		methodBlocks, methodEdges := controlFlowForMethod(method, methodStart)
 		blocks = append(blocks, methodBlocks...)
@@ -489,9 +501,17 @@ func materializeIR(exec *executable) {
 }
 
 func materializeAssembly(exec *executable) {
+	assembly, spans := assemblyForExecutable(exec)
+	exec.Assembly = assembly
+	exec.AssemblySpans = spans
+}
+
+func assemblyForExecutable(exec *executable) ([]string, []Span) {
 	assembly := []string{}
+	spans := []Span{}
 	for _, method := range exec.MethodOrder {
 		assembly = append(assembly, "", method.DisplayName+":")
+		spans = append(spans, method.Span, method.Span)
 		for localIndex, instruction := range method.Code {
 			args := instructionArgs(instruction)
 			line := fmt.Sprintf("  %04d  %-16s", localIndex, instruction.Op)
@@ -502,23 +522,30 @@ func materializeAssembly(exec *executable) {
 				line += "    ; " + instruction.Comment
 			}
 			assembly = append(assembly, line)
+			spans = append(spans, instruction.Span)
 		}
 	}
 	if len(assembly) > 0 && assembly[0] == "" {
 		assembly = assembly[1:]
+		spans = spans[1:]
 	}
-	exec.Assembly = assembly
+	return assembly, spans
 }
 
 func instructionArgs(instruction byteInstruction) []string {
 	switch instruction.Op {
 	case opPushInt:
-		return []string{strconv.Itoa(instruction.Int)}
+		return []string{instruction.Int.String()}
 	case opPushString:
 		return []string{strconv.Quote(instruction.Text)}
 	case opPushBool:
 		return []string{strconv.FormatBool(instruction.Bool)}
-	case opLoad, opStore, opBind, opNew:
+	case opLoad, opStore, opNew:
+		return []string{instruction.Text}
+	case opBind:
+		if instruction.ValueType != "" {
+			return []string{instruction.Text, instruction.ValueType}
+		}
 		return []string{instruction.Text}
 	case opJump, opJumpIfFalse:
 		return []string{fmt.Sprintf("L%d", instruction.Target)}
@@ -596,7 +623,7 @@ func controlFlowForMethod(method *compiledMethod, globalStart int) ([]ControlFlo
 	}
 	edgeSet := map[string]bool{}
 	edges := []ControlFlowEdge{}
-	addEdge := func(from, to, kind string) {
+	addEdge := func(from, to, kind string, span Span) {
 		if from == "" || to == "" {
 			return
 		}
@@ -605,27 +632,27 @@ func controlFlowForMethod(method *compiledMethod, globalStart int) ([]ControlFlo
 			return
 		}
 		edgeSet[key] = true
-		edges = append(edges, ControlFlowEdge{From: from, To: to, Kind: kind})
+		edges = append(edges, ControlFlowEdge{From: from, To: to, Kind: kind, Span: span})
 	}
 	for i, instruction := range method.Code {
 		from := blockForInstruction[i]
 		switch instruction.Op {
 		case opJump:
-			addEdge(from, blockForInstruction[instruction.Target], "jump")
+			addEdge(from, blockForInstruction[instruction.Target], "jump", instruction.Span)
 		case opJumpIfFalse:
-			addEdge(from, blockForInstruction[instruction.Target], "false")
+			addEdge(from, blockForInstruction[instruction.Target], "false", instruction.Span)
 			if i+1 < len(method.Code) {
-				addEdge(from, blockForInstruction[i+1], "true")
+				addEdge(from, blockForInstruction[i+1], "true", instruction.Span)
 			}
 		case opCaseSelect:
 			for _, target := range instruction.Cases {
-				addEdge(from, blockForInstruction[target.Target], "case "+target.Type)
+				addEdge(from, blockForInstruction[target.Target], "case "+target.Type, instruction.Span)
 			}
 		case opReturn, opHalt:
 			// Terminal.
 		default:
 			if i+1 < len(method.Code) && blockForInstruction[i] != blockForInstruction[i+1] {
-				addEdge(from, blockForInstruction[i+1], "fallthrough")
+				addEdge(from, blockForInstruction[i+1], "fallthrough", instruction.Span)
 			}
 		}
 	}

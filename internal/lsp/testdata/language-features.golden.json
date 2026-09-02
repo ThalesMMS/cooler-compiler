@@ -1,0 +1,10 @@
+{
+  "codeActions": "sha256:8013a065eb32e826987f4affb2fbd1b14fc5dd99850cdb547080ab0fc8737804",
+  "completions": "sha256:7c4218ab6a2def129cb16e87c266126389c93101ad9a83418b81ef610443e3cf",
+  "definition": "sha256:ec51bb7ddbeff26e855ff0c898d6a0b806d983a7b4b9769672c7b58931a1cc54",
+  "diagnostics": "sha256:c71d78754e12ab7b077fb6d10f865ace91a7ace67047f3c26a9d9c7eb287e06b",
+  "hover": "sha256:3efa54571bf26cbbbc78ce49d553d7bf845f3a5e6c60b25bc9fb7d2d58fa66f2",
+  "references": "sha256:86fe2195397deb43350351ea9034a6c9ea9fa38caf1a56043a9d0b20fab1c697",
+  "semanticTokens": "sha256:d5cb723ef9d34a1ee8ce5be1d40ade19eafa5bee0f65fff4e43eadf5f6cc4412",
+  "symbols": "sha256:ab264f07d5ed9047f3b2bdd066dc6098c3803f1b9134dafa0d567f95c3d3a3f1"
+}

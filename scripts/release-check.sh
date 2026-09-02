@@ -3,6 +3,14 @@
 
 set -euo pipefail
 
+# Git for Windows inherits the host PATH before /usr/bin, where FIND.EXE can
+# shadow the POSIX find required by this local Unix-style release gate.
+case "$(uname -s)" in
+  MSYS* | MINGW* | CYGWIN*)
+    export PATH="$(dirname "$BASH"):$PATH"
+    ;;
+esac
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
@@ -57,7 +65,7 @@ run_optional() {
 check_required_tools() {
   local missing=0
   local tool
-  for tool in bash find git go gofmt make mktemp node uname xargs; do
+  for tool in bash cmp find git go gofmt make mktemp node tr uname xargs; do
     if ! command -v "$tool" >/dev/null 2>&1; then
       printf 'missing required tool: %s\n' "$tool" >&2
       missing=1
@@ -89,21 +97,37 @@ check_go_tests() {
   CGO_ENABLED=0 go test -count=1 ./...
 }
 
+check_session_lifecycle() {
+  CGO_ENABLED=0 go test -count=10 ./cmd/coolergui \
+    -run '^(TestSession|TestCompleteRacingNext|TestRunRaces|TestPipelinePromotion|TestServerShutdown)'
+}
+
 check_go_vet() {
   CGO_ENABLED=0 go vet ./...
 }
 
 check_javascript() {
   local source_file
-  for source_file in \
-    internal/web/static/about.js \
-    internal/web/static/client-utils.js \
-    internal/web/static/app.js; do
+  while IFS= read -r -d '' source_file; do
     node --check "$source_file" || return 1
-  done
+  done < <(find internal/web/static -type f \( -name '*.js' -o -name '*.mjs' \) -print0)
   node --test \
     internal/web/static/about.test.js \
-    internal/web/static/client-utils.test.js
+    internal/web/static/client-utils.test.js \
+    internal/web/static/app-modules.test.mjs
+}
+
+check_shell_scripts() {
+  local source_file
+  while IFS= read -r -d '' source_file; do
+    bash -n "$source_file" || return 1
+  done < <(find scripts -type f -name '*.sh' -print0)
+}
+
+check_batch_entrypoint() {
+  [[ "$(git check-attr eol -- build.bat)" == *": crlf" ]] || return 1
+  grep -Fqx 'if "%1"=="check" goto check' < <(tr -d '\r' <build.bat) || return 1
+  grep -Fqx ':check' < <(tr -d '\r' <build.bat)
 }
 
 check_fallback_builds() {
@@ -128,6 +152,10 @@ check_fallback_builds() {
   done
 }
 
+check_release_reproducibility() {
+  ./scripts/check-release-reproducibility.sh
+}
+
 check_race() {
   CGO_ENABLED=1 go test -race -count=1 ./...
 }
@@ -139,6 +167,7 @@ check_macos_package() {
   [[ -f "$resources/LICENSE" ]]
   [[ -f "$resources/NOTICE" ]]
   [[ -f "$resources/THIRD_PARTY_NOTICES.md" ]]
+  ./scripts/test-macos-quit.sh "$work_dir/macos/Cooler Compiler Lab.app"
 }
 
 check_windows_native() {
@@ -159,10 +188,20 @@ printf 'Temporary output: %s\n' "$work_dir"
 run_required "module checksums (go mod verify)" go mod verify
 run_required "repository whitespace (git diff --check)" check_repository_diff
 run_required "Go formatting (gofmt -l)" check_go_format
+run_required "documentation links, schemas, and generated references" go run ./cmd/cooler-doc-check
+run_required "pinned golangci-lint" make --no-print-directory lint
+run_required "normative COOL conformance corpus" make --no-print-directory CONFORMANCE_REPORT="$work_dir/conformance-report.json" conformance
+run_required "differential harness self-tests" go test -count=1 ./internal/conformance -run '^TestDifferential'
 run_required "Go tests, examples, embedded resources, and multifile/input behavior" check_go_tests
+run_required "deterministic session lifecycle stress" check_session_lifecycle
+run_required "bounded local compiler fuzz smoke" make --no-print-directory FUZZ_SMOKE_DURATION=1s FUZZ_WORKERS=4 fuzz-smoke
 run_required "Go vet" check_go_vet
+run_required "shell script syntax" check_shell_scripts
+run_required "Windows batch entrypoint and CRLF policy" check_batch_entrypoint
 run_required "JavaScript syntax and tests" check_javascript
+run_required "bounded performance benchmark smoke" make --no-print-directory benchmark-smoke
 run_required "CLI and GUI fallback release builds" check_fallback_builds
+run_required "deterministic packaged release reproducibility" check_release_reproducibility
 
 cgo_enabled="$(go env CGO_ENABLED 2>/dev/null || true)"
 cc_value="$(go env CC 2>/dev/null || true)"
@@ -185,12 +224,6 @@ if command -v "$windows_cc" >/dev/null 2>&1 && command -v "$windows_cxx" >/dev/n
   run_optional "native Windows WebView2 cross-build" check_windows_native
 else
   skip "native Windows WebView2 cross-build (MinGW-w64 toolchain unavailable)"
-fi
-
-if command -v golangci-lint >/dev/null 2>&1; then
-  run_optional "golangci-lint" golangci-lint run ./...
-else
-  skip "golangci-lint (tool unavailable)"
 fi
 
 if [[ "$optional_failures" -ne 0 ]]; then

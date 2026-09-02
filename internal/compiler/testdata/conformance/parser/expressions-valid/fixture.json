@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "parser-expressions-valid",
+  "title": "Program structure, expression grammar, and precedence",
+  "ruleIds": [
+    "PAR-PROGRAM-STRUCTURE",
+    "PAR-ASSIGNMENT",
+    "PAR-DISPATCH",
+    "PAR-CONDITIONALS",
+    "PAR-LOOPS",
+    "PAR-BLOCKS",
+    "PAR-LET",
+    "PAR-CASE",
+    "PAR-UNARY-BINARY",
+    "PAR-PRECEDENCE",
+    "BUILTIN-BASIC-CLASSES",
+    "TOOL-BACKEND-ARTIFACTS"
+  ],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "7/if/case",
+  "expectedArtifacts": ["tokens", "ast", "symbols", "ir", "assembly", "controlFlow", "runtimeTrace"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

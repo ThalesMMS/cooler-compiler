@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-basics-valid",
+  "title": "Identifier, keyword, Boolean, comment, and string tokenization",
+  "ruleIds": [
+    "LEX-IDENTIFIERS",
+    "LEX-KEYWORDS",
+    "LEX-BOOLEANS",
+    "LEX-COMMENTS",
+    "LEX-STRINGS"
+  ],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "lexer\tok\n!",
+  "expectedArtifacts": ["tokens", "ast", "runtimeTrace"],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

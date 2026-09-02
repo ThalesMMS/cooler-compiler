@@ -31,7 +31,7 @@ func TestSplitProgramInput(t *testing.T) {
 	}
 }
 
-func TestInStringConsumesTwoLines(t *testing.T) {
+func TestInStringConsumesTwoLinesInDispatchOrder(t *testing.T) {
 	source := `class Main inherits IO {
   main() : Object {
     out_string(in_string().concat(in_string()))
@@ -39,8 +39,8 @@ func TestInStringConsumesTwoLines(t *testing.T) {
 };`
 	result := CompileWithInput(source, "hello\nworld\n")
 	assertNoErrors(t, result.Diagnostics)
-	if got := outputText(result.Runtime.Output); got != "helloworld" {
-		t.Fatalf("output %q, want %q", got, "helloworld")
+	if got := outputText(result.Runtime.Output); got != "worldhello" {
+		t.Fatalf("output %q, want %q", got, "worldhello")
 	}
 }
 

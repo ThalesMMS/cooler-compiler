@@ -312,14 +312,14 @@ func (e *IdentifierExpr) ToAST() ASTNode {
 
 type IntExpr struct {
 	exprBase
-	Value int
+	Value coolInt
 	Raw   string
 }
 
 func (*IntExpr) exprNode() {}
 func (e *IntExpr) ToAST() ASTNode {
 	node := astExpr("Int", e.Raw, &e.exprBase)
-	node.Value = strconv.Itoa(e.Value)
+	node.Value = e.Value.String()
 	return node
 }
 

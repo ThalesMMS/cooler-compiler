@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-initialization-valid",
+  "title": "Default values and parent-before-child source-order attribute initialization",
+  "ruleIds": ["RUN-OBJECT-INITIALIZATION"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedOutput": "p1p2c1c20falsevoid",
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

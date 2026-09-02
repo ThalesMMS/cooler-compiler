@@ -4,10 +4,11 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const { createHash } = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   applyQuickFix,
-  concatSources,
-  mapDiagnosticLocation,
   buildArchiveFiles,
   buildCompileReport,
   buildZipBlob,
@@ -15,13 +16,33 @@ const {
   mergeRecentFiles,
   normalizeFileName,
   renderASTNode,
+  runButtonPresentation,
   runVMChunks,
   shouldAcceptResponse,
   shouldDisableRunButton,
   shouldStopAutoRun,
   toggleASTBranch,
   traceEnd,
+  validateArchiveFiles,
 } = require("./client-utils.js");
+
+test("Run button presentation keeps its visual and accessible state in sync", () => {
+  assert.deepEqual(runButtonPresentation("idle"), {
+    label: "Run",
+    title: "Run until halt or breakpoint",
+    icon: "run",
+  });
+  assert.deepEqual(runButtonPresentation("pause"), {
+    label: "Pause",
+    title: "Pause after the current VM batch",
+    icon: "pause",
+  });
+  assert.deepEqual(runButtonPresentation("pausing"), {
+    label: "Pausing…",
+    title: "Waiting for the current VM batch",
+    icon: "pause",
+  });
+});
 
 test("every AST branch has its own expanded disclosure control", () => {
   assert.equal(typeof renderASTNode, "function", "AST renderer must be available to the UI");
@@ -109,6 +130,7 @@ test("auto-run ignores chunk budget pauses but stops for breakpoints, errors, ha
   assert.equal(shouldStopAutoRun({ halted: true, executedSteps: 25, trace: [] }, 24), true);
   assert.equal(shouldStopAutoRun({ executedSteps: 24, trace: [] }, 24), true);
   assert.equal(shouldStopAutoRun({ executedSteps: 25, diagnostics: [{ severity: "error" }] }, 24), true);
+  assert.equal(shouldStopAutoRun({ executedSteps: 25, waitingInput: { sequence: 1 }, trace: [] }, 24), true);
 });
 
 test("the client Run loop batches execution and honors a pending Pause", async () => {
@@ -141,6 +163,35 @@ test("the client Run loop batches execution and honors a pending Pause", async (
   assert.deepEqual(requests.map((request) => request.breakpoints), [[2, 9], [2, 9]]);
   assert.deepEqual(requests.map((request) => request.traceFrom), [0, 1]);
   assert.equal(runtime.executedSteps, 50);
+});
+
+test("the client sends source-aware breakpoints in deterministic order", async () => {
+  let runtime = null;
+  let request;
+  await runVMChunks({
+    sessionID: "session-project",
+    epoch: 1,
+    getSessionID: () => "session-project",
+    getEpoch: () => 1,
+    getRuntime: () => runtime,
+    getBreakpoints: () => [
+      { sourceId: "z-unit", line: 2 },
+      { sourceId: "a-unit", line: 9 },
+      { sourceId: "a-unit", line: 3 },
+    ],
+    isPauseRequested: () => false,
+    requestChunk: async (payload) => {
+      request = payload;
+      return { snapshot: { runtime: { halted: true, executedSteps: 1, trace: [] } } };
+    },
+    applySnapshot: (snapshot) => { runtime = snapshot.runtime; },
+    wait: async () => {},
+  });
+  assert.deepEqual(request.breakpoints, [
+    { sourceId: "a-unit", line: 3 },
+    { sourceId: "a-unit", line: 9 },
+    { sourceId: "z-unit", line: 2 },
+  ]);
 });
 
 test("the client Run loop discards a response after the session is replaced", async () => {
@@ -176,6 +227,7 @@ test("the Run button stays disabled while a pause is pending", () => {
   assert.equal(shouldDisableRunButton({ busy: true, autoRunning: true, pauseRequested: false }), false);
   assert.equal(shouldDisableRunButton({ busy: true, autoRunning: false, pauseRequested: false }), true);
   assert.equal(shouldDisableRunButton({ runtimeDone: true }), true);
+  assert.equal(shouldDisableRunButton({ waitingInput: true }), true);
 });
 
 test("quick fixes use browser-compatible offsets", () => {
@@ -187,17 +239,40 @@ test("quick fixes use browser-compatible offsets", () => {
 
 test("the complete report preserves metrics and control-flow artifacts", () => {
   const report = buildCompileReport({
+    schemaVersion: "1.1.0",
+    compilerVersion: "0.1.1",
+    compilerCommit: "abc123",
+    target: { os: "linux", arch: "amd64", goVersion: "go1.25" },
+    options: { execute: true, vmMaxSteps: 100000, inputProvided: false },
+    sourceUnits: [{ id: "source-1", name: "main.cl", order: 0, byteSize: 14, sha256: "a".repeat(64) }],
     source: "class Main {};",
     metrics: { classes: 1 },
     controlFlow: { blocks: [{ id: "entry" }], edges: [] },
+    visualizations: { schemaVersion: "1.3.0", classes: [{ name: "Main" }] },
+    optimization: { mode: "basic", executionIR: "optimized", passes: [{ contract: { name: "constant-fold" } }] },
   }, "main.cl", "2026-08-20T12:00:00.000Z");
   assert.deepEqual(report.metrics, { classes: 1 });
   assert.deepEqual(report.controlFlow.blocks, [{ id: "entry" }]);
   assert.equal(report.sourceFile, "main.cl");
+  assert.equal(report.schemaVersion, "1.1.0");
+  assert.equal(report.compilerVersion, "0.1.1");
+  assert.equal(report.compilerCommit, "abc123");
+  assert.equal(report.visualizations.classes[0].name, "Main");
+  assert.equal(report.optimization.mode, "basic");
+  assert.equal(report.exportedAt, "2026-08-20T12:00:00.000Z");
+  assert.equal(buildCompileReport({}, "main.cl").exportedAt, undefined);
+  assert.equal(buildCompileReport({}, "main.cl").schemaVersion, "1.4.0");
+  assert.equal(buildCompileReport({}, "main.cl").optimization.mode, "none");
 });
 
-test("multifile export produces a readable ZIP directory with every documented entry", async () => {
-  const files = buildArchiveFiles({
+test("report export produces a digest-verified deterministic ZIP manifest", async () => {
+  const files = await buildArchiveFiles({
+    schemaVersion: "1.1.0",
+    compilerVersion: "0.1.1",
+    compilerCommit: "abc123",
+    target: { os: "linux", arch: "amd64", goVersion: "go1.25" },
+    options: { execute: true, vmMaxSteps: 100000, inputProvided: false },
+    sourceUnits: [{ id: "source-1", name: "hello.cl", order: 0, byteSize: 14, sha256: "a".repeat(64) }],
     source: "class Main {};",
     diagnostics: [],
     tokens: [],
@@ -219,44 +294,89 @@ test("multifile export produces a readable ZIP directory with every documented e
     "hello/vm-trace.json",
     "hello/output.txt",
     "hello/compile-report.json",
+    "hello/manifest.json",
   ];
   assert.deepEqual(files.map((file) => file.name), expected);
+
+  const manifest = JSON.parse(files.at(-1).content);
+  const schema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../../schemas/report-archive-manifest-v1.schema.json"), "utf8"));
+  for (const field of schema.required) assert.ok(Object.hasOwn(manifest, field), `schema requires ${field}`);
+  assert.equal(manifest.schemaVersion, "1.0.0");
+  assert.equal(manifest.compilerVersion, "0.1.1");
+  assert.deepEqual(manifest.artifacts.map((artifact) => artifact.path), expected.slice(0, -1));
+  const byName = new Map(files.map((file) => [file.name, file.content]));
+  for (const artifact of manifest.artifacts) {
+    const bytes = new TextEncoder().encode(byName.get(artifact.path));
+    assert.equal(artifact.byteSize, bytes.length);
+    assert.equal(artifact.sha256, createHash("sha256").update(bytes).digest("hex"));
+  }
 
   const bytes = new Uint8Array(await buildZipBlob(files, new Date("2026-08-20T12:00:00Z")).arrayBuffer());
   assert.deepEqual(Array.from(bytes.slice(0, 4)), [0x50, 0x4b, 0x03, 0x04]);
   const text = new TextDecoder().decode(bytes);
   for (const name of expected) assert.ok(text.includes(name), `missing ZIP entry ${name}`);
   assert.deepEqual(Array.from(bytes.slice(-22, -18)), [0x50, 0x4b, 0x05, 0x06]);
+
+  const first = new Uint8Array(await buildZipBlob(files).arrayBuffer());
+  const second = new Uint8Array(await buildZipBlob(files).arrayBuffer());
+  assert.deepEqual(first, second);
 });
 
-test("concatSources joins files in order and inserts a newline between chunks", () => {
-  const withoutNewline = concatSources([
-    { name: "a.cl", source: "class A {};" },
-    { name: "b.cl", source: "class B {};" },
+test("multifile report archives preserve explicit source units", async () => {
+  const files = await buildArchiveFiles({
+    schemaVersion: "1.1.0",
+    compilerVersion: "dev",
+    sourceUnits: [
+      { id: "left", name: "same.cl", order: 0, byteSize: 11, sha256: "a".repeat(64) },
+      { id: "right", name: "same.cl", order: 1, byteSize: 11, sha256: "b".repeat(64) },
+    ],
+  }, "same.cl", [
+    { id: "left", name: "same.cl", content: "class A {};" },
+    { id: "right", name: "same.cl", content: "class B {};" },
   ]);
-  assert.equal(withoutNewline.source, "class A {};\nclass B {};");
-  assert.deepEqual(withoutNewline.files.map((file) => ({ name: file.name, startLine: file.startLine, startOffset: file.startOffset })), [
-    { name: "a.cl", startLine: 1, startOffset: 0 },
-    { name: "b.cl", startLine: 2, startOffset: 12 },
+  assert.equal(files[0].name, "same/sources/001-same.cl");
+  assert.equal(files[1].name, "same/sources/002-same.cl");
+  assert.equal(files[0].content, "class A {};");
+  assert.equal(files[1].content, "class B {};");
+  const manifest = JSON.parse(files.at(-1).content);
+  assert.deepEqual(manifest.sourceUnits.map((unit) => unit.id), ["left", "right"]);
+  assert.deepEqual(manifest.sourceUnits.map((unit) => unit.path), [
+    "same/sources/001-same.cl",
+    "same/sources/002-same.cl",
   ]);
-
-  const withNewline = concatSources([
-    { name: "a.cl", source: "class A {};\n" },
-    { name: "b.cl", source: "class B {};\n" },
-  ]);
-  assert.equal(withNewline.source, "class A {};\nclass B {};\n");
-  assert.equal(withNewline.files[1].startLine, 2);
-  assert.equal(withNewline.files[1].startOffset, 12);
 });
 
-test("mapDiagnosticLocation maps joined lines back to the originating file", () => {
-  const { files } = concatSources([
-    { name: "stack.cl", source: "class Stack {};\nclass Main {};\n" },
-    { name: "atoi.cl", source: "class A2I {};\n" },
-  ]);
-  assert.deepEqual(mapDiagnosticLocation(files, "fallback.cl", 1), { name: "stack.cl", line: 1, index: 0 });
-  assert.deepEqual(mapDiagnosticLocation(files, "fallback.cl", 2), { name: "stack.cl", line: 2, index: 0 });
-  assert.deepEqual(mapDiagnosticLocation(files, "fallback.cl", 3), { name: "atoi.cl", line: 1, index: 1 });
-  assert.deepEqual(mapDiagnosticLocation([], "fallback.cl", 4), { name: "fallback.cl", line: 4, index: -1 });
-  assert.equal(mapDiagnosticLocation(files, "fallback.cl", 0).name, "stack.cl");
+test("ZIP generation rejects duplicate and unsafe entry paths", () => {
+  for (const files of [
+    [{ name: "same.txt", content: "a" }, { name: "same.txt", content: "b" }],
+    [{ name: "../escape.txt", content: "x" }],
+    [{ name: "/absolute.txt", content: "x" }],
+    [{ name: "folder\\windows.txt", content: "x" }],
+    [{ name: "C:/drive.txt", content: "x" }],
+  ]) {
+    assert.throws(() => validateArchiveFiles(files), /ZIP entry path/);
+    assert.throws(() => buildZipBlob(files), /ZIP entry path/);
+  }
+});
+
+test("report archive manifest matches the v1 golden fixture", async () => {
+  const files = await buildArchiveFiles({
+    schemaVersion: "1.0.0",
+    compilerVersion: "0.1.1",
+    compilerCommit: "abc123",
+    target: { os: "test", arch: "test", goVersion: "go-test" },
+    options: { execute: false, vmMaxSteps: 100000, inputProvided: false },
+    sourceUnits: [{ id: "source-1", name: "main.cl", order: 0, byteSize: 0, sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" }],
+    source: "",
+    diagnostics: [],
+    tokens: [],
+    ast: null,
+    symbols: [],
+    ir: [],
+    assembly: [],
+    assemblySpans: [],
+    runtime: { trace: [], output: [] },
+  }, "main.cl");
+  const golden = fs.readFileSync(path.join(__dirname, "testdata/report-archive-manifest.golden.json"), "utf8").replace(/\r\n/g, "\n");
+  assert.equal(files.at(-1).content, golden);
 });

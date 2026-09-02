@@ -1,0 +1,6 @@
+division|COL6015|runtime|error|2:21|33-38|division by zero
+dispatch-void|COL6020|runtime|error|5:42|92-97|dispatch on void
+case-void|COL6030|runtime|error|4:32|80-86|case on void
+case-no-match|COL6031|runtime|error|4:26|70-79|no matching case branch for Value
+abort|COL6040|runtime|error|2:21|33-40|Object.abort was called
+substr|COL6046|runtime|error|2:21|33-51|String.substr indexes are out of range

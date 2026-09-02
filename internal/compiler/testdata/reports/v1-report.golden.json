@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "1.4.0",
+  "compilerVersion": "0.1.1",
+  "compilerCommit": "abc123",
+  "target": {
+    "os": "test",
+    "arch": "test",
+    "goVersion": "go-test"
+  },
+  "options": {
+    "execute": false,
+    "vmMaxSteps": 100000,
+    "inputProvided": false,
+    "vmPolicy": {
+      "maxInstructionsPerRun": 100000,
+      "maxInstructionsTotal": 100000,
+      "maxOperandStackDepth": 4096,
+      "maxCallFrameDepth": 256,
+      "maxScopeDepth": 1024,
+      "maxObjectAllocations": 10000,
+      "maxTraceEntries": 5000,
+      "maxTraceBytes": 16777216,
+      "maxStringBytes": 1048576,
+      "maxOutputBytes": 4194304,
+      "maxInputBytes": 1048576,
+      "maxInputLines": 10000,
+      "maxBreakpoints": 1024
+    },
+    "optimization": "none"
+  },
+  "sourceUnits": [
+    {
+      "id": "source-1",
+      "name": "main.cl",
+      "order": 0,
+      "byteSize": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "source": "",
+  "stages": [],
+  "tokens": [],
+  "symbols": [],
+  "ir": [],
+  "assembly": [],
+  "assemblySpans": [],
+  "metrics": {
+    "usefulTokens": 0,
+    "astNodes": 0,
+    "classes": 0,
+    "methods": 0,
+    "attributes": 0,
+    "symbols": 0,
+    "irInstructions": 0,
+    "assemblyLines": 0,
+    "basicBlocks": 0,
+    "flowEdges": 0
+  },
+  "controlFlow": {
+    "blocks": [],
+    "edges": []
+  },
+  "runtime": {
+    "trace": [],
+    "executedSteps": 0,
+    "output": [],
+    "stack": [],
+    "frames": [],
+    "halted": true
+  },
+  "diagnostics": [],
+  "optimization": {
+    "mode": "none",
+    "enabled": false,
+    "executionIR": "unoptimized",
+    "passOrder": [],
+    "baselineVerified": false,
+    "optimizedVerified": false,
+    "beforeIR": [],
+    "afterIR": [],
+    "beforeCFG": {
+      "blocks": [],
+      "edges": []
+    },
+    "afterCFG": {
+      "blocks": [],
+      "edges": []
+    },
+    "passes": []
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "lexer-comments-invalid",
+  "title": "Nested block-comment EOF recovery",
+  "ruleIds": ["LEX-COMMENTS", "LEX-DIAGNOSTICS"],
+  "validity": "invalid",
+  "runThrough": "lexer",
+  "expectedLastSuccessfulStage": "none",
+  "expectedDiagnostics": [
+    {"code": "COL1003", "stage": "lexer", "severity": "error"}
+  ],
+  "sources": ["tokens.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}

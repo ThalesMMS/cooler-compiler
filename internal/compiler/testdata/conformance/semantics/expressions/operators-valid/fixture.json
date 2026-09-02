@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "semantic-operators-valid",
+  "title": "Valid unary, arithmetic, ordering, equality, and isvoid operands",
+  "ruleIds": ["SEM-EXPR-COMPLEMENTS", "SEM-EXPR-ARITHMETIC", "SEM-EXPR-COMPARISON-EQUALITY"],
+  "validity": "valid",
+  "expectedLastSuccessfulStage": "runtime",
+  "expectedDiagnostics": [],
+  "expectedAst": [
+    {"path": [0, 0, 0, 0], "kind": "Unary", "text": "TILDE", "type": "Int"},
+    {"path": [0, 0, 0, 1], "kind": "Unary", "text": "NOT", "type": "Bool"},
+    {"path": [0, 0, 0, 2], "kind": "Binary", "text": "PLUS", "type": "Int"},
+    {"path": [0, 0, 0, 6], "kind": "Binary", "text": "LESS", "type": "Bool"},
+    {"path": [0, 0, 0, 8], "kind": "Binary", "text": "EQUAL", "type": "Bool"},
+    {"path": [0, 0, 0, 12], "kind": "IsVoid", "type": "Bool"}
+  ],
+  "sources": ["main.cl"],
+  "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
+}
