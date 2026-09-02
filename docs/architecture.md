@@ -5,7 +5,7 @@ Related canonical references: [stack IR](stack-ir.md),
 [multifile semantics](multifile.md), and the
 [artifact contract](artifact-contract.md).
 
-Cooler Compiler Lab separates the desktop and browser interface from a self-contained compiler pipeline and VM. Each language-dependent stage implements COOL semantics directly.
+Cooler Compiler separates the desktop and browser interface from a self-contained compiler pipeline and VM. Each language-dependent stage implements COOL semantics directly.
 
 ```text
 Native WKWebView / browser

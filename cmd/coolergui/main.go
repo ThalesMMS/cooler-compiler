@@ -134,14 +134,14 @@ func run() error {
 		return err
 	}
 	if *allowRemote {
-		log.Printf("WARNING: --allow-remote exposes the local GUI service beyond loopback; Cooler is not a hosted multi-user service")
+		log.Printf("WARNING: --allow-remote exposes the local GUI service beyond loopback; Cooler Compiler is not a hosted multi-user service")
 	}
 	listener, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", *addr)
 	if err != nil {
 		return fmt.Errorf("listen on %s: %w", *addr, err)
 	}
 	guiURL := "http://" + listener.Addr().String()
-	fmt.Printf("Cooler Compiler Lab at %s\n", guiURL)
+	fmt.Printf("Cooler Compiler at %s\n", guiURL)
 	capability, err := newCapability()
 	if err != nil {
 		_ = listener.Close()

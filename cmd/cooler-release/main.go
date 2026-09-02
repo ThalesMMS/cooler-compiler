@@ -17,7 +17,7 @@ func main() {
 	version := flag.String("version", "", "release version without a v prefix")
 	commit := flag.String("commit", "", "full source commit")
 	epoch := flag.Int64("source-date-epoch", 0, "deterministic Unix timestamp")
-	requireMacApp := flag.Bool("require-macos-app", false, "require and package the native macOS app bundle")
+	requireMacApp := flag.Bool("require-macos-app", false, "require and package the macOS application bundle")
 	skipped := flag.String("skipped-checks", "", "semicolon-separated documented skipped checks")
 	flag.Parse()
 

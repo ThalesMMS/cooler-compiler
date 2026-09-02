@@ -1,4 +1,4 @@
-# Cooler Compiler Lab v0.1.1 release notes (draft)
+# Cooler Compiler v0.1.1 release notes (draft)
 
 The final release notes must copy the verified statuses from
 `release-validation-v0.1.1.md`; build success is not runtime evidence.

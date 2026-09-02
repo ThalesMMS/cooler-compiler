@@ -8,7 +8,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${DIST_DIR:-$ROOT/dist}"
 COMMIT="${COMMIT:-$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null || true)}"
 SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(git -C "$ROOT" show -s --format=%ct HEAD 2>/dev/null || true)}"
-APP="$DIST_DIR/Cooler Compiler Lab.app"
+APP_NAME="${APP_NAME:-Cooler Compiler}"
+APP="$DIST_DIR/$APP_NAME.app"
 MACOS="$APP/Contents/MacOS"
 RESOURCES="$APP/Contents/Resources"
 
@@ -21,18 +22,21 @@ if [[ -z "$SOURCE_DATE_EPOCH" ]]; then
   SOURCE_DATE_EPOCH="0"
 fi
 
-if [[ "$(uname -s)" != "Darwin" ]]; then
-  echo "macOS application packaging must run on macOS" >&2
-  exit 1
-fi
-
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RESOURCES"
 
 cd "$ROOT"
-CGO_ENABLED=1 go build -buildvcs=false -trimpath \
-  -ldflags "-s -w -X main.version=$VERSION -X main.commit=$COMMIT -X main.buildDate=$SOURCE_DATE_EPOCH" \
-  -o "$MACOS/coolergui" ./cmd/coolergui
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  CGO_ENABLED=1 GOOS=darwin GOARCH=arm64 go build -buildvcs=false -trimpath \
+    -ldflags "-s -w -X main.version=$VERSION -X main.commit=$COMMIT -X main.buildDate=$SOURCE_DATE_EPOCH" \
+    -o "$MACOS/coolergui" ./cmd/coolergui
+else
+  printf '[INFO] cross-building the macOS application bundle with the browser fallback\n' >&2
+  GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -buildvcs=false -trimpath \
+    -ldflags "-s -w -X main.version=$VERSION -X main.commit=$COMMIT -X main.buildDate=$SOURCE_DATE_EPOCH" \
+    -o "$MACOS/coolergui" ./cmd/coolergui
+fi
+chmod +x "$MACOS/coolergui"
 cp "$ROOT/assets/AppIcon.icns" "$RESOURCES/AppIcon.icns"
 for notice_file in LICENSE NOTICE THIRD_PARTY_NOTICES.md; do
   cp "$ROOT/$notice_file" "$RESOURCES/$notice_file"
@@ -43,12 +47,12 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleDisplayName</key><string>Cooler Compiler Lab</string>
+  <key>CFBundleDisplayName</key><string>Cooler Compiler</string>
   <key>CFBundleExecutable</key><string>coolergui</string>
   <key>CFBundleIdentifier</key><string>com.thalesmms.cooler-compiler</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
-  <key>CFBundleName</key><string>Cooler Compiler Lab</string>
+  <key>CFBundleName</key><string>Cooler Compiler</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
@@ -59,6 +63,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 </plist>
 PLIST
 
-codesign --force --sign - "$APP"
+if [[ "$(uname -s)" == "Darwin" ]] && command -v codesign >/dev/null 2>&1; then
+  codesign --force --sign - "$APP"
+fi
 
 echo "$APP"

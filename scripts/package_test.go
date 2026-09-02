@@ -126,7 +126,7 @@ exit 1
 		t.Fatalf("packaging failed: %v\n%s", err, output)
 	}
 
-	app := filepath.Join(root, "dist", "Cooler Compiler Lab.app")
+	app := filepath.Join(root, "dist", "Cooler Compiler.app")
 	icon, err := os.ReadFile(filepath.Join(app, "Contents", "Resources", "AppIcon.icns"))
 	if err != nil {
 		t.Fatalf("AppIcon.icns was not installed: %v", err)
@@ -150,6 +150,8 @@ exit 1
 	}
 	for _, want := range []string{
 		"<key>CFBundleIconFile</key><string>AppIcon</string>",
+		"<key>CFBundleDisplayName</key><string>Cooler Compiler</string>",
+		"<key>CFBundleName</key><string>Cooler Compiler</string>",
 		"<key>CFBundleShortVersionString</key><string>9.8.7</string>",
 	} {
 		if !strings.Contains(string(plist), want) {
@@ -168,7 +170,7 @@ func TestMacOSNativeMenuDefinesCommandQ(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		`initWithTitle:@"Quit Cooler Compiler Lab"`,
+		`initWithTitle:@"Quit Cooler Compiler"`,
 		`action:@selector(terminate:)`,
 		`keyEquivalent:@"q"`,
 	} {

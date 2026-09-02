@@ -1,6 +1,6 @@
 # Supported COOL language and compatibility
 
-This document is the language-level contract for Cooler v1.0.0. The constructs below are implemented across the lexer, parser, semantic analyzer, stack IR, pseudo-assembly formatter, and Go VM. The implementation is complete within this declared educational scope; it is not a promise that Cooler can replace every artifact or invocation of the reference COOL compiler and runtime.
+This document is the language-level contract for Cooler Compiler v1.0.0. The constructs below are implemented across the lexer, parser, semantic analyzer, stack IR, pseudo-assembly formatter, and Go VM. The implementation is complete within this declared educational scope; it is not a promise that Cooler Compiler can replace every artifact or invocation of the reference COOL compiler and runtime.
 
 For the tooling feature matrix and concise release boundary, see [Scope and compatibility in the README](../README.md#scope-and-compatibility).
 

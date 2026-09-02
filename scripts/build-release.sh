@@ -36,13 +36,13 @@ fi
 raw="$work_dir/raw"
 make --no-print-directory DIST="$raw" VERSION="$VERSION" COMMIT="$COMMIT" SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" build-all
 
-require_macos_app=false
+require_macos_app=true
 skipped_checks=()
-if [[ "$(uname -s)" == "Darwin" ]] && command -v codesign >/dev/null 2>&1; then
-  make --no-print-directory DIST="$raw" VERSION="$VERSION" COMMIT="$COMMIT" SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" macos-app
-  require_macos_app=true
-else
-  skipped_checks+=("native macOS application package unavailable on this host")
+make --no-print-directory DIST="$raw" VERSION="$VERSION" COMMIT="$COMMIT" SOURCE_DATE_EPOCH="$SOURCE_DATE_EPOCH" macos-app
+if [[ "$(uname -s)" != "Darwin" ]]; then
+  skipped_checks+=("native macOS WKWebView runtime unavailable on this host; macOS .app uses the browser fallback")
+elif ! command -v codesign >/dev/null 2>&1; then
+  skipped_checks+=("macOS codesign unavailable on this host")
 fi
 
 windows_cc="${WINDOWS_CC:-x86_64-w64-mingw32-gcc}"

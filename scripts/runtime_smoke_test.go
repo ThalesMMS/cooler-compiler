@@ -36,7 +36,7 @@ func TestRuntimeSmokeScriptsCoverReleaseScenarios(t *testing.T) {
 		"assembly",
 		"report",
 		"cooler-lsp",
-		"Cooler Compiler Lab",
+		"Cooler Compiler",
 		"MANUAL",
 	}
 

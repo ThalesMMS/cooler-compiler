@@ -107,7 +107,7 @@ class Main { main() : Object { (new Helper).echo() }; };
     for ($i = 0; $i -lt 100; $i++) {
         if ($gui.HasExited) { throw "browser GUI exited before becoming ready: $(Get-Content -Raw $guiErrorLog)" }
         $guiOutput = if (Test-Path $guiLog) { Get-Content -Raw $guiLog } else { "" }
-        if ($guiOutput -match 'Cooler Compiler Lab at (http://\S+)') {
+        if ($guiOutput -match 'Cooler Compiler at (http://\S+)') {
             $guiUrl = $Matches[1]
             try { Invoke-RestMethod "$guiUrl/api/health" | Out-Null; $ready = $true; break } catch {}
         }
@@ -115,7 +115,7 @@ class Main { main() : Object { (new Helper).echo() }; };
     }
     if (!$ready) { throw "browser GUI did not become ready" }
     $page = Invoke-WebRequest -UseBasicParsing "$guiUrl/"
-    if ($page.Content -notmatch "Cooler Compiler Lab") { throw "GUI HTML mismatch" }
+    if ($page.Content -notmatch "Cooler Compiler") { throw "GUI HTML mismatch" }
     if (!$page.Headers["Content-Security-Policy"]) { throw "GUI response omitted Content-Security-Policy" }
     Write-Host "[PASS] browser GUI served health and secured application HTML"
     Write-Host "[MANUAL] exercise debugger, exports, and native WebView2 GUI"

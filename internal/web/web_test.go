@@ -16,7 +16,7 @@ func TestEmbeddedGUIAssets(t *testing.T) {
 		path string
 		want string
 	}{
-		{"/", "Cooler Compiler Lab"},
+		{"/", "Cooler Compiler"},
 		{"/app.js", "app-bootstrap.mjs"},
 		{"/app-bootstrap.mjs", "bootstrapCoolerApp"},
 		{"/app-state.mjs", "invalidateActiveSession"},
@@ -346,7 +346,7 @@ func TestAboutDialogIsServedWithProjectInformation(t *testing.T) {
 	body := response.Body.String()
 	for _, want := range []string{
 		`id="aboutButton"`,
-		`aria-label="About Cooler Compiler Lab"`,
+		`aria-label="About Cooler Compiler"`,
 		`<dialog id="aboutDialog"`,
 		`aria-labelledby="aboutTitle"`,
 		`id="aboutCloseButton"`,

@@ -1,6 +1,6 @@
 # Contributing
 
-Cooler Compiler Lab is a local-first educational compiler. Contributions should
+Cooler Compiler is a local-first educational compiler. Contributions should
 preserve deterministic behavior, explicit compatibility boundaries, and the
 absence of hosted build or test dependencies.
 
@@ -39,9 +39,8 @@ commit discussion. The complete state model and immutable-candidate rules are
 in the [v1.0.0 completion contract](docs/v1.0-completion-contract.md).
 
 This development repository can contain unreleased planning and evidence. Only
-reviewed release history is promoted to the public distribution repository; the
-rules and secret scan are documented in
-[`docs/development-publication.md`](docs/development-publication.md).
+reviewed release history is promoted to the public distribution repository, and
+release-affecting changes must preserve the repository's publication boundary.
 
 Keep commits reviewable and include tests with behavior changes. Do not commit
 `bin/`, `dist/`, downloaded toolchains, credentials, or machine-specific paths.

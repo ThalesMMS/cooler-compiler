@@ -1,15 +1,13 @@
-# Cooler Compiler Lab v1.0.0 release notes
+# Cooler Compiler v1.0.0 release notes
 
-[Cooler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0)
+[Cooler Compiler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0)
 was published on September 2, 2026. It completes the declared educational COOL
 compiler/workbench scope and replaces v0.1.0 as the current supported public
 release.
 
-The public tag resolves to commit
-`07f68ab0600a6d61ef51f9160f3bc007149288ed`. The sanitized public tree maps to
-private release candidate `e18373d9f8ebc5117a9451c871759f0c09580453` for all
-439 published files. The exact asset hashes and bounded platform evidence are in
-the [v1.0.0 validation ledger](release-validation-v1.0.0.md).
+The corrected public tag points to the reviewed source commit recorded in
+`release-manifest.json`. The exact asset identities and bounded platform
+evidence are in the [v1.0.0 validation ledger](release-validation-v1.0.0.md).
 
 ## Highlights
 
@@ -48,8 +46,10 @@ Exact behavioral boundaries are canonical in the
 
 The v1.0.0 qualification policy was bounded. Windows amd64 received packaged
 runtime smoke coverage. Linux and macOS archives were reproduced and
-checksum-qualified but were not executed on those target systems. This release
-does not present cross-building as runtime certification.
+checksum-qualified but were not executed on those target systems. The macOS
+archive includes a `Cooler Compiler.app` bundle; when assembled on a non-macOS
+host its executable uses the browser fallback. This release does not present
+cross-building as runtime certification.
 
 ## Published package and platform matrix
 
@@ -58,18 +58,10 @@ does not present cross-building as runtime certification.
 | Linux amd64 | `cooler-compiler-v1.0.0-linux-amd64.tar.gz` | CLI, LSP, browser-hosted GUI | Reproducibly cross-built and checksum-qualified; runtime not executed |
 | Linux arm64 | `cooler-compiler-v1.0.0-linux-arm64.tar.gz` | CLI, LSP, browser-hosted GUI | Reproducibly cross-built and checksum-qualified; runtime not executed |
 | Windows 11 amd64 | `cooler-compiler-v1.0.0-windows-amd64.zip` | CLI, LSP, browser-hosted GUI, native WebView2 shell | Bounded packaged CLI, LSP, browser-GUI, and native WebView2 runtime smoke passed |
-| macOS arm64 | `cooler-compiler-v1.0.0-macos-arm64.zip` | CLI, LSP, browser-hosted GUI, native WKWebView app | Reproducibly cross-built and checksum-qualified; runtime, WKWebView, signing, notarization, and Gatekeeper tests not executed |
+| macOS arm64 | `cooler-compiler-v1.0.0-macos-arm64.zip` | CLI, LSP, browser-hosted GUI, `Cooler Compiler.app` bundle | Reproducibly cross-built and checksum-qualified; macOS runtime, signing, notarization, and Gatekeeper tests not executed |
 
-Published SHA-256 values:
-
-```text
-bfdd6c4f62d8e83fc673adbf378f9563d170199efcf6f0273439f090af0c8063  cooler-compiler-v1.0.0-linux-amd64.tar.gz
-30be76c7f95838ffd9c464eecc62a311c79d98ad2c2edd5bf5fb3642b9cc89b3  cooler-compiler-v1.0.0-linux-arm64.tar.gz
-a0785de33823c6e4fc64ede30080553e6a43f54320253c1560b895dbc8645cf0  cooler-compiler-v1.0.0-macos-arm64.zip
-b55c17097d9d04acbd32f90ef2960040add1cb3cee317c87f0d8073fda207bb8  cooler-compiler-v1.0.0-windows-amd64.zip
-b2498c68d303d60cbc2b54cc16cb09132968f7affb242a13f566023fca606261  release-manifest.json
-065e405898e0b2c04e755629d51a54c82a7ad613ec261741606a793a81d159b8  SHA256SUMS
-```
+The authoritative SHA-256 values for the corrected assets are published in the
+attached `SHA256SUMS` and `release-manifest.json` files.
 
 macOS amd64/universal, Windows arm64, and other unlisted combinations are
 unsupported or source-build-only for v1.0.0.
@@ -182,7 +174,5 @@ After upload:
 - repository visibility, `main`, AGPL-3.0 detection, topics, links, and release
   identity were checked.
 
-See the [development/publication contract](development-publication.md) for the
-one-way source-export policy and the
-[v1.0.0 validation ledger](release-validation-v1.0.0.md) for the exact evidence
-and limitations.
+See the [v1.0.0 validation ledger](release-validation-v1.0.0.md) for the exact
+evidence and limitations.

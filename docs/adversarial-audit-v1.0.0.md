@@ -1,4 +1,4 @@
-# Cooler v1.0.0 adversarial audit
+# Cooler Compiler v1.0.0 adversarial audit
 
 - Audit record version: 1.0.0
 - Candidate base: `7a793d3d61a8b407916be9d63dd826262e63c907`

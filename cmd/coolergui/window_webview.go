@@ -38,11 +38,11 @@ static WKWebView *coolerWebView;
 
 static void installCoolerMainMenu(NSApplication *app) {
     NSMenu *mainMenu = [[NSMenu alloc] initWithTitle:@""];
-    NSMenuItem *appMenuItem = [[NSMenuItem alloc] initWithTitle:@"Cooler Compiler Lab"
+    NSMenuItem *appMenuItem = [[NSMenuItem alloc] initWithTitle:@"Cooler Compiler"
                                                         action:nil
                                                  keyEquivalent:@""];
-    NSMenu *appMenu = [[NSMenu alloc] initWithTitle:@"Cooler Compiler Lab"];
-    NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"Quit Cooler Compiler Lab"
+    NSMenu *appMenu = [[NSMenu alloc] initWithTitle:@"Cooler Compiler"];
+    NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"Quit Cooler Compiler"
                                                       action:@selector(terminate:)
                                                keyEquivalent:@"q"];
     [quitItem setKeyEquivalentModifierMask:NSEventModifierFlagCommand];
@@ -72,7 +72,7 @@ static void runCoolerWebView(const char *rawURL, int debug) {
                                                    styleMask:style
                                                      backing:NSBackingStoreBuffered
                                                        defer:NO];
-        [coolerWindow setTitle:@"Cooler Compiler Lab"];
+        [coolerWindow setTitle:@"Cooler Compiler"];
         [coolerWindow setMinSize:NSMakeSize(980, 640)];
         [coolerWindow center];
 

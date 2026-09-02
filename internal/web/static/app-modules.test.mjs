@@ -50,7 +50,7 @@ test("module or initialization failures are visible in the interface", async () 
   assert.match(documentRef.status.textContent, /module unavailable/);
   assert.equal(documentRef.children.length, 1);
   assert.equal(documentRef.children[0].attributes.role, "alert");
-  assert.match(documentRef.children[0].textContent, /Could not start Cooler Compiler Lab/);
+  assert.match(documentRef.children[0].textContent, /Could not start Cooler Compiler/);
 });
 
 test("session invalidation defers disposal while Run is active", () => {

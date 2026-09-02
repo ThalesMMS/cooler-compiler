@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP="${1:-$ROOT/dist/Cooler Compiler Lab.app}"
+APP="${1:-$ROOT/dist/Cooler Compiler.app}"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "macOS quit integration test requires macOS" >&2
@@ -31,7 +31,7 @@ for _ in {1..100}; do
   sleep 0.1
 done
 if [[ -z "$app_pid" ]]; then
-  echo "Cooler Compiler Lab did not launch" >&2
+  echo "Cooler Compiler did not launch" >&2
   exit 1
 fi
 
@@ -50,11 +50,11 @@ osascript -e "tell application id \"$bundle_id\" to quit"
 for _ in {1..100}; do
   if ! kill -0 "$app_pid" 2>/dev/null; then
     trap - EXIT
-    echo "Apple Quit event terminated Cooler Compiler Lab"
+    echo "Apple Quit event terminated Cooler Compiler"
     exit 0
   fi
   sleep 0.1
 done
 
-echo "Cooler Compiler Lab remained running after the Apple Quit event" >&2
+echo "Cooler Compiler remained running after the Apple Quit event" >&2
 exit 1

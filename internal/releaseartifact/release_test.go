@@ -77,6 +77,19 @@ func TestBuildProducesDeterministicSafePackagesAndVerifiedMetadata(t *testing.T)
 		}
 		assertArchiveSafe(t, filepath.Join(first, pkg.Filename))
 	}
+	macArchive := ""
+	for _, pkg := range decoded.Packages {
+		if pkg.Target.OS == "macos" {
+			macArchive = filepath.Join(first, pkg.Filename)
+			if !containsString(pkg.Modes, "app-bundle") {
+				t.Fatalf("macOS package modes = %v, want app-bundle", pkg.Modes)
+			}
+		}
+	}
+	if macArchive == "" {
+		t.Fatal("release manifest omitted macOS package")
+	}
+	assertArchiveContains(t, macArchive, "Cooler Compiler.app/Contents/MacOS/coolergui")
 	assertChecksumFile(t, first)
 }
 
@@ -204,14 +217,41 @@ func makeReleaseInputs(t *testing.T) string {
 			t.Fatal(err)
 		}
 	}
-	appExecutable := filepath.Join(root, "Cooler Compiler Lab.app", "Contents", "MacOS", "coolergui")
+	appExecutable := filepath.Join(root, "Cooler Compiler.app", "Contents", "MacOS", "coolergui")
 	if err := os.MkdirAll(filepath.Dir(appExecutable), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(appExecutable, []byte("native-app\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
+	if err := os.WriteFile(filepath.Join(root, "Cooler Compiler.app", "Contents", "Info.plist"), []byte("plist\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	return root
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func assertArchiveContains(t *testing.T, path, suffix string) {
+	t.Helper()
+	reader, err := zip.OpenReader(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeReleaseTest(t, reader)
+	for _, entry := range reader.File {
+		if strings.HasSuffix(strings.TrimSuffix(entry.Name, "/"), "/"+suffix) {
+			return
+		}
+	}
+	t.Fatalf("archive %s does not contain %s", path, suffix)
 }
 
 func packageNames(manifest Manifest) []string {

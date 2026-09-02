@@ -229,14 +229,22 @@ func packageSpecs(input, version string, requireMacApp bool) ([]packageSpec, err
 		return nil, err
 	}
 	modes := []string{"cli", "lsp", "browser-gui"}
-	appPath := filepath.Join(input, "Cooler Compiler Lab.app")
+	appPath := filepath.Join(input, "Cooler Compiler.app")
 	if info, statErr := os.Stat(appPath); statErr == nil && info.IsDir() {
-		appEntries, walkErr := collectTree(appPath, root+"/Cooler Compiler Lab.app")
+		for _, relative := range []string{
+			filepath.Join("Contents", "Info.plist"),
+			filepath.Join("Contents", "MacOS", "coolergui"),
+		} {
+			if err := requireRegularFile(filepath.Join(appPath, relative)); err != nil {
+				return nil, fmt.Errorf("macOS application bundle is incomplete: %w", err)
+			}
+		}
+		appEntries, walkErr := collectTree(appPath, root+"/Cooler Compiler.app")
 		if walkErr != nil {
 			return nil, walkErr
 		}
 		entries = append(entries, appEntries...)
-		modes = append(modes, "native-wkwebview-gui")
+		modes = append(modes, "app-bundle")
 	} else if requireMacApp {
 		return nil, fmt.Errorf("required macOS application bundle is missing: %s", appPath)
 	}

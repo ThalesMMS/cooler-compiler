@@ -3,7 +3,7 @@
 ## 1. Port the application shell
 
 - retain a Go binary, loopback HTTP API, embedded web assets, browser fallback, and native macOS WebView;
-- rename the commands, artifacts, routes, packaging metadata, and interface for Cooler Compiler Lab;
+- rename the commands, artifacts, routes, packaging metadata, and interface for Cooler Compiler;
 - preserve source-linked spans and bounded stateful VM sessions.
 
 ## 2. Replace the language frontend

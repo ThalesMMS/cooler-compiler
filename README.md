@@ -1,8 +1,8 @@
-# Cooler Compiler Lab
+# Cooler Compiler
 
-**Cooler Compiler Lab** is a standalone educational compiler and debugger for the **COOL (Classroom Object-Oriented Language)** programming language. It combines a Go compiler core, an embedded browser/WebView interface, source-linked artifacts, a stack IR, pseudo-assembly, and an interactive VM session.
+**Cooler Compiler** is a standalone educational compiler and debugger for the **COOL (Classroom Object-Oriented Language)** programming language. It combines a Go compiler core, an embedded browser/WebView interface, source-linked artifacts, a stack IR, pseudo-assembly, and an interactive VM session.
 
-**Current supported release:** [Cooler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0), published on September 2, 2026. Downloaded release assets are checksum-verifiable through `SHA256SUMS` and `release-manifest.json`; the exact platform qualification boundaries are recorded in the [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md).
+**Current supported release:** [Cooler Compiler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0), published on September 2, 2026. Downloaded release assets are checksum-verifiable through `SHA256SUMS` and `release-manifest.json`; the exact platform qualification boundaries are recorded in the [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md).
 
 The compiler and local server are self-contained. On macOS, the GUI opens in a native `WKWebView`; on Windows, a CGO build uses the native WebView2-backed window. Linux and CGO-disabled desktop builds automatically use the default browser.
 
@@ -16,11 +16,11 @@ git checkout v1.0.0
 
 ## Scope and compatibility
 
-Cooler v1.0.0 is an end-to-end educational COOL compiler and virtual machine. The pipeline is complete within Cooler's declared educational scope: it tokenizes, parses, type-checks, lowers, displays generated artifacts, and executes every supported construct listed in [`docs/cool-language.md`](docs/cool-language.md). “Complete” does not mean drop-in compatibility with every `coolc`, SPIM, MIPS, or reference-runtime artifact.
+Cooler Compiler v1.0.0 is an end-to-end educational COOL compiler and virtual machine. The pipeline is complete within Cooler Compiler's declared educational scope: it tokenizes, parses, type-checks, lowers, displays generated artifacts, and executes every supported construct listed in [`docs/cool-language.md`](docs/cool-language.md). “Complete” does not mean drop-in compatibility with every `coolc`, SPIM, MIPS, or reference-runtime artifact.
 
 Every row below is part of the published v1.0.0 contract. The conformance summary records **63 rules, 90 fixtures, 61 supported rules, 2 intentional scope divergences, and 0 incomplete rules**.
 
-| Area | Implemented in Cooler v1.0.0 | Compatibility boundary |
+| Area | Implemented in Cooler Compiler v1.0.0 | Compatibility boundary |
 | --- | --- | --- |
 | Lexer | Classic identifiers, keywords, literals, nested block comments, line comments, string escapes, diagnostics, and UTF-16-compatible source spans | Accepts the lexical rules documented for Cooler; diagnostics and source metadata are Cooler-specific |
 | Parser | Classes, features, all documented COOL expression forms, precedence, and recovery with partial artifacts | No preprocessor, module syntax, or separate compilation/linking |
@@ -265,8 +265,7 @@ go build ./cmd/cooler-lsp
   [v1.0.0 release notes](docs/release-notes-v1.0.0.md),
   [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md),
   [historical v0.1.1 target evidence](docs/release-validation-v0.1.1.md),
-  [local release process](docs/release.md), and
-  [development/publication boundary](docs/development-publication.md).
+  [local release process](docs/release.md).
 
 Run `make docs-check` to validate local links and headings, JSON schema
 identities, required index entries, and the generated diagnostic-code inventory.
@@ -290,7 +289,7 @@ make macos-app
 The result is written to:
 
 ```text
-dist/Cooler Compiler Lab.app
+dist/Cooler Compiler.app
 ```
 
 The bundle includes the project icon from `assets/AppIcon.icns`. The 1024+ pixel source artwork is kept in `assets/AppIcon.png` so the icon can be regenerated for other platforms or sizes.

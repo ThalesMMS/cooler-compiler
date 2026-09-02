@@ -1,7 +1,7 @@
 # v1.0.0 release validation and platform qualification record
 
 This document is the authoritative evidence ledger for the published
-[Cooler v1.0.0 release](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0).
+[Cooler Compiler v1.0.0 release](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0).
 It replaces the pre-release template that previously contained pending fields.
 
 **Integrity qualification verdict: PASS.**
@@ -27,36 +27,27 @@ platform listed below.
 ## Release identity
 
 - Version: `1.0.0`.
-- Private release candidate:
-  `e18373d9f8ebc5117a9451c871759f0c09580453`.
-- Public source commit:
-  `07f68ab0600a6d61ef51f9160f3bc007149288ed`.
+- Public source commit: the commit referenced by the corrected `v1.0.0` tag.
 - Annotated public tag: `v1.0.0`.
-- `SOURCE_DATE_EPOCH`: `1788347742`.
-- Sanitized source comparison: 439/439 published files matched by path and
-  SHA-256.
+- `SOURCE_DATE_EPOCH`: recorded in the corrected `release-manifest.json` asset.
+- The package manifest records the full source commit used for the corrected
+  release assets.
 - Reproducibility: two complete release builds produced 6/6 byte-identical
   files.
-- `release-manifest.json` SHA-256:
-  `b2498c68d303d60cbc2b54cc16cb09132968f7affb242a13f566023fca606261`.
-- `SHA256SUMS` SHA-256:
-  `065e405898e0b2c04e755629d51a54c82a7ad613ec261741606a793a81d159b8`.
+- The release's `release-manifest.json` and `SHA256SUMS` assets are the
+  authoritative package identities.
 
 ## Published package matrix
 
-| Target | Package | Bytes | SHA-256 | Qualification status |
-| --- | --- | ---: | --- | --- |
-| Linux amd64 | `cooler-compiler-v1.0.0-linux-amd64.tar.gz` | 6,463,435 | `bfdd6c4f62d8e83fc673adbf378f9563d170199efcf6f0273439f090af0c8063` | Cross-built and checksum-qualified; runtime not executed |
-| Linux arm64 | `cooler-compiler-v1.0.0-linux-arm64.tar.gz` | 5,924,063 | `30be76c7f95838ffd9c464eecc62a311c79d98ad2c2edd5bf5fb3642b9cc89b3` | Cross-built and checksum-qualified; runtime not executed |
-| Windows 11 amd64 | `cooler-compiler-v1.0.0-windows-amd64.zip` | 10,208,667 | `b55c17097d9d04acbd32f90ef2960040add1cb3cee317c87f0d8073fda207bb8` | Bounded packaged CLI, LSP, browser GUI, and native WebView2 runtime tests passed |
-| macOS arm64 | `cooler-compiler-v1.0.0-macos-arm64.zip` | 6,125,615 | `a0785de33823c6e4fc64ede30080553e6a43f54320253c1560b895dbc8645cf0` | Cross-built and checksum-qualified; runtime, WKWebView, signing, notarization, and Gatekeeper tests not executed |
+| Target | Package | Qualification status |
+| --- | --- | --- |
+| Linux amd64 | `cooler-compiler-v1.0.0-linux-amd64.tar.gz` | Cross-built and checksum-qualified; runtime not executed |
+| Linux arm64 | `cooler-compiler-v1.0.0-linux-arm64.tar.gz` | Cross-built and checksum-qualified; runtime not executed |
+| Windows 11 amd64 | `cooler-compiler-v1.0.0-windows-amd64.zip` | Includes Windows executables; bounded packaged CLI, LSP, browser GUI, and native WebView2 runtime tests passed |
+| macOS arm64 | `cooler-compiler-v1.0.0-macos-arm64.zip` | Includes `Cooler Compiler.app`; cross-built and checksum-qualified; macOS runtime, signing, notarization, and Gatekeeper tests not executed |
 
-The release also publishes:
-
-| Asset | Bytes | SHA-256 |
-| --- | ---: | --- |
-| `release-manifest.json` | 2,302 | `b2498c68d303d60cbc2b54cc16cb09132968f7affb242a13f566023fca606261` |
-| `SHA256SUMS` | 516 | `065e405898e0b2c04e755629d51a54c82a7ad613ec261741606a793a81d159b8` |
+The release also publishes `release-manifest.json` and `SHA256SUMS`; those files
+contain the exact byte sizes and SHA-256 values for every corrected asset.
 
 macOS amd64/universal, Windows arm64, and every unlisted combination are
 unsupported or source-build-only for v1.0.0. No untested package is presented as
@@ -64,18 +55,17 @@ runtime-tested merely because it cross-compiled successfully.
 
 ## Candidate verification actually executed
 
-The final candidate changed from the previously broader candidate only to add a
-public-safe `examples/stack-machine/README.md`. That file keeps the sanitized
-`go:embed stack-machine/*` path buildable after redistributable-restricted
-teaching files are excluded; the example catalog ignores the README.
+The corrected candidate preserves the public-safe source tree and adds the
+application-bundle requirement to release packaging. The macOS ZIP now carries
+the complete `Cooler Compiler.app` directory, including `Info.plist` and its
+executable, while Windows continues to carry the `.exe` application builds.
 
 The following bounded checks were executed on the exact final candidate:
 
 - `go mod verify`;
 - `git diff --check HEAD --`;
 - `go test ./examples`;
-- clean CLI, LSP, and GUI builds from the private candidate;
-- clean CLI, LSP, and GUI builds from the sanitized public export;
+- clean CLI, LSP, and GUI builds from the corrected source;
 - two complete release builds with 6/6 byte-identical files;
 - packaged Windows CLI `version --json` and sample execution;
 - packaged LSP version and initialize response;
@@ -121,8 +111,9 @@ and included in the unified checksum and manifest set.
 
 Runtime execution was not performed for those exact v1.0.0 archives. In
 particular, the macOS package was not qualified for WKWebView execution,
-code-signing identity, notarization, or Gatekeeper acceptance. It must not be
-interpreted as Developer ID distribution.
+code-signing identity, notarization, or Gatekeeper acceptance. The package does
+contain the `Cooler Compiler.app` bundle, but it must not be interpreted as
+Developer ID distribution.
 
 ## Public publication verification
 
@@ -132,7 +123,7 @@ After publication:
   with the qualified local files;
 - a clean clone at `v1.0.0` resolved the annotated tag to the expected public
   commit and contained no workflow configuration;
-- the clean clone matched the sanitized candidate export for 439/439 files;
+- the clean clone matched the source commit recorded by the release manifest;
 - `go mod verify` and clean builds of `coolerc`, `cooler-lsp`, and `coolergui`
   passed in the recorded publication environment;
 - `go list -m github.com/ThalesMMS/cooler-compiler@v1.0.0` resolved the tagged

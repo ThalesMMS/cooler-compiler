@@ -68,7 +68,7 @@ intentionally out of scope.
   exact-package run.
 - **Manual browser scenarios:** the packaged Windows server ran inside the VM
   and was reached through SSH local port forwarding. The page identified
-  Cooler Compiler Lab 0.1.1 and rendered without an overlay or console log.
+  Cooler Compiler 0.1.1 and rendered without an overlay or console log.
   Compile completed all six phases; Step advanced from zero to one instruction;
   Reset returned to zero; Run halted after 19 instructions and printed
   `Hello, COOL!`.

@@ -1,6 +1,6 @@
 # Third-party notices
 
-This document records the origin and license status of dependencies, platform components, assets, and copied teaching material used by Cooler Compiler Lab. Project-owned material is covered by [`NOTICE`](NOTICE) and [`LICENSE`](LICENSE); the entries below retain their own terms.
+This document records the origin and license status of dependencies, platform components, assets, and copied teaching material used by Cooler Compiler. Project-owned material is covered by [`NOTICE`](NOTICE) and [`LICENSE`](LICENSE); the entries below retain their own terms.
 
 Release packaging copies `LICENSE`, `NOTICE`, and this file alongside distribution binaries and into the macOS application's `Contents/Resources` directory.
 
@@ -166,7 +166,7 @@ No standalone open-source license or SPDX identifier accompanied these three fil
 
 ## Project-owned assets
 
-The following assets were created specifically for Cooler Compiler Lab and are covered by the project's `AGPL-3.0-or-later` license:
+The following assets were created specifically for Cooler Compiler and are covered by the project's `AGPL-3.0-or-later` license:
 
 - `assets/AppIcon.png`: source/master application artwork, first committed with the project About dialog and packaging support;
 - `assets/AppIcon.icns`: macOS icon bundle derived from `assets/AppIcon.png`;

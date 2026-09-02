@@ -162,12 +162,12 @@ check_race() {
 
 check_macos_package() {
   make --no-print-directory DIST="$work_dir/macos" macos-app || return 1
-  local resources="$work_dir/macos/Cooler Compiler Lab.app/Contents/Resources"
+  local resources="$work_dir/macos/Cooler Compiler.app/Contents/Resources"
   [[ -f "$resources/AppIcon.icns" ]]
   [[ -f "$resources/LICENSE" ]]
   [[ -f "$resources/NOTICE" ]]
   [[ -f "$resources/THIRD_PARTY_NOTICES.md" ]]
-  ./scripts/test-macos-quit.sh "$work_dir/macos/Cooler Compiler Lab.app"
+  ./scripts/test-macos-quit.sh "$work_dir/macos/Cooler Compiler.app"
 }
 
 check_windows_native() {
@@ -181,7 +181,7 @@ check_windows_native() {
 run_required "required tools" check_required_tools
 work_dir="$(mktemp -d "$tmp_base/cooler-release-check.XXXXXX")"
 
-printf 'Cooler release verification\n'
+printf 'Cooler Compiler release verification\n'
 printf 'Repository: %s\n' "$ROOT"
 printf 'Temporary output: %s\n' "$work_dir"
 

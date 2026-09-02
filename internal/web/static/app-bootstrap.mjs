@@ -2,7 +2,7 @@
 
 export function presentBootstrapFailure(error, documentRef = globalThis.document) {
   const detail = error instanceof Error ? error.message : String(error || "unknown error");
-  const message = `Could not start Cooler Compiler Lab: ${detail}`;
+  const message = `Could not start Cooler Compiler: ${detail}`;
   if (!documentRef) return message;
 
   const status = documentRef.getElementById?.("globalStatus");

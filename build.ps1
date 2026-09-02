@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Show-Help {
-    Write-Host "Cooler Compiler Lab - Build and Run Script for Windows" -ForegroundColor Cyan
+    Write-Host "Cooler Compiler - Build and Run Script for Windows" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Usage: .\build.ps1 [command]" -ForegroundColor Yellow
     Write-Host ""

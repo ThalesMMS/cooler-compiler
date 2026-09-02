@@ -16,7 +16,7 @@ func runNativeWindow(url string, debug bool) error {
 	w := webview.New(debug)
 	defer w.Destroy()
 
-	w.SetTitle("Cooler Compiler Lab")
+	w.SetTitle("Cooler Compiler")
 	w.SetSize(1280, 800, webview.HintNone)
 	w.SetSize(980, 640, webview.HintMin)
 	w.Navigate(url)

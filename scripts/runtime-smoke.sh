@@ -205,7 +205,7 @@ for _ in {1..100}; do
     cat "$smoke_root/gui.log" >&2
     exit 1
   fi
-  gui_url="$(sed -n 's/^Cooler Compiler Lab at \(http:\/\/[^[:space:]]*\)$/\1/p' "$smoke_root/gui.log" | tail -n 1)"
+  gui_url="$(sed -n 's/^Cooler Compiler at \(http:\/\/[^[:space:]]*\)$/\1/p' "$smoke_root/gui.log" | tail -n 1)"
   if [[ -n "$gui_url" ]] && curl --fail --silent "$gui_url/api/health" >"$smoke_root/health.json"; then
     gui_ready=true
     break
@@ -218,17 +218,17 @@ if [[ "$gui_ready" != true ]]; then
 fi
 curl --fail --silent --dump-header "$smoke_root/headers.txt" --output "$smoke_root/index.html" "$gui_url/"
 grep -qi '^Content-Security-Policy:' "$smoke_root/headers.txt"
-grep -q 'Cooler Compiler Lab' "$smoke_root/index.html"
+grep -q 'Cooler Compiler' "$smoke_root/index.html"
 printf '[PASS] browser GUI served health and secured application HTML\n'
 
-if [[ "$platform" == Darwin && -d "$package_dir/Cooler Compiler Lab.app" ]]; then
+if [[ "$platform" == Darwin && -d "$package_dir/Cooler Compiler.app" ]]; then
   bundle_id="com.thalesmms.cooler-compiler"
   running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
   if [[ "$running_info" == *'"pid"='* ]]; then
     printf '[FAIL] an application with bundle identifier %s is already running\n' "$bundle_id" >&2
     exit 1
   fi
-  open -n "$package_dir/Cooler Compiler Lab.app"
+  open -n "$package_dir/Cooler Compiler.app"
   for _ in {1..100}; do
     running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
     native_pid="$(sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p' <<<"$running_info")"

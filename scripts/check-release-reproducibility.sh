@@ -3,6 +3,13 @@
 
 set -euo pipefail
 
+# Git for Windows may resolve FIND.EXE before the POSIX find used below.
+case "$(uname -s)" in
+  MSYS* | MINGW* | CYGWIN*)
+    export PATH="$(dirname "$BASH"):$PATH"
+    ;;
+esac
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 tmp_base="${TMPDIR:-/tmp}"
 tmp_base="${tmp_base%/}"

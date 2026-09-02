@@ -1,6 +1,6 @@
 @REM SPDX-License-Identifier: AGPL-3.0-or-later
 @echo off
-REM Cooler Compiler Lab - Build and Run Script for Windows
+REM Cooler Compiler - Build and Run Script for Windows
 REM This is a batch wrapper for the PowerShell script
 
 if "%1"=="" goto help
@@ -60,7 +60,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1 clean
 goto end
 
 :help
-echo Cooler Compiler Lab - Build and Run Script for Windows
+echo Cooler Compiler - Build and Run Script for Windows
 echo.
 echo Usage: build.bat [command]
 echo.

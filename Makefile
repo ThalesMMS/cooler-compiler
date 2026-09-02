@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-APP_NAME := Cooler Compiler Lab
+APP_NAME := Cooler Compiler
 VERSION ?= 1.0.0
 COMMIT ?= $(shell git rev-parse --verify HEAD 2>/dev/null)
 SOURCE_DATE_EPOCH ?= $(shell git show -s --format=%ct HEAD 2>/dev/null)
@@ -8,6 +8,7 @@ BUILD_DATE ?= $(SOURCE_DATE_EPOCH)
 GO_BUILD_FLAGS := -buildvcs=false -trimpath
 LDFLAGS := -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildDate=$(BUILD_DATE)
 DIST := dist
+MACOS_APP := $(DIST)/$(APP_NAME).app
 BIN := bin
 CONFORMANCE_REPORT ?= $(DIST)/conformance-report.json
 WINDOWS_CC ?= x86_64-w64-mingw32-gcc
@@ -120,10 +121,10 @@ browser:
 	go run ./cmd/coolergui --browser
 
 macos-app:
-	DIST_DIR="$(abspath $(DIST))" COMMIT="$(COMMIT)" SOURCE_DATE_EPOCH="$(SOURCE_DATE_EPOCH)" bash ./scripts/build-macos-app.sh "$(VERSION)"
+	APP_NAME="$(APP_NAME)" DIST_DIR="$(abspath $(DIST))" COMMIT="$(COMMIT)" SOURCE_DATE_EPOCH="$(SOURCE_DATE_EPOCH)" bash ./scripts/build-macos-app.sh "$(VERSION)"
 
 test-macos-quit: macos-app
-	bash ./scripts/test-macos-quit.sh "$(abspath $(DIST))/Cooler Compiler Lab.app"
+	bash ./scripts/test-macos-quit.sh "$(abspath $(MACOS_APP))"
 
 package: check build macos-app
 

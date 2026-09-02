@@ -4,13 +4,12 @@ This roadmap separates released functionality from possible future work. It
 describes direction, not a delivery-date promise. Development is prepared in
 this private repository and reviewed snapshots are published in
 [`ThalesMMS/cooler-compiler`](https://github.com/ThalesMMS/cooler-compiler)
-under the boundary defined in
-[`docs/development-publication.md`](docs/development-publication.md).
+under the repository's reviewed publication boundary.
 
 ## Supported release
 
 The current supported public release is
-[**Cooler v1.0.0**](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0),
+[**Cooler Compiler v1.0.0**](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0),
 published on September 2, 2026.
 
 Its public source identity is:

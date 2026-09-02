@@ -15,7 +15,7 @@
 
   function presentEntrypointFailure(error) {
     const detail = error instanceof Error ? error.message : String(error || "unknown error");
-    const message = `Could not load Cooler Compiler Lab: ${detail}`;
+    const message = `Could not load Cooler Compiler: ${detail}`;
     const status = document.getElementById("globalStatus");
     if (status) status.textContent = message;
     const failure = document.createElement("div");

@@ -22,7 +22,7 @@ Required tools:
   [`tools/golangci-lint.version`](../tools/golangci-lint.version), installed with
   `scripts/install-golangci-lint.sh` or supplied through `GOLANGCI_LINT`.
 
-The required gate runs `go mod verify`, `git diff --check`, a read-only `gofmt -l` audit, uncached Go tests, `go vet`, the pinned `golangci-lint`, shell-script syntax checks, JavaScript syntax checks and tests, CGO-disabled CLI/GUI builds for the supported Linux, Windows, and macOS targets, and two byte-for-byte identical packaged release builds. Tool acquisition is deliberately separate: release verification never downloads a linter or other dependency. The Go suite includes the embedded catalog/resource tests, every valid example's exact output, intentional-error examples, the stack-machine input fixture, multifile CLI/input behavior, schemas, archive safety, manifests, and package digests.
+The required gate runs `go mod verify`, `git diff --check`, a read-only `gofmt -l` audit, uncached Go tests, `go vet`, the pinned `golangci-lint`, shell-script syntax checks, JavaScript syntax checks and tests, CGO-disabled CLI/GUI builds for the supported Linux, Windows, and macOS targets, a macOS `.app` bundle build, and two byte-for-byte identical packaged release builds. Tool acquisition is deliberately separate: release verification never downloads a linter or other dependency. The Go suite includes the embedded catalog/resource tests, every valid example's exact output, intentional-error examples, the stack-machine input fixture, multifile CLI/input behavior, schemas, archive safety, manifests, and package digests.
 
 ## Optional checks
 
@@ -45,8 +45,11 @@ Every check ends with one of three markers:
 Any required failure exits immediately with a nonzero status. An optional check may be skipped, but if it is available and fails, the final status is also nonzero. A successful run ends with `[PASS] release verification completed`.
 
 Gate artifacts are discarded with the temporary directory. `make build-all`
-retains raw cross-built binaries. From a clean reviewed commit and an empty
-`dist/`, produce the actual deterministic release packages and provenance with:
+retains raw cross-built binaries. The release builder also creates the macOS
+application bundle in every environment: it uses native WKWebView on macOS and
+a darwin/arm64 browser-fallback executable elsewhere. From a clean reviewed
+commit and an empty `dist/`, produce the actual deterministic release packages
+and provenance with:
 
 ```bash
 make release-artifacts VERSION=1.0.0
