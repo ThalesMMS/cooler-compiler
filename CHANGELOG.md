@@ -5,7 +5,7 @@ All notable user-visible changes are recorded here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for the documented
 CLI, JSON, archive, and Go-facing contracts.
 
-## 1.0.0 - 2026-09-01
+## 1.0.0 - 2026-09-02
 
 ### Added
 
@@ -148,5 +148,5 @@ version and a migration note here. One previous report-schema major is readable
 for at least one maintenance release or rejected with a specific unsupported
 version error. See the canonical [artifact version policy](docs/artifact-contract.md#version-policy).
 
-[1.0.0]: https://github.com/ThalesMMS/cooler-compiler-dev/compare/v0.1.0...v1.0.0
-[0.1.0]: https://github.com/ThalesMMS/cooler-compiler-dev/releases/tag/v0.1.0
+[1.0.0]: https://github.com/ThalesMMS/cooler-compiler/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/ThalesMMS/cooler-compiler/releases/tag/v0.1.0
