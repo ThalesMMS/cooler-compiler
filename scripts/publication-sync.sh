@@ -113,7 +113,7 @@ export_candidate() {
   extract_development_candidate "$commit" "$destination" "$archive"
   {
     printf 'format=cooler-publication-source-v1\n'
-    printf 'source_repository=https://github.com/ThalesMMS/cooler-compiler-dev.git\n'
+    printf 'source_repository=https://github.com/ThalesMMS/cooler-compiler.git\n'
     printf 'source_commit=%s\n' "$commit"
     printf 'archive_object=%s\n' "$archive_object"
   } >"$destination.publication-source"

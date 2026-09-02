@@ -14,7 +14,7 @@ This table changes when a new minor line becomes the supported release. The
 ## Reporting a vulnerability
 
 Please use the repository's
-[private security advisory form](https://github.com/ThalesMMS/cooler-compiler-dev/security/advisories/new).
+[private security advisory form](https://github.com/ThalesMMS/cooler-compiler/security/advisories/new).
 Do not include exploit details, tokens, private source programs, or unpatched
 vulnerabilities in a public issue.
 
