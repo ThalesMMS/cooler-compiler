@@ -2,6 +2,8 @@
 
 **Cooler Compiler Lab** is a standalone educational compiler and debugger for the **COOL (Classroom Object-Oriented Language)** programming language. It combines a Go compiler core, an embedded browser/WebView interface, source-linked artifacts, a stack IR, pseudo-assembly, and an interactive VM session.
 
+**Current supported release:** [Cooler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0), published on September 2, 2026. Downloaded release assets are checksum-verifiable through `SHA256SUMS` and `release-manifest.json`; the exact platform qualification boundaries are recorded in the [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md).
+
 The compiler and local server are self-contained. On macOS, the GUI opens in a native `WKWebView`; on Windows, a CGO build uses the native WebView2-backed window. Linux and CGO-disabled desktop builds automatically use the default browser.
 
 ## Get the source
@@ -9,15 +11,14 @@ The compiler and local server are self-contained. On macOS, the GUI opens in a n
 ```bash
 git clone https://github.com/ThalesMMS/cooler-compiler.git
 cd cooler-compiler
+git checkout v1.0.0
 ```
 
 ## Scope and compatibility
 
 Cooler v1.0.0 is an end-to-end educational COOL compiler and virtual machine. The pipeline is complete within Cooler's declared educational scope: it tokenizes, parses, type-checks, lowers, displays generated artifacts, and executes every supported construct listed in [`docs/cool-language.md`](docs/cool-language.md). “Complete” does not mean drop-in compatibility with every `coolc`, SPIM, MIPS, or reference-runtime artifact.
 
-Every row below is part of the declared v1.0.0 contract. v1.0.0 is
-implemented but not publicly released; the supported public release remains
-v0.1.0 until [Final 11/11](https://github.com/ThalesMMS/cooler-compiler-dev/issues/61) closes.
+Every row below is part of the published v1.0.0 contract. The conformance summary records **63 rules, 90 fixtures, 61 supported rules, 2 intentional scope divergences, and 0 incomplete rules**.
 
 | Area | Implemented in Cooler v1.0.0 | Compatibility boundary |
 | --- | --- | --- |
@@ -60,10 +61,10 @@ This section is the canonical release-note link for the v1.0.0 compatibility con
 - GUI with syntax-highlighted source, multi-file Open/Add tabs, a program-input box for `IO.in_string` / `IO.in_int`, examples, recent files, clickable diagnostics, filterable tokens, typed AST, symbol table, IR, control-flow graph, VM trace, stack, frames, an accessible bounded heap inspector, and individual or ZIP artifact export;
 - incremental Run/Pause execution that keeps the interface responsive and merges lightweight VM trace deltas;
 - accessible About dialog with a concise pipeline guide, control reference, project link, author, version, and license details;
-- `coolerc` command-line interface for local scripts and editor/tool integration.
+- `coolerc` command-line interface for local scripts and editor/tool integration;
 - stable public Go compiler/debugger facade with immutable artifacts,
   multifile and incremental compilation, context cancellation, and optional
-  heap/watch/reverse capabilities.
+  heap/watch/reverse capabilities;
 - local `cooler-lsp` stdio language server with diagnostics, navigation,
   symbols, hover, completion, semantic tokens, and safe quick fixes.
 
@@ -226,7 +227,9 @@ Before preparing a release, run the complete local gate:
 make release-check
 ```
 
-The command checks module integrity, whitespace, formatting, the normative conformance corpus, differential-harness self-tests, tests, a bounded local fuzz smoke, vet, the exact repository-pinned `golangci-lint`, shell and JavaScript syntax, examples/resources, release builds, and two byte-identical package builds; it also reports platform-specific checks as passed or skipped. Install the pinned linter once with `./scripts/install-golangci-lint.sh`; verification itself performs no tool download. Run `make conformance` alone for its human summary and `dist/conformance-report.json`. `make fuzz TARGET=FuzzCompile DURATION=10m` runs one opt-in campaign; the [robustness testing guide](docs/robustness-testing.md) documents every target, bound, property, and regression rule. An optional `make differential` compares the original corpus with user-supplied `coolc`/SPIM tools and skips cleanly when they are absent; `STRICT=1`, `RULE=...`, and `FIXTURE=...` control strict discovery and filtering. See [`docs/conformance.md`](docs/conformance.md) and the [`differential guide`](docs/differential.md) for the local contracts, and [`docs/release.md`](docs/release.md) for release prerequisites and result interpretation. Target execution is tracked separately, because a successful cross-build is not runtime evidence; the latest recorded target evidence is the versioned [`v0.1.1 runtime-validation record`](docs/release-validation-v0.1.1.md), and v1.0.0 target evidence is recorded when [Final 10/11](https://github.com/ThalesMMS/cooler-compiler-dev/issues/60) closes. This project intentionally does not use CI.
+The command checks module integrity, whitespace, formatting, the normative conformance corpus, differential-harness self-tests, tests, a bounded local fuzz smoke, vet, the exact repository-pinned `golangci-lint`, shell and JavaScript syntax, examples/resources, release builds, and two byte-identical package builds; it also reports platform-specific checks as passed or skipped. Install the pinned linter once with `./scripts/install-golangci-lint.sh`; verification itself performs no tool download. Run `make conformance` alone for its human summary and `dist/conformance-report.json`. `make fuzz TARGET=FuzzCompile DURATION=10m` runs one opt-in campaign; the [robustness testing guide](docs/robustness-testing.md) documents every target, bound, property, and regression rule. An optional `make differential` compares the original corpus with user-supplied `coolc`/SPIM tools and skips cleanly when they are absent; `STRICT=1`, `RULE=...`, and `FIXTURE=...` control strict discovery and filtering. See [`docs/conformance.md`](docs/conformance.md) and the [`differential guide`](docs/differential.md) for the local contracts, and [`docs/release.md`](docs/release.md) for release prerequisites and result interpretation.
+
+Successful cross-compilation is not runtime evidence. For v1.0.0, the exact published assets were rebuilt reproducibly and verified after download; Windows amd64 additionally passed bounded packaged CLI, LSP, browser-GUI, and native WebView2 smoke tests. Linux amd64/arm64 and macOS arm64 were cross-built and checksum-qualified, but target runtime execution is not claimed. See the [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md). This project intentionally does not use CI.
 
 The same operations without Make are:
 
@@ -235,6 +238,7 @@ CGO_ENABLED=0 go test ./...
 CGO_ENABLED=0 go vet ./...
 go build ./cmd/coolergui
 go build ./cmd/coolerc
+go build ./cmd/cooler-lsp
 ```
 
 ## Documentation
@@ -252,22 +256,22 @@ go build ./cmd/coolerc
   [debugger protocol](docs/debugger-protocol.md), [program input](docs/input.md),
   [JSON and archive contract](docs/artifact-contract.md),
   [educational optimization contract](docs/optimization.md),
-  [visualization and provenance model](docs/visualization-model.md), and
-  [v0.1.1 target evidence](docs/release-validation-v0.1.1.md).
+  [visualization and provenance model](docs/visualization-model.md).
 - Engineering/release: [architecture](docs/architecture.md),
   [robustness testing](docs/robustness-testing.md),
   [local performance engineering](docs/performance.md),
   [adversarial v1.0.0 audit](docs/adversarial-audit-v1.0.0.md),
   [v1.0.0 completion contract](docs/v1.0-completion-contract.md),
-  [draft v1.0.0 release notes](docs/release-notes-v1.0.0.md),
-  [v1.0.0 target-evidence ledger](docs/release-validation-v1.0.0.md),
+  [v1.0.0 release notes](docs/release-notes-v1.0.0.md),
+  [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md),
+  [historical v0.1.1 target evidence](docs/release-validation-v0.1.1.md),
   [local release process](docs/release.md), and
   [development/publication boundary](docs/development-publication.md).
 
 Run `make docs-check` to validate local links and headings, JSON schema
 identities, required index entries, and the generated diagnostic-code inventory.
 
-`make build-all` emits browser-fallback GUI binaries and `coolerc` binaries for Linux, Windows, and macOS. To cross-compile the native Windows WebView2 GUI, install MinGW-w64 and run:
+`make build-all` emits browser-fallback GUI binaries and `coolerc`/`cooler-lsp` binaries for Linux, Windows, and macOS. To cross-compile the native Windows WebView2 GUI, install MinGW-w64 and run:
 
 ```bash
 make build-windows-native
@@ -314,12 +318,14 @@ class Main inherits IO {
 ```text
 cmd/coolergui/               local HTTP server and desktop/browser launcher
 cmd/coolerc/                 command-line compiler
+cmd/cooler-lsp/              local stdio COOL language server
+compiler/                    stable public Go compiler/debugger facade
 internal/compiler/           lexer, parser, type checker, IR, CFG, VM, debugger
 internal/web/                embedded GUI assets
 assets/                      application icon source and macOS icon bundle
 examples/                    guided .cl programs and embedded catalog
 docs/                        architecture, language coverage, and implementation notes
-scripts/                     packaging helpers
+scripts/                     validation and packaging helpers
 ```
 
 ## License
