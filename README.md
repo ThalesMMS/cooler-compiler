@@ -329,6 +329,12 @@ scripts/                     validation and packaging helpers
 
 ## License
 
-Project-owned code, documentation, and assets are licensed under the [GNU Affero General Public License v3.0 or later](LICENSE). See [`NOTICE`](NOTICE) for the project copyright and license declaration.
+Project-owned code, documentation, and assets are available under a dual-license
+model:
 
-Dependencies, platform WebViews, bundled teaching material, and asset provenance are documented in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Third-party material retains its own license terms and is not relicensed by the project's AGPL declaration.
+- the GNU Affero General Public License version 3 or later, under the terms in
+  [`LICENSE`](LICENSE); or
+- a separate commercial license from the copyright holder.
+
+See [`LICENSING.md`](LICENSING.md) for the scope and commercial contact.
+Third-party material retains its own license terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the applicable notices.
