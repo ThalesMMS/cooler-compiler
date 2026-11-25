@@ -65,6 +65,9 @@ func main() {
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "fmt" {
+		return runFormat(args[1:], stdin, stdout, stderr)
+	}
 	options, usage, err := parseCLI(args, stderr)
 	if err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -348,6 +351,9 @@ func generalUsage(w io.Writer) func() error {
 		_, err := fmt.Fprintln(w, "usage: coolerc run [options] [file.cl ...]")
 		if err == nil {
 			_, err = fmt.Fprintln(w, "       coolerc check [options] [file.cl ...]")
+		}
+		if err == nil {
+			_, err = fmt.Fprintln(w, "       coolerc fmt [-check|-w] [file.cl ...]")
 		}
 		if err == nil {
 			_, err = fmt.Fprintln(w, "       coolerc emit tokens|ast|symbols|cfg|ir|assembly|report [options] [file.cl ...]")
