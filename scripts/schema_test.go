@@ -3,6 +3,7 @@
 package scripts_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ThalesMMS/cooler-compiler/internal/compiler"
 	"github.com/ThalesMMS/cooler-compiler/internal/releaseartifact"
@@ -239,6 +241,12 @@ func TestCompileReportSchemaRejectsMalformedDiagnosticChildren(t *testing.T) {
 }
 
 func validateSchemaValue(root, schema, value any, path string) error {
+	if allowed, ok := schema.(bool); ok {
+		if !allowed {
+			return fmt.Errorf("%s is forbidden by this schema version", path)
+		}
+		return nil
+	}
 	rule, ok := schema.(map[string]any)
 	if !ok {
 		return nil
@@ -389,4 +397,86 @@ func resolveLocalReference(root any, reference string) (any, error) {
 		}
 	}
 	return current, nil
+}
+
+func TestGUICompleteReportSchema(t *testing.T) {
+	if _, err := exec.LookPath("node"); err != nil {
+		t.Skip("Node required for GUI export")
+	}
+	root, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, sources := range [][]compiler.SourceUnit{{{ID: "main", Name: "main.cl", Content: `class Main { main():Object { 0 }; };`}}, {{ID: "helper", Name: "helper.cl", Content: `class Helper {};`}, {ID: "main", Name: "main.cl", Content: `class Main inherits Helper { main():Object { 0 }; };`}}} {
+		report := compiler.NewProjectCompilationSession(sources, compiler.ResultContract{Options: compiler.CompilationOptions{WarningRules: "none"}}).Complete().Result
+		payload := mustJSON(t, map[string]any{"report": report, "tabs": sources})
+		script := `(async()=>{const fs=require('fs');const client=require('./internal/web/static/client-utils.js');const {reportSources}=await import('./internal/web/static/report-sources.mjs');const {report,tabs}=JSON.parse(fs.readFileSync(0,'utf8'));process.stdout.write(JSON.stringify({...client.buildCompileReport(report,'main.cl','2026-09-06T00:00:00Z'),...reportSources(report,tabs.map(t=>({...t,source:t.content})))}));})().catch(e=>{console.error(e);process.exit(1)});`
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		cmd := exec.CommandContext(ctx, "node", "-e", script)
+		cmd.Dir = root
+		cmd.Stdin = strings.NewReader(string(payload))
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		data, err := cmd.Output()
+		cancel()
+		if err != nil {
+			t.Fatalf("GUI export: %v %s", err, stderr.String())
+		}
+		validateSchemaDocument(t, filepath.Join(root, "schemas", "compile-report-v1.schema.json"), data)
+		var exported struct {
+			Sources []compiler.SourceUnit `json:"sources"`
+		}
+		if err := json.Unmarshal(data, &exported); err != nil {
+			t.Fatal(err)
+		}
+		if string(mustJSON(t, exported.Sources)) != string(mustJSON(t, sources)) {
+			t.Fatalf("GUI export did not preserve sources: %s", data)
+		}
+	}
+}
+
+func TestReportSchemaVersionedExtensions(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "schemas", "compile-report-v1.schema.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schema any
+	if err := json.Unmarshal(data, &schema); err != nil {
+		t.Fatal(err)
+	}
+	base := compiler.CompileWithContract(`class Main { main():Object {0}; };`, "", compiler.ResultContract{Options: compiler.CompilationOptions{WarningRules: "none"}})
+	for _, name := range []string{"old-warning", "old-sources", "missing-content", "unknown-source-field", "unknown-top-level", "legacy-valid"} {
+		t.Run(name, func(t *testing.T) {
+			var document map[string]any
+			if err := json.Unmarshal(mustJSON(t, base), &document); err != nil {
+				t.Fatal(err)
+			}
+			options := document["options"].(map[string]any)
+			switch name {
+			case "old-warning":
+				document["schemaVersion"] = "1.4.0"
+			case "old-sources":
+				document["schemaVersion"] = "1.4.0"
+				delete(options, "warningRules")
+				document["sources"] = []any{map[string]any{"id": "a", "name": "a.cl", "content": ""}}
+			case "missing-content":
+				document["sources"] = []any{map[string]any{"id": "a", "name": "a.cl"}}
+			case "unknown-source-field":
+				document["sources"] = []any{map[string]any{"id": "a", "name": "a.cl", "content": "", "unexpected": true}}
+			case "unknown-top-level":
+				document["unexpected"] = true
+			case "legacy-valid":
+				document["schemaVersion"] = "1.4.0"
+				delete(options, "warningRules")
+			}
+			err := validateSchemaValue(schema, schema, document, "$")
+			if name == "legacy-valid" {
+				if err != nil {
+					t.Fatal(err)
+				}
+			} else if err == nil {
+				t.Fatal("invalid report accepted")
+			}
+		})
+	}
 }

@@ -1266,6 +1266,9 @@ func TestCapabilitiesAreRandomPerProcess(t *testing.T) {
 func TestEveryStateChangingEndpointRequiresCapability(t *testing.T) {
 	handler := testHandler()
 	paths := []string{
+		"/api/drafts",
+		"/api/format",
+		"/api/report/import",
 		"/api/compile",
 		"/api/pipeline/start",
 		"/api/pipeline/next",

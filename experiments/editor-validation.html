@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>Editor validation</title><h1>Editor validation</h1><p id="result">Running</p><textarea aria-label="Test editor"></textarea><script type="module">
+import {applyIndent,composing,mapBreakpointLine} from '../internal/web/static/editor-tools.mjs';
+const assert=(v,m)=>{if(!v)throw Error(m)};const editor=document.querySelector('textarea');
+try{editor.value='😀a\nb\nc';editor.setSelectionRange(0,6);let inputs=0;editor.addEventListener('input',()=>inputs++);
+applyIndent(editor);assert(editor.value==='  😀a\n  b\nc','indent');assert(editor.selectionStart===2&&editor.selectionEnd===10,'UTF16 selection');
+assert(document.execCommand('undo')&&editor.value==='😀a\nb\nc','native undo');assert(document.execCommand('redo')&&editor.value.startsWith('  😀'),'native redo');
+editor.setSelectionRange(2,5);document.execCommand('insertText',false,'貼付😀');assert(editor.value.includes('貼付😀'),'paste-shaped insert');editor.setSelectionRange(2,6);document.execCommand('delete');assert(!editor.value.includes('貼付'),'cut-shaped delete');
+assert(composing(new KeyboardEvent('keydown',{key:'Enter',isComposing:true,ctrlKey:true})),'IME guard');
+editor.dispatchEvent(new CompositionEvent('compositionstart',{data:''}));document.execCommand('insertText',false,'日本語');editor.dispatchEvent(new CompositionEvent('compositionend',{data:'日本語'}));assert(editor.value.includes('日本語'),'composition text');
+assert(mapBreakpointLine('a\nb','x\na\nb',2)===3,'breakpoint');editor.readOnly=true;const before=editor.value;applyIndent(editor);assert(editor.value===before,'readonly');
+document.querySelector('#result').textContent=`PASS: UTF-16, multiline indent, native undo/redo, paste/cut-shaped edits, synthetic composition, readonly, breakpoint movement; ${inputs} input events.`;editor.remove();
+}catch(e){document.querySelector('#result').textContent='FAIL: '+e.message;}
+</script></html>

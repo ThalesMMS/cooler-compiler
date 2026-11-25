@@ -1,4 +1,6 @@
+import { applyIndent, mapBreakpointLine, nextDiagnosticIndex, composing, EditorHistory, breakpointLineForSource } from "./editor-tools.mjs";
 import { graphHTML, layoutGraph, graphSVG, graphPNG, bindGraphs } from "./graphs.mjs";
+import { reportSources } from "./report-sources.mjs";
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 import {
@@ -10,6 +12,7 @@ import {
 	shouldAcceptTimeline,
 } from "./app-state.mjs";
 import { createHistorySeeker } from "./history-seek.mjs";
+import { createDraftWriter, draftWorkspace } from "./drafts.mjs";
 
 export async function startCoolerApp() {
 
@@ -29,6 +32,7 @@ export async function startCoolerApp() {
     saveButton: $("#saveButton"),
     saveAsButton: $("#saveAsButton"),
     compileButton: $("#compileButton"),
+	formatButton: $("#formatButton"),
 	optimizationMode: $("#optimizationMode"),
     nextPhaseButton: $("#nextPhaseButton"),
     runButton: $("#runButton"),
@@ -92,9 +96,79 @@ export async function startCoolerApp() {
   const vmRunChunkSteps = 25;
   const vmRunChunkDelayMs = 25;
   let sourceIDCounter = 0;
+	let offeredDrafts = null;
+	let reportWorkspace = null;
+	const inspectingReport = () => Boolean(reportWorkspace?.readonly);
+	let lastDraftJSON = "";
+	const draftStatus = $("#draftStatus");
+	const draftWriter = createDraftWriter({
+	  save(body) { return api("/api/drafts", body, new TextEncoder().encode(JSON.stringify(body)).length < 60 * 1024); },
+	  status(message, error) { draftStatus.textContent = message; draftStatus.classList.toggle("draft-error", error); },
+	});
+	function scheduleDrafts() {
+	  if (reportWorkspace) return;
+	  flushActiveTab();
+	  const workspace = draftWorkspace(state.sourceTabs, state.activeTabIndex);
+	  const encoded = JSON.stringify(workspace);
+	  if (encoded !== lastDraftJSON && draftWriter.schedule(workspace)) lastDraftJSON = encoded;
+	}
+	async function readDrafts() {
+	  flushActiveTab();
+	  const beforeRead = JSON.stringify(draftWorkspace(state.sourceTabs, state.activeTabIndex));
+	  try {
+	    const data = await api("/api/drafts", { action: "read" });
+	    lastDraftJSON = beforeRead;
+	    draftWriter.start(data.revision);
+	    if (data.workspace) {
+	      draftWriter.pause();
+	      offeredDrafts = data.workspace;
+	      draftStatus.textContent = `Recover ${data.workspace.tabs.length} saved draft tabs? These copies are not files saved to disk.`;
+	      $("#restoreDrafts").hidden = false;
+	      $("#discardDrafts").hidden = false;
+	    } else {
+	      draftStatus.textContent = "Recovery copies are stored locally as you edit.";
+	      if (state.sourceTabs.some(tab => tab.source !== tab.savedSource)) lastDraftJSON = "";
+	      scheduleDrafts();
+	    }
+	  } catch (error) { draftStatus.textContent = error.message; draftStatus.classList.add("draft-error"); }
+	}
+	async function clearDrafts() {
+	  if (draftWriter.active()) { toast("Wait for the recovery save to finish, then clear it.", "error"); return; }
+	  flushActiveTab();
+	  const beforeClear = JSON.stringify(draftWorkspace(state.sourceTabs, state.activeTabIndex));
+	  draftWriter.pause();
+	  try {
+	    const data = await api("/api/drafts", { action: "clear", revision: draftWriter.revision() });
+	    offeredDrafts = null;
+	    $("#restoreDrafts").hidden = true;
+	    $("#discardDrafts").hidden = true;
+	    draftWriter.start(data.revision);
+	    draftStatus.textContent = "Recovery data cleared. Your open editor is unchanged; new edits create new recovery copies.";
+	    flushActiveTab();
+	    lastDraftJSON = beforeClear;
+	    draftStatus.classList.remove("draft-error");
+	    scheduleDrafts();
+	  } catch (error) { draftStatus.textContent = error.message; draftStatus.classList.add("draft-error"); }
+	}
+	function restoreDrafts() {
+	  if(reportWorkspace)return;
+	  if (!offeredDrafts) return;
+	  const tabs = Array.isArray(offeredDrafts.tabs) ? offeredDrafts.tabs : [];
+	  if (!tabs.length) { offeredDrafts = null; return; }
+	  invalidateSession();
+	  state.sourceTabs = tabs.map(tab => ({ ...makeSourceTab(tab.name, tab.content, null), recovered: true }));
+	  state.activeTabIndex = Math.min(Math.max(0, Math.trunc(Number(offeredDrafts.active)) || 0), state.sourceTabs.length - 1);
+	  offeredDrafts = null;
+	  state.breakpoints.clear(); state.breakpointConfigs.clear();
+	  loadActiveTabIntoEditor(); renderAll();
+	  $("#restoreDrafts").hidden = true; $("#discardDrafts").hidden = true;
+	  draftWriter.start(draftWriter.revision());
+	  lastDraftJSON = JSON.stringify(draftWorkspace(state.sourceTabs, state.activeTabIndex));
+	  draftStatus.textContent = "Drafts restored. Save each file to keep a disk copy.";
+	}
 
   function newSourceID() {
-    sourceIDCounter += 1;
+    do { sourceIDCounter += 1; } while ([...state.sourceTabs,...(reportWorkspace?.backup.sourceTabs || [])].some(tab=>tab.id===`source-${sourceIDCounter}`));
     return `source-${sourceIDCounter}`;
   }
 
@@ -141,7 +215,8 @@ export async function startCoolerApp() {
 };
 `;
 
-  async function api(path, body) {
+  async function api(path, body, keepalive = false) {
+	if (inspectingReport() && (/^\/api\/vm\//u.test(path) || /^\/api\/pipeline\/(start|next|complete)$/u.test(path) || path === '/api/compile')) throw new Error('Report inspection does not run code. Use Recompile imported sources.');
     const headers = {
       Accept: "application/json",
       "X-Cooler-Capability": window.CoolerCapability || "",
@@ -150,6 +225,7 @@ export async function startCoolerApp() {
       ? { method: "GET", headers }
       : {
           method: "POST",
+		  keepalive,
           headers: { ...headers, "Content-Type": "application/json" },
           body: JSON.stringify(body),
         };
@@ -200,6 +276,7 @@ export async function startCoolerApp() {
   }
 
   function loadExample(example, skipConfirmation = false) {
+	if(inspectingReport())return;
     if (!skipConfirmation && !confirmDiscard()) {
       elements.exampleSelect.value = "";
       return;
@@ -239,6 +316,7 @@ export async function startCoolerApp() {
   }
 
   function replaceDocument(source, name, saved = true) {
+	if(inspectingReport())return;
     invalidateSession();
     state.breakpoints.clear();
 	state.breakpointConfigs.clear();
@@ -255,6 +333,7 @@ export async function startCoolerApp() {
     const tab = state.sourceTabs[state.activeTabIndex];
     if (!tab) return;
     tab.source = elements.editor.value;
+    tab.selectionStart=elements.editor.selectionStart;tab.selectionEnd=elements.editor.selectionEnd;tab.scrollTop=elements.editor.scrollTop;
   }
 
   function programInput() {
@@ -299,17 +378,19 @@ export async function startCoolerApp() {
       const dirty = tab.source !== tab.savedSource;
       return `<div class="source-tab" role="presentation">
         <button class="tab${active ? " active" : ""}${dirty ? " dirty" : ""}" type="button" data-file-index="${index}" role="tab" aria-selected="${active}" aria-controls="sourcePanel" title="${escapeHTML(tab.name)}">
-          <span class="tab-name">${escapeHTML(tab.name)}</span>
+          <span class="tab-name">${escapeHTML(tab.name)}${tab.recovered ? " · recovered" : ""}</span>
         </button>
-        <button type="button" class="tab-close" data-close-index="${index}" title="Close" aria-label="Close ${escapeHTML(tab.name)}">×</button>
+        <button type="button" class="tab-close" ${inspectingReport() ? "disabled" : ""} data-close-index="${index}" title="Close" aria-label="Close ${escapeHTML(tab.name)}">×</button>
       </div>`;
     }).join("");
+	scheduleDrafts();
   }
 
   function loadActiveTabIntoEditor() {
     const tab = state.sourceTabs[state.activeTabIndex];
     if (!tab) return;
     elements.editor.value = tab.source;
+    elements.editor.setSelectionRange(tab.selectionStart||0,tab.selectionEnd||0);elements.editor.scrollTop=tab.scrollTop||0;
     state.documentName = tab.name;
     state.savedSource = tab.savedSource;
     updateDocumentTitle();
@@ -317,7 +398,7 @@ export async function startCoolerApp() {
     renderSourceTabs();
     renderGutter();
     renderSourceHighlights();
-	restoreDebuggerWorkspaceForOpenTabs();
+	if(!reportWorkspace)restoreDebuggerWorkspaceForOpenTabs();
   }
 
   function switchSourceTab(index) {
@@ -328,6 +409,7 @@ export async function startCoolerApp() {
   }
 
   function closeSourceTab(index) {
+	if(inspectingReport())return;
     if (index < 0 || index >= state.sourceTabs.length) return;
     flushActiveTab();
     if (state.sourceTabs.length <= 1) {
@@ -546,6 +628,69 @@ export async function startCoolerApp() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function formatSource() {
+    if (state.busy) return;
+    const source = elements.editor.value;
+    const tab = state.sourceTabs[state.activeTabIndex];
+    const start = elements.editor.selectionStart, end = elements.editor.selectionEnd;
+    const direction = elements.editor.selectionDirection;
+    setBusy(true, "Formatting…");
+    try {
+      const result = await api("/api/format", { source });
+      if (tab !== state.sourceTabs[state.activeTabIndex] || elements.editor.value !== source) return;
+      if (result.source !== source) {
+        elements.editor.value = result.source;
+        elements.editor.setSelectionRange(mapFormatSelection(source, result.source, start), mapFormatSelection(source, result.source, end, start === end ? 'right' : 'left'), direction);
+        sourceChanged();
+      }
+      elements.editor.focus();
+      setGlobalStatus("Source formatted", "ok");
+    } catch (error) {
+      toast(error.message, "error");
+      setGlobalStatus("Formatting failed — source preserved", "error");
+    } finally { setBusy(false); }
+  }
+
+  async function inspectReport() {
+    if(state.busy || reportWorkspace)return;
+    const text=$('#reportJSON').value;
+    if(new TextEncoder().encode(text).length>1048576){$('#reportError').textContent='Report must be at most 1 MiB.';return;}
+    setBusy(true,'Opening report…');
+    try {
+      const payload=await api('/api/report/import',JSON.parse(text));
+      if (!payload?.report || typeof payload.report !== 'object' || Array.isArray(payload.report)) throw new Error('The response contains no report.');
+      flushActiveTab();
+      const backup={};
+      for(const key of ['sourceTabs','activeTabIndex','breakpoints','breakpointConfigs','documentName','savedSource'])backup[key]=state[key];
+      backup.selection=[elements.editor.selectionStart,elements.editor.selectionEnd,elements.editor.selectionDirection];
+      reportWorkspace={backup,sources:payload.sources || [],readonly:true};
+      invalidateSession();state.stale=false;state.breakpoints=new Set();state.breakpointConfigs=new Map();
+      state.sourceTabs=reportWorkspace.sources.length ? reportWorkspace.sources.map(source=>makeSourceTab(source.name,source.content,null,source.id)) : [makeSourceTab('sources-unavailable.cl','-- This report contains source metadata but no recoverable source contents.\n',null)];
+      state.activeTabIndex=0;loadActiveTabIntoEditor();
+      state.result=payload.report;state.runtime=payload.report.runtime;state.activeTab='diagnostics';
+      $('#inspectionNotice').hidden=false;
+      const missing=['tokens','ast','symbols','ir','assembly'].filter(key=>!payload.report[key] || Array.isArray(payload.report[key]) && !payload.report[key].length);
+      $('#inspectionStatus').textContent=`Report inspection — no code is running. ${reportWorkspace.sources.length ? 'Sources available.' : 'Source contents unavailable.'} ${missing.length ? 'Artifacts absent: '+missing.join(', ')+'.' : ''}`;
+      $('#reportDialog').close();renderAll();setGlobalStatus('Report opened for inspection','ok');
+    } catch(error){$('#reportError').textContent=error.message;}
+    finally{setBusy(false);}
+  }
+
+  function closeReport() {
+    if(!reportWorkspace || state.busy)return;
+	if(!reportWorkspace.readonly){
+	  flushActiveTab();
+	  const changed=state.sourceTabs.length!==reportWorkspace.sources.length || state.sourceTabs.some((tab,i)=>tab.source!==reportWorkspace.sources[i]?.content);
+	  if(changed && !window.confirm('Discard edits to imported sources and return to your original documents?'))return;
+	}
+    const backup=reportWorkspace.backup;
+    invalidateSession();
+    for(const key of ['sourceTabs','activeTabIndex','breakpoints','breakpointConfigs','documentName','savedSource'])state[key]=backup[key];
+    reportWorkspace=null;state.stale=true;loadActiveTabIntoEditor();
+    elements.editor.setSelectionRange(...backup.selection);
+    $('#inspectionNotice').hidden=true;renderAll();setGlobalStatus('Original documents restored','ok');
   }
 
   async function runSession() {
@@ -874,6 +1019,7 @@ export async function startCoolerApp() {
   function setBusy(busy, label = "Working…", active = "") {
     state.busy = busy;
     elements.compileButton.disabled = busy;
+	elements.formatButton.disabled = busy;
     elements.nextPhaseButton.disabled = busy;
     elements.runButton.disabled = busy && active !== "run";
     elements.stepButton.disabled = busy;
@@ -925,7 +1071,7 @@ export async function startCoolerApp() {
       text = "ready";
       kind = "ok";
     }
-    elements.sessionStatus.textContent = text;
+    elements.sessionStatus.textContent = inspectingReport() ? 'report inspection' : text;
     elements.sessionStatus.className = `status-pill ${kind}`;
     if (elements.debugLocation) {
       const location = state.debugLocation;
@@ -1729,7 +1875,7 @@ export async function startCoolerApp() {
     $$(".quick-fix", elements.content).forEach((button) => {
       button.addEventListener("click", (event) => {
         event.stopPropagation();
-        const sourceID = button.dataset.fixSource || "";
+        if(inspectingReport())return; const sourceID = button.dataset.fixSource || "";
         const fileIndex = sourceTabIndex(sourceID);
         if (fileIndex < 0) return;
         if (fileIndex !== state.activeTabIndex) switchSourceTab(fileIndex);
@@ -1865,7 +2011,37 @@ export async function startCoolerApp() {
 	  renderArtifact();
 	}
 
+  const editorKeys=new WeakMap();
+  function historyKey(tab){if(!editorKeys.has(tab))editorKeys.set(tab,Symbol());return editorKeys.get(tab);}
+  const editorHistory=new EditorHistory();let historyReplay=false, beforeInputSelection=null;
+  function undoEditor(redo=false){
+    if(inspectingReport())return;const tab=state.sourceTabs[state.activeTabIndex];if(!tab)return;
+    const stack=redo?editorHistory.future:editorHistory.past;const entry=stack.findLast(e=>e.key===historyKey(tab));
+    if(entry && (redo?entry.before.text:entry.after.text)!==tab.source){editorHistory.forget(historyKey(tab));return;}
+    const snapshot=editorHistory.move(historyKey(tab),redo);if(!snapshot)return;
+    historyReplay=true;try{elements.editor.value=snapshot.text;elements.editor.setSelectionRange(snapshot.start,snapshot.end);sourceChanged();}finally{historyReplay=false;}
+  }
+  let diagnosticCursor=-1, diagnosticResult=null;
+  function navigateDiagnostic(direction) {
+    if(state.stale || !state.result){setGlobalStatus("Compile to navigate diagnostics", "idle");return;}
+    if(diagnosticResult!==state.result){diagnosticCursor=-1;diagnosticResult=state.result;}
+    const items=(state.result.diagnostics||[]).filter(d=>d.span && sourceTabIndex(d.span.sourceId)>=0);
+    diagnosticCursor=nextDiagnosticIndex(items.length,diagnosticCursor,direction);
+    if(diagnosticCursor<0){setGlobalStatus("No source diagnostics", "ok");return;}
+    const d=items[diagnosticCursor];selectSpan(d.span);setGlobalStatus(`${diagnosticCursor+1}/${items.length}: ${d.message}`,d.severity==="error"?"error":"idle");
+  }
+
   function sourceChanged() {
+	if(inspectingReport()){elements.editor.value=state.sourceTabs[state.activeTabIndex]?.source || '';return;}
+    const tab=state.sourceTabs[state.activeTabIndex];
+    if(tab && tab.source!==elements.editor.value){
+      if(!historyReplay)editorHistory.record(historyKey(tab),{text:tab.source,start:elements.editor.coolerSelection?.before.start??beforeInputSelection?.start??tab.selectionStart??0,end:elements.editor.coolerSelection?.before.end??beforeInputSelection?.end??tab.selectionEnd??0},{text:elements.editor.value,start:elements.editor.coolerSelection?.after.start??elements.editor.selectionStart,end:elements.editor.coolerSelection?.after.end??elements.editor.selectionEnd});
+      beforeInputSelection=null;
+      const mapped=[];
+      for(const key of state.breakpoints){const oldLine=breakpointLineForSource(key,tab.id);if(oldLine===null)continue;const line=mapBreakpointLine(tab.source,elements.editor.value,oldLine);mapped.push({key,line,config:state.breakpointConfigs.get(key)});}
+      for(const {key} of mapped){state.breakpoints.delete(key);state.breakpointConfigs.delete(key);state.breakpointStates.delete(key);}
+      for(const {line,config} of mapped){if(line!==null){const key=`${tab.id}:${line}`;state.breakpoints.add(key);if(config)state.breakpointConfigs.set(key,config);}}
+    }
     flushActiveTab();
     invalidateSession();
     state.stale = true;
@@ -1909,6 +2085,19 @@ export async function startCoolerApp() {
 	elements.reverseMode.disabled = state.busy || !state.timeline?.canStepBack;
     elements.resetButton.disabled = state.busy || !state.pipeline.id || !snapshot?.complete || state.stale;
     elements.exportButton.disabled = !state.result;
+	const locked = inspectingReport();
+	$('.debugger-panel').hidden=locked;
+	if(elements.optimizationMode)elements.optimizationMode.disabled=state.busy || locked;
+	elements.programInput.readOnly=locked;
+	for(const id of ['restoreDrafts','discardDrafts','clearDrafts'])$('#'+id).disabled=Boolean(reportWorkspace);
+	if(locked){if(elements.liveInputLine)elements.liveInputLine.disabled=true;if(elements.sendInputButton)elements.sendInputButton.disabled=true;}
+	elements.editor.readOnly = locked;
+	for (const control of [elements.openButton,elements.addFileButton,elements.clearSourceButton,elements.exampleSelect,elements.recentSelect,elements.saveButton,elements.saveAsButton,elements.formatButton]) control.disabled = state.busy || locked;
+	if (locked) for (const control of [elements.compileButton,elements.nextPhaseButton,elements.runButton,elements.stepButton,elements.stepIntoButton,elements.stepOverButton,elements.stepOutButton,elements.runToCursorButton,elements.resetButton]) control.disabled=true;
+	$('#openReportButton').disabled = state.busy || Boolean(reportWorkspace);
+	$('#recompileReport').disabled = state.busy || !reportWorkspace?.sources?.length || !locked;
+	$('#closeReport').disabled = state.busy;
+	$$('.tab-close',elements.sourceTabs).forEach(control => {control.disabled=locked;});
   }
 
   function lastTraceState() {
@@ -1936,6 +2125,7 @@ export async function startCoolerApp() {
   }
 
   async function openFiles(fileList, { append = false } = {}) {
+	if(inspectingReport())return;
     const files = Array.from(fileList || []).filter(Boolean);
     if (files.length === 0) return;
     if (!append && !confirmDiscard()) return;
@@ -1975,12 +2165,14 @@ export async function startCoolerApp() {
   }
 
   function saveSource() {
+	if(inspectingReport())return;
     flushActiveTab();
     const tab = state.sourceTabs[state.activeTabIndex];
     const name = client.normalizeFileName((tab && tab.name) || state.documentName || "program.cl");
     if (tab) {
       tab.name = name;
       tab.savedSource = tab.source;
+	  tab.recovered = false;
     }
     state.documentName = name;
     state.savedSource = tab ? tab.source : elements.editor.value;
@@ -1992,6 +2184,7 @@ export async function startCoolerApp() {
   }
 
   function saveSourceAs() {
+	if(inspectingReport())return;
     const tab = state.sourceTabs[state.activeTabIndex];
     const requested = window.prompt(".cl file name", (tab && tab.name) || state.documentName || "program.cl");
     if (!requested) return;
@@ -2093,7 +2286,7 @@ export async function startCoolerApp() {
       case "report":
       default:
         download(`${stem}.cooler-report.json`, JSON.stringify(
-          client.buildCompileReport(state.result, state.documentName),
+          { ...client.buildCompileReport(state.result, state.documentName), ...reportSources(state.result,state.sourceTabs) },
           null,
           2,
         ), "application/json;charset=utf-8");
@@ -2164,6 +2357,11 @@ export async function startCoolerApp() {
   }
 
   function bindEvents() {
+	$("#restoreDrafts").addEventListener("click", restoreDrafts);
+	$("#discardDrafts").addEventListener("click", clearDrafts);
+	$("#clearDrafts").addEventListener("click", clearDrafts);
+	window.addEventListener("pagehide", () => { void draftWriter.flush(); });
+	document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") void draftWriter.flush(); });
     elements.exampleSelect.addEventListener("change", () => {
       const example = state.examples.find((item) => item.id === elements.exampleSelect.value);
       if (example) loadExample(example);
@@ -2200,7 +2398,24 @@ export async function startCoolerApp() {
     elements.saveButton.addEventListener("click", saveSource);
     elements.saveAsButton.addEventListener("click", saveSourceAs);
     elements.compileButton.addEventListener("click", compilePipeline);
+	$('#openReportButton').addEventListener('click', () => {$('#reportError').textContent='';$('#reportDialog').showModal();});
+	$('#cancelReport').addEventListener('click', () => $('#reportDialog').close());
+	$('#reportFile').addEventListener('change', async event => {
+	  const file=event.target.files?.[0];if(!file)return;
+	  if(file.size>1048576){$('#reportError').textContent='Report must be at most 1 MiB.';return;}
+	  try {$('#reportJSON').value=await file.text();}catch(error){$('#reportError').textContent=error.message;}
+	});
+	$('#inspectReport').addEventListener('click',inspectReport);
+	$('#closeReport').addEventListener('click',closeReport);
+	$('#recompileReport').addEventListener('click',async () => {
+	  if(!reportWorkspace?.sources.length || state.busy)return;
+	  reportWorkspace.readonly=false;invalidateSession();state.stale=true;
+	  $('#inspectionStatus').textContent='Imported sources workspace. Your original documents remain preserved until you return.';
+	  renderAll();await compilePipeline();
+	});
+	elements.formatButton.addEventListener("click", formatSource);
 	elements.optimizationMode?.addEventListener("change", () => {
+	  if(inspectingReport())return;
 	  state.optimization = elements.optimizationMode.value === "basic" ? "basic" : "none";
 	  invalidateSession();
 	  state.stale = true;
@@ -2293,19 +2508,23 @@ export async function startCoolerApp() {
 	elements.watchList?.addEventListener("input", updateWatch);
 	elements.watchList?.addEventListener("change", updateWatch);
 
+    elements.editor.addEventListener("beforeinput",event=>{
+      if(event.inputType==="historyUndo"||event.inputType==="historyRedo"){event.preventDefault();undoEditor(event.inputType==="historyRedo");return;}
+      beforeInputSelection=elements.editor.coolerSelection?.before || {start:elements.editor.selectionStart,end:elements.editor.selectionEnd};
+    });
     elements.editor.addEventListener("input", sourceChanged);
     elements.editor.addEventListener("scroll", syncEditorScroll);
     elements.editor.addEventListener("click", () => { updateEditorMetadata(); updateSourceProvenance(); });
     elements.editor.addEventListener("keyup", () => { updateEditorMetadata(); updateSourceProvenance(); });
     elements.editor.addEventListener("keydown", (event) => {
-      if (event.key === "Tab") {
-        event.preventDefault();
-        const start = elements.editor.selectionStart;
-        const end = elements.editor.selectionEnd;
-        elements.editor.setRangeText("  ", start, end, "end");
-        sourceChanged();
-      }
+      if(inspectingReport() || composing(event))return;
+      if((event.ctrlKey||event.metaKey) && ["z","y"].includes(event.key.toLowerCase())){event.preventDefault();undoEditor(event.shiftKey||event.key.toLowerCase()==="y");return;}
+      if((event.ctrlKey||event.metaKey) && ["[","]"].includes(event.key)){event.preventDefault();applyIndent(elements.editor,event.key==="[");updateEditorMetadata();}
     });
+    $('#indentSource').addEventListener('click',()=>{if(!inspectingReport()){applyIndent(elements.editor);updateEditorMetadata();}});
+    $('#outdentSource').addEventListener('click',()=>{if(!inspectingReport()){applyIndent(elements.editor,true);updateEditorMetadata();}});
+    $('#previousDiagnostic').addEventListener('click',()=>navigateDiagnostic(-1));
+    $('#nextDiagnostic').addEventListener('click',()=>navigateDiagnostic(1));
 
     const toggleBreakpoint = (row) => {
       if (!row) return;
@@ -2348,6 +2567,9 @@ export async function startCoolerApp() {
     });
 
     document.addEventListener("keydown", (event) => {
+      if(composing(event))return;
+      if(event.key==="F8"){event.preventDefault();navigateDiagnostic(event.shiftKey?-1:1);return;}
+	  if(inspectingReport())return;
       const command = event.metaKey || event.ctrlKey;
       if (command && event.key === "Enter") {
         event.preventDefault();
@@ -2401,7 +2623,9 @@ export async function startCoolerApp() {
     setSource(fallbackSource, "hello.cl");
     renderAll();
     await Promise.all([loadExamples(), loadHealth()]);
+	await readDrafts();
   }
 
   await init();
 }
+import { mapFormatSelection } from "./format-selection.mjs";

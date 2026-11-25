@@ -75,6 +75,8 @@
             <path d="m14 20 5.5-5.5a1.4 1.4 0 0 1 2 2L16 22h-2Z"></path>
           </svg>
         </button>
+        <button id="formatButton" class="button secondary" type="button" title="Format the active source, preserving comments">Format</button>
+        <button id="openReportButton" class="button secondary" type="button">Open report</button>
         <button id="compileButton" class="button primary responsive-action-button" type="button" title="Compile and create a debug session (⌘/Ctrl+Enter)" aria-label="Compile">
           <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m14.5 6.5 3 3"></path>
@@ -166,6 +168,12 @@
     </header>
 
     <main id="mainContent" class="workspace" tabindex="-1">
+	  <aside class="draft-recovery" aria-label="Draft recovery">
+	    <span id="draftStatus" role="status">Checking local recovery data…</span>
+	    <button id="restoreDrafts" type="button" hidden>Restore drafts</button>
+	    <button id="discardDrafts" type="button" hidden>Discard drafts</button>
+	    <button id="clearDrafts" type="button">Clear recovery data</button>
+	  </aside>
       <section class="source-pane panel" aria-label="COOL source editor">
         <div class="panel-header source-header">
           <div>
@@ -191,6 +199,12 @@
         </div>
 
         <div class="editor-footer">
+          <div class="editor-actions" aria-label="Source editing">
+            <button type="button" id="outdentSource" title="Outdent selected lines (Ctrl/Cmd+[)">Outdent</button>
+            <button type="button" id="indentSource" title="Indent selected lines (Ctrl/Cmd+])">Indent</button>
+            <button type="button" id="previousDiagnostic" title="Previous diagnostic (Shift+F8)">Previous diagnostic</button>
+            <button type="button" id="nextDiagnostic" title="Next diagnostic (F8)">Next diagnostic</button>
+          </div>
           <div class="legend">
             <span><i class="dot breakpoint-dot"></i> breakpoint</span>
             <span><i class="dot diagnostic-dot"></i> diagnostic</span>
@@ -200,6 +214,11 @@
       </section>
 
       <section class="results-pane" aria-label="Compiler results">
+        <aside id="inspectionNotice" hidden aria-label="Report inspection">
+          <p id="inspectionStatus" role="status"></p>
+          <button id="recompileReport" type="button">Recompile imported sources</button>
+          <button id="closeReport" type="button">Return to my documents</button>
+        </aside>
         <div id="pipeline" class="pipeline" aria-label="Compilation pipeline"></div>
 
         <section class="panel artifact-panel">
@@ -299,7 +318,7 @@
     </main>
 
     <footer class="statusbar">
-      <span id="globalStatus"><i class="status-light idle"></i> Ready</span>
+      <span id="globalStatus" role="status" aria-atomic="true"><i class="status-light idle"></i> Ready</span>
       <span>Lexer → Parser → Types → Stack IR → VM</span>
       <span id="versionLabel">local educational compiler</span>
     </footer>
@@ -366,5 +385,14 @@
   <script src="/about.js" defer></script>
   <script src="/client-utils.js" defer></script>
   <script src="/app.js" defer></script>
+<dialog id="reportDialog" aria-labelledby="reportDialogTitle">
+  <h2 id="reportDialogTitle">Open JSON report</h2>
+  <p>Inspect exported artifacts without running code. Maximum 1 MiB.</p>
+  <label for="reportFile">Report file</label><input id="reportFile" type="file" accept=".json,application/json">
+  <label for="reportJSON">Or paste report JSON</label><textarea id="reportJSON" rows="8"></textarea>
+  <p id="reportError" role="alert"></p>
+  <button id="inspectReport" type="button">Inspect report</button>
+  <button id="cancelReport" type="button">Cancel</button>
+</dialog>
 </body>
 </html>

@@ -17,7 +17,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -113,10 +115,11 @@ type compileRequest struct {
 }
 
 type securityPolicy struct {
-	capability   string
-	listenerPort string
-	allowRemote  bool
-	allowedHosts map[string]struct{}
+	draftDirectory string
+	capability     string
+	listenerPort   string
+	allowRemote    bool
+	allowedHosts   map[string]struct{}
 }
 
 func main() {
@@ -130,8 +133,14 @@ func run() error {
 	browser := flag.Bool("browser", false, "open in the default browser instead of a native window")
 	open := flag.Bool("open", true, "open the browser automatically in browser mode")
 	debugWebview := flag.Bool("debug-webview", false, "enable WebView debugging tools")
+	draftDir := flag.String("draft-dir", "", "durable draft directory (default: user config/cooler-compiler)")
 	allowRemote := flag.Bool("allow-remote", false, "allow the GUI HTTP server to listen beyond loopback (unsafe)")
 	flag.Parse()
+	if *draftDir == "" {
+		if config, err := os.UserConfigDir(); err == nil {
+			*draftDir = filepath.Join(config, "cooler-compiler")
+		}
+	}
 
 	if err := validateListenAddress(*addr, *allowRemote); err != nil {
 		return err
@@ -156,10 +165,11 @@ func run() error {
 		return fmt.Errorf("resolve listener address: %w", err)
 	}
 	policy := securityPolicy{
-		capability:   capability,
-		listenerPort: listenerPort,
-		allowRemote:  *allowRemote,
-		allowedHosts: allowedHostsForListener(*addr, listener.Addr(), *allowRemote),
+		draftDirectory: *draftDir,
+		capability:     capability,
+		listenerPort:   listenerPort,
+		allowRemote:    *allowRemote,
+		allowedHosts:   allowedHostsForListener(*addr, listener.Addr(), *allowRemote),
 	}
 
 	sessions := newSessionStore()
@@ -208,8 +218,12 @@ func run() error {
 
 func buildMux(sessions *sessionStore, policy securityPolicy) http.Handler {
 	mux := http.NewServeMux()
+	drafts := &draftStore{directory: policy.draftDirectory}
+	mux.HandleFunc("/api/drafts", apiGuard(policy, http.MethodPost, true, drafts.handler))
 	mux.Handle("/", web.Handler(policy.capability))
 	mux.HandleFunc("/api/compile", apiGuard(policy, http.MethodPost, true, compileHandler))
+	mux.HandleFunc("/api/format", apiGuard(policy, http.MethodPost, true, formatHandler))
+	mux.HandleFunc("/api/report/import", apiGuard(policy, http.MethodPost, true, reportImportHandler))
 	mux.HandleFunc("/api/pipeline/start", apiGuard(policy, http.MethodPost, true, sessions.pipelineStartHandler))
 	mux.HandleFunc("/api/pipeline/next", apiGuard(policy, http.MethodPost, true, sessions.pipelineNextHandler))
 	mux.HandleFunc("/api/pipeline/complete", apiGuard(policy, http.MethodPost, true, sessions.pipelineCompleteHandler))
