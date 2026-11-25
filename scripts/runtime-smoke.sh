@@ -222,7 +222,7 @@ grep -q 'Cooler Compiler' "$smoke_root/index.html"
 printf '[PASS] browser GUI served health and secured application HTML\n'
 
 if [[ "$platform" == Darwin && -d "$package_dir/Cooler Compiler.app" ]]; then
-  bundle_id="com.thalesmms.cooler-compiler"
+  bundle_id="thalesmms.coolercompiler"
   running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
   if [[ "$running_info" == *'"pid"='* ]]; then
     printf '[FAIL] an application with bundle identifier %s is already running\n' "$bundle_id" >&2

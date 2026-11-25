@@ -49,7 +49,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <dict>
   <key>CFBundleDisplayName</key><string>Cooler Compiler</string>
   <key>CFBundleExecutable</key><string>coolergui</string>
-  <key>CFBundleIdentifier</key><string>com.thalesmms.cooler-compiler</string>
+  <key>CFBundleIdentifier</key><string>thalesmms.coolercompiler</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleName</key><string>Cooler Compiler</string>

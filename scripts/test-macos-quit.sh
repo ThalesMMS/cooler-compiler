@@ -15,7 +15,7 @@ if [[ ! -d "$APP" ]]; then
   exit 1
 fi
 
-bundle_id="com.thalesmms.cooler-compiler"
+bundle_id="thalesmms.coolercompiler"
 running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
 if [[ "$running_info" == *'"pid"='* ]]; then
   echo "an application with bundle identifier $bundle_id is already running" >&2

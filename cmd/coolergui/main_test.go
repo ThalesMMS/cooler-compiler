@@ -57,6 +57,7 @@ func TestStartAndReapWaitsForBrowserCommand(t *testing.T) {
 
 func TestStartAndReapKillsTimedOutBrowserCommand(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
 	command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestBrowserCommandHelper$")
 	command.Env = append(os.Environ(), "COOLER_BROWSER_COMMAND_HELPER=1", "COOLER_BROWSER_COMMAND_SLEEP=1")
 	done, err := startAndReap(command, cancel)
@@ -68,11 +69,15 @@ func TestStartAndReapKillsTimedOutBrowserCommand(t *testing.T) {
 		if err == nil || !errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			t.Fatalf("timed-out browser command error=%v context=%v", err, ctx.Err())
 		}
+		// Wait reports both a nonzero exit (Windows) and signal termination
+		// (Unix) as ExitError. Exited is false for the latter, even after reap.
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) || exitErr.ProcessState == nil ||
+			exitErr.ProcessState != command.ProcessState || exitErr.Success() {
+			t.Fatalf("timed-out browser command was not reaped: error=%v state=%+v", err, command.ProcessState)
+		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("timed-out browser command was not killed and reaped")
-	}
-	if command.ProcessState == nil || !command.ProcessState.Exited() {
-		t.Fatalf("timed-out browser command state = %+v", command.ProcessState)
 	}
 }
 
