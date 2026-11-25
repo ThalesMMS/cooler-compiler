@@ -1,3 +1,4 @@
+import { graphHTML, layoutGraph, graphSVG, graphPNG, bindGraphs } from "./graphs.mjs";
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 
 import {
@@ -1023,7 +1024,7 @@ export async function startCoolerApp() {
 	  heap: renderHeap,
     };
     elements.content.innerHTML = provenanceBreadcrumbsHTML() + (renderers[state.activeTab] || renderDiagnostics)();
-    wireArtifactInteractions();
+    wireArtifactInteractions(); bindGraphs(elements.content,state.result,span=>selectSpan(span));
 	markRelatedArtifacts();
     updateSessionStatus(state.runtime?.paused ? "paused" : "ready");
   }
@@ -1086,7 +1087,7 @@ export async function startCoolerApp() {
   function renderAST() {
     const ast = state.result?.ast;
     if (!ast) return emptyInline("No AST was produced because parsing did not complete.");
-    return `${metricsHTML()}<div class="tree">${client.renderASTNode(ast)}</div>`;
+    return `${metricsHTML()}${graphHTML(state.result,"ast",document.documentElement.dataset.theme!=="light")}${layoutGraph(state.result,"ast").truncated ? "" : `<details><summary>AST tree</summary><div class="tree">${client.renderASTNode(ast)}</div></details>`}`;
   }
 
   function renderSymbols() {
@@ -1135,14 +1136,14 @@ export async function startCoolerApp() {
     const graph = state.result?.controlFlow || {};
     const blocks = graph.blocks || [];
     const edges = graph.edges || [];
-    if (blocks.length === 0) return emptyInline("No control-flow graph is available.");
+    if (blocks.length === 0 || blocks.length > 200 || edges.length > 1000) return graphHTML(state.result,"cfg",document.documentElement.dataset.theme!=="light");
     const byMethod = new Map();
     blocks.forEach((block) => {
       const list = byMethod.get(block.method) || [];
       list.push(block);
       byMethod.set(block.method, list);
     });
-    return `<div class="cfg-layout">
+    return `${graphHTML(state.result,"cfg",document.documentElement.dataset.theme!=="light")}<details><summary>Control-flow blocks and edges</summary><div class="cfg-layout">
       <div class="cfg-canvas">${Array.from(byMethod.entries()).map(([method, methodBlocks]) => `
         <section class="cfg-method">
           <div class="cfg-method-title">${escapeHTML(method || "program")}</div>
@@ -1153,7 +1154,7 @@ export async function startCoolerApp() {
       <div class="cfg-edge-list">${edges.map((edge) => `
         <div class="cfg-edge clickable-span" ${spanData(edge.span)}><span>${escapeHTML(shortBlockName(edge.from))}</span><span class="cfg-edge-kind">${escapeHTML(edge.kind)} \u2192</span><span>${escapeHTML(shortBlockName(edge.to))}</span></div>
       `).join("")}</div>
-    </div>`;
+    </div></details>`;
   }
 
 	function spansOverlap(left, right) {
@@ -2047,6 +2048,7 @@ export async function startCoolerApp() {
   async function exportSelectedArtifact() {
     if (!state.result) return;
     const stem = client.stripExtension(state.documentName || "program.cl");
+    if (/^(ast|cfg)-(svg|png)$/.test(elements.exportSelect.value)) { const [kind,format]=elements.exportSelect.value.split("-"); const graph=layoutGraph(state.result,kind); try { if(format==="svg") download(`${stem}.${kind}.svg`,graphSVG(graph,document.documentElement.dataset.theme!=="light"),"image/svg+xml"); else downloadBlob(`${stem}.${kind}.png`,await graphPNG(graph,Number($("#pngScale").value),document.documentElement.dataset.theme!=="light")); setGlobalStatus("Graph exported", "ok"); toast("Graph exported"); } catch(error){setGlobalStatus(error.message,"error"); toast(error.message,"error");} return; }
     switch (elements.exportSelect.value) {
       case "tokens":
         download(`${stem}.tokens.json`, JSON.stringify(state.result.tokens || [], null, 2), "application/json;charset=utf-8");
@@ -2119,7 +2121,7 @@ export async function startCoolerApp() {
     const current = document.documentElement.dataset.theme || "dark";
     const next = current === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
-    localStorage.setItem("cooler-theme", next);
+    localStorage.setItem("cooler-theme", next); renderArtifact();
   }
 
   function restoreTheme() {

@@ -1,0 +1,19 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="img-src 'self' data:"><title>Graph browser validation</title><h1>Graph browser validation</h1><p id="result">Running…</p><div id="graphs" aria-hidden="true"></div><script type="module">
+import {graphHTML,layoutGraph,bindGraphs,graphPNG} from '../internal/web/static/graphs.mjs';
+const assert=(condition,message)=>{if(!condition)throw new Error(message)};
+try{
+const report={ast:{kind:'Program',children:Array.from({length:2000},(_,i)=>({kind:'String',text:'<label> '+i,span:{sourceId:'source-'+(i%2),startLine:i+1}}))}};
+const root=document.querySelector('#graphs'),start=performance.now();root.innerHTML=graphHTML(report,'ast',true);
+let selected=0;bindGraphs(root,report,()=>selected++);
+const viewport=root.querySelector('.graph-viewport'),svg=root.querySelector('svg'),original=svg.getAttribute('viewBox');
+viewport.dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));assert(svg.getAttribute('viewBox')!==original,'keyboard pan');
+viewport.dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}));assert(svg.getAttribute('viewBox')===original,'fit');
+root.querySelector('[data-graph-action="in"]').click();assert(svg.getAttribute('viewBox')!==original,'zoom');
+root.querySelector('[data-graph-node="1"]').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));assert(selected===1,'keyboard selection');
+const graph=layoutGraph(report,'ast');assert(graph.truncated && graph.nodes.length===200,'large bound');
+const small=layoutGraph({controlFlow:{blocks:[{name:'A'},{name:'B'}],edges:[{from:'A',to:'B'},{from:'B',to:'A'}]}},'cfg');
+const png=await graphPNG(small,2);const bitmap=await createImageBitmap(png);assert(bitmap.width===small.width*2 && bitmap.height===small.height*2,'PNG dimensions');bitmap.close();
+document.querySelector('#result').textContent=`PASS: large graph 200/2001 nodes, keyboard pan/fit/zoom/source selection; PNG ${small.width*2}×${small.height*2}, ${png.size} bytes; elapsed ${(performance.now()-start).toFixed(1)} ms.`;
+root.replaceChildren();
+}catch(error){document.querySelector('#result').textContent='FAIL: '+error.message;}
+</script></html>

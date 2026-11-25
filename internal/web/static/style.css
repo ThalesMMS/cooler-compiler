@@ -979,3 +979,12 @@ html[data-theme="light"] .code-block { background: #202532; color: #f1f4fa; }
   @keyframes about-in { from { opacity: 0; transform: translateY(8px) scale(.985); } }
   @keyframes about-backdrop-in { from { opacity: 0; } }
 }
+.graph-viewport { height: 420px; overflow: hidden; touch-action: none; border: 1px solid currentcolor; border-radius: 6px; }
+.graph-viewport svg { display: block; width: 100%; height: 100%; }
+.graph-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.graph-controls button { min-width: 40px; min-height: 36px; }
+.graph-view table { width: 100%; text-align: start; }
+.graph-view details { margin-block: 12px; }
+.graph-view [data-graph-node] { cursor: pointer; }
+.graph-view [data-graph-node]:focus rect { stroke: #7c69ef; stroke-width: 4px; }
+.graph-viewport:focus-visible { outline: 3px solid #7c69ef; outline-offset: 3px; }
