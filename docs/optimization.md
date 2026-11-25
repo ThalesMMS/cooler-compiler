@@ -36,10 +36,17 @@ The fixed pass order is:
    Division by zero stays at runtime with its original diagnostic span. String
    equality is deliberately left alone because evaluating it at compile time
    could bypass runtime string-size policy.
-2. `constant-conditions` selects a branch only when the condition is a literal
+2. `algebraic-identities` removes typed `x+0`, `x-0`, `x*1`, double integer
+   negation and double Boolean negation. Operand evaluation stays in place,
+   including calls, input, allocations and failures. Any incoming edge into
+   the identity pair prevents rewriting; `x*0` is explicitly refused.
+3. `constant-conditions` selects a branch only when the condition is a literal
    Boolean and the candidate instructions have no external incoming edge.
-3. `cfg-cleanup` threads unconditional jumps, removes jumps to the immediately
+4. `cfg-cleanup` threads unconditional jumps, removes jumps to the immediately
    following instruction, and removes unreachable instructions.
+5. `dead-computations` removes self-contained, discarded local computations
+   proved removable by a bounded stack/effect analysis. It retains operations
+   that may write, fail, allocate, diverge, or alter control flow.
 
 The passes may change instruction count and control flow. They must preserve
 left-to-right evaluation, output, input consumption, runtime-error category and
@@ -79,3 +86,59 @@ therefore use a policy high enough for both variants and compare semantic
 outcomes rather than requiring the same step count. A deliberately tight
 instruction budget can pause one variant before the other; that is a resource
 limit observation, not a language-semantic difference.
+
+The algebraic pass uses Cooler's signed 32-bit arithmetic, including wrapping
+negation at the minimum integer. It merges all removed origins into the
+retained instruction and preserves that operand instruction's source span,
+so failures in operand evaluation remain attributed to the same source.
+Acceptance and refusal evidence appears alongside the other passes. Changes
+reduce executed instructions and can reduce transient stack usage; use the
+baseline for experiments with exact instruction or operand-stack budgets.
+The bytecode verifier establishes structural/type invariants after the pass;
+it is not a formal proof of semantic equivalence.
+
+## Issue #82 validation
+
+Focused tests compare baseline and optimized output, input events, runtime
+diagnostic identity/spans, and relevant heap snapshots. Cases cover zero,
+one, signed 32-bit extrema, integer and Boolean double negation, operand I/O,
+allocation and failure, incoming jumps into either removed instruction,
+zero-multiplication refusal, and exact retained origin indexes/source spans.
+The basic optimization golden records the new pass and its verifier barrier.
+The full short Go suite, vet, pinned lint and documentation checks passed on
+Windows. Algebraic tests also executed successfully on Debian/WSL using a
+cross-built Linux test executable. Native macOS validation was unavailable.
+
+## Dead computations and effects
+
+The local effect table admits Int/Bool/void/self pushes, typed non-dividing
+arithmetic/comparisons, negation, `isvoid`, duplication and discard. A candidate
+must consume only values it produced, end with `POP` and leave no value, have
+no interior incoming edge, and fit within 128 instructions. All admitted
+operations terminate under the equivalent semantic budget used for optimization.
+
+String pushes and variable reads remain conservative because they can carry
+failure/resource checks. Division is never removed by this pass; a proven
+nonzero literal division may already have been folded by `constant-fold`.
+Calls, I/O, allocation/constructors, writes, scope changes and potentially
+divergent control flow are retained. This is not dead-store elimination.
+The report records removals and refusals. Removed origins transfer to the next
+retained instruction while its own source span stays unchanged; the verifier
+checks the resulting stack and CFG. Exact instruction and transient stack
+budgets, trace lengths, and debugger instruction stops may differ, as with the
+other opt-in passes.
+
+Issue #83 tests exercise discarded block results, interior targets, operand
+stack balance, input/output, allocations, division and string-policy failures,
+and bounded nonterminating loops. Sixteen generated cases compare baseline
+and optimized observables. Loop tests use a 100-instruction budget.
+Independent review found no concrete defects. The short full Go suite, vet,
+pinned lint and documentation checks passed on Windows; the focused dead-value
+tests also ran successfully in Debian/WSL. Native macOS was unavailable.
+
+## Inlining experiment
+
+The [known-target prototype and measurements](inlining-experiment.md) document
+why inlining remains test-only: it changes frame and lexical-scope policy
+failures and debugger observations, while growing the measured instruction
+streams. It is not part of either optimization mode.

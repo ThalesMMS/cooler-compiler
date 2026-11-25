@@ -32,7 +32,7 @@ func TestBasicOptimizationGoldenAndVerifierEvidence(t *testing.T) {
 		t.Fatalf("observable output changed: baseline=%q optimized=%q", baseline.Runtime.Output, optimized.Runtime.Output)
 	}
 	report := optimized.Optimization
-	if !report.Enabled || report.ExecutionIR != "optimized" || !report.BaselineVerified || !report.OptimizedVerified || len(report.Passes) != 3 {
+	if !report.Enabled || report.ExecutionIR != "optimized" || !report.BaselineVerified || !report.OptimizedVerified || len(report.Passes) != 5 {
 		t.Fatalf("incomplete optimization report: %+v", report)
 	}
 	if len(report.AfterIR) >= len(report.BeforeIR) {

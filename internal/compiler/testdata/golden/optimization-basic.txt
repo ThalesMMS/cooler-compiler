@@ -29,8 +29,10 @@ Main.main RETURN                    origins=[47]
 
 PASSES
 constant-fold 51->42 changes=5 rejected=1 verified=true
+algebraic-identities 42->42 changes=0 rejected=0 verified=true
 constant-conditions 42->35 changes=6 rejected=0 verified=true
 cfg-cleanup 35->34 changes=1 rejected=0 verified=true
+dead-computations 34->34 changes=0 rejected=5 verified=true
 
 BEFORE CFG
 Object.$init:B0 0–1

@@ -44,8 +44,10 @@ func optimizeExecutable(baseline *executable, mode string) (*executable, Optimiz
 	optimized := cloneExecutableForOptimization(baseline)
 	passes := []func(*executable) OptimizationPassReport{
 		foldConstantPass,
+		algebraicIdentityPass,
 		simplifyConstantConditionPass,
 		cleanupControlFlowPass,
+		deadComputationPass,
 	}
 	diagnostics := append([]Diagnostic(nil), baselineDiagnostics...)
 	for _, pass := range passes {
