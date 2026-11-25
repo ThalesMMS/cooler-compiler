@@ -48,8 +48,11 @@ where applicable.
 
 ## Workspace policy
 
+Warning rules and their shared configuration are documented in the
+[compiler warnings guide](warnings.md).
+
 COOL has no module or import system. The server therefore compiles one ordered
-project:
+project. With no source-set configuration, the compatible default is:
 
 1. every `.cl`/`.cool` file below each initialized workspace root is discovered;
 2. open editor buffers replace the corresponding disk content;
@@ -60,10 +63,53 @@ project:
 Watched create/change/delete notifications update closed disk documents. Open
 buffers always win until `didClose`, when the current disk file is reloaded or
 the removed document leaves the project. Renames are the client's normal
-delete/create pair. Configuration changes invalidate the analysis cache.
+delete/create pair. Configuration changes rescan sources and invalidate the analysis cache.
 File URI paths are decoded exactly once. Windows UNC authorities are preserved
 and round-trip canonically; a non-local authority is rejected on Unix instead
 of being silently reinterpreted as a local path.
+
+### Independent exercises
+
+Select an exercise with `initializationOptions.sourceSet` in the initialize
+request, or send `workspace/didChangeConfiguration` with this payload:
+
+```json
+{
+  "settings": {
+    "cooler": {
+      "sourceSet": {
+        "include": ["exercises/01/", "shared/"],
+        "exclude": ["exercises/01/solutions/"]
+      }
+    }
+  }
+}
+```
+
+For example, keep separate `Main` classes in `exercises/01/main.cl` and
+`exercises/02/main.cl`, and reusable classes in `shared/`. Change the include
+entry to `exercises/02/` to select the second exercise. Paths are relative to
+each initialized workspace root and use `/` on every platform. A trailing `/`
+selects a directory recursively; other entries select an exact file. Matching
+is case-sensitive, exclusions win across all roots, and glob syntax, absolute
+paths, `.` and `..` components are rejected. Empty includes select every COOL
+source under the roots. A null or omitted source set restores the default,
+including open files outside the roots. An explicit set excludes outside files.
+
+The filter applies to discovery, watched files, and every language feature's
+analysis snapshot. Open buffers outside the active selection are retained and
+continue receiving edits, but do not contaminate the selected compilation.
+Switching back uses their current unsaved contents and versions. Closing an
+excluded buffer removes it from memory; opening or editing one does not switch
+exercises automatically. Old exercise diagnostics are cleared on a successful
+switch, and stale analysis cannot republish them.
+
+Configuration permits at most 256 include/exclude entries combined, each at
+most 4096 bytes. Existing scan time, filesystem-entry, file, and byte limits
+still apply; retained inactive buffers count against memory limits. Invalid,
+cancelled, unreadable, or over-limit reconfiguration is rejected transactionally
+and logged on stderr, keeping the previous selection and editor buffers. No
+configuration files, modules, imports, or hosted services are introduced.
 
 The complete typed project must be reconsidered after a content change because
 one class can affect inheritance and dispatch everywhere. The public facade
@@ -190,3 +236,6 @@ make release-check
 ```
 
 No editor extension, CI workflow, or network service is required.
+
+See [symbol suggestions](symbol-suggestions.md) for bounded typo QuickFixes,
+UTF-16 application evidence, and versioned `documentChanges` negotiation.

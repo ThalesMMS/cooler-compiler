@@ -30,14 +30,15 @@ import (
 const schemaVersion = "1.0.0"
 
 type baseline struct {
-	SchemaVersion string            `json:"schemaVersion"`
-	Name          string            `json:"name"`
-	Commit        string            `json:"commit"`
-	Toolchain     string            `json:"toolchain"`
-	Platform      platform          `json:"platform"`
-	Options       runOptions        `json:"options"`
-	Workloads     []workloadSummary `json:"workloads"`
-	Samples       []sample          `json:"samples"`
+	SchemaVersion    string            `json:"schemaVersion"`
+	Name             string            `json:"name"`
+	Commit           string            `json:"commit"`
+	WorkingTreeDirty bool              `json:"workingTreeDirty,omitempty"`
+	Toolchain        string            `json:"toolchain"`
+	Platform         platform          `json:"platform"`
+	Options          runOptions        `json:"options"`
+	Workloads        []workloadSummary `json:"workloads"`
+	Samples          []sample          `json:"samples"`
 }
 
 type platform struct {
@@ -130,16 +131,17 @@ func runBenchmarks(ctx context.Context, args []string) error {
 	}
 
 	result := baseline{
-		SchemaVersion: schemaVersion,
-		Name:          *name,
-		Commit:        commandText(ctx, "git", "rev-parse", "HEAD"),
-		Toolchain:     runtime.Version(),
-		Platform:      platform{OS: runtime.GOOS, Arch: runtime.GOARCH},
-		Options:       runOptions{Count: *count, Benchtime: *benchtime, Benchmark: *benchmark, WebIterations: *webIterations},
-		Workloads:     workloadSummaries(),
+		SchemaVersion:    schemaVersion,
+		Name:             *name,
+		Commit:           commandText(ctx, "git", "rev-parse", "HEAD"),
+		WorkingTreeDirty: workingTreeDirty(ctx),
+		Toolchain:        runtime.Version(),
+		Platform:         platform{OS: runtime.GOOS, Arch: runtime.GOARCH},
+		Options:          runOptions{Count: *count, Benchtime: *benchtime, Benchmark: *benchmark, WebIterations: *webIterations},
+		Workloads:        workloadSummaries(),
 	}
 
-	for _, pkg := range []string{"./internal/compiler", "./cmd/coolergui"} {
+	for _, pkg := range []string{"./internal/compiler", "./cmd/coolergui", "./internal/lsp"} {
 		fmt.Fprintf(os.Stderr, "benchmarking %s\n", pkg)
 		command := exec.CommandContext(ctx, "go", "test", pkg, "-run", "^$", "-bench", *benchmark, "-benchmem", "-count", strconv.Itoa(*count), "-benchtime", *benchtime)
 		outputBytes, err := command.CombinedOutput()
@@ -386,6 +388,11 @@ func sortSamples(samples []sample) {
 		}
 		return samples[left].Iteration < samples[right].Iteration
 	})
+}
+
+func workingTreeDirty(ctx context.Context) bool {
+	output, err := exec.CommandContext(ctx, "git", "status", "--porcelain", "--untracked-files=no").Output()
+	return err == nil && strings.TrimSpace(string(output)) != ""
 }
 
 func commandText(ctx context.Context, name string, args ...string) string {

@@ -8,37 +8,54 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"sync"
 
 	publiccompiler "github.com/ThalesMMS/cooler-compiler/compiler"
 )
 
 type analysis struct {
-	Generation uint64
-	Documents  map[string]documentSnapshot
-	Result     publiccompiler.Result
-	Report     publiccompiler.Report
-	Index      *semanticIndex
+	Generation     uint64
+	Documents      map[string]documentSnapshot
+	Result         publiccompiler.Result
+	Report         publiccompiler.Report
+	Index          *semanticIndex
+	signaturesOnce sync.Once
+	signatures     *signatureModel
+}
+
+func (value *analysis) signatureModel() *signatureModel {
+	value.signaturesOnce.Do(func() { value.signatures = newSignatureModel(value) })
+	return value.signatures
 }
 
 func (s *Server) analyze(ctx context.Context) (*analysis, error) {
 	if ctx == nil {
 		return nil, errors.New("nil analysis context")
 	}
+	queueDone := beginMeasurement(s.config.measurement, "queue")
+	if s.config.measurement != nil {
+		s.config.measurement.record("queue-enter", 0)
+	}
 	select {
 	case <-ctx.Done():
+		queueDone()
 		return nil, ctx.Err()
 	case <-s.analysisToken:
 	}
+	queueDone()
 	defer func() { s.analysisToken <- struct{}{} }()
 
 	s.mu.Lock()
 	if s.cache != nil && s.cache.Generation == s.generation {
 		cached := s.cache
 		s.mu.Unlock()
+		if s.config.measurement != nil {
+			s.config.measurement.record("cache-hit", 0)
+		}
 		return cached, nil
 	}
 	s.mu.Unlock()
-	generation, documents := s.snapshotDocuments()
+	generation, documents, warnings := s.snapshotAnalysisInputs()
 	byURI := make(map[string]documentSnapshot, len(documents))
 	if len(documents) == 0 {
 		empty := &analysis{Generation: generation, Documents: byURI, Index: newSemanticIndex()}
@@ -68,13 +85,20 @@ func (s *Server) analyze(ctx context.Context) (*analysis, error) {
 	}
 	options := publiccompiler.DefaultOptions()
 	options.Mode = publiccompiler.ModeCheck
+	options.WarningRules = warnings
+	compileDone := beginMeasurement(s.config.measurement, "compile")
 	result, err := publiccompiler.CompileProject(ctx, project, options)
+	compileDone()
 	if err != nil {
 		return nil, err
 	}
+	reportDone := beginMeasurement(s.config.measurement, "report")
 	report := result.Report()
+	reportDone()
 	completed := &analysis{Generation: generation, Documents: byURI, Result: result, Report: report}
+	indexDone := beginMeasurement(s.config.measurement, "index")
 	completed.Index = buildSemanticIndex(completed)
+	indexDone()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -110,6 +134,7 @@ func (s *Server) publishDiagnostics(value *analysis) {
 	}
 	s.mu.Unlock()
 
+	publicationDone := beginMeasurement(s.config.measurement, "diagnostic-conversion")
 	grouped := make(map[string][]diagnostic, len(value.Documents))
 	for uri := range value.Documents {
 		grouped[uri] = []diagnostic{}
@@ -132,6 +157,7 @@ func (s *Server) publishDiagnostics(value *analysis) {
 		uris = append(uris, uri)
 	}
 	sort.Strings(uris)
+	publicationDone()
 	for _, uri := range uris {
 		var version *int
 		if doc := value.Documents[uri]; doc.Open {
@@ -154,7 +180,7 @@ func (s *Server) publishDiagnosticsIfCurrent(generation uint64, params publishDi
 	}
 	s.writeMu.Lock()
 	defer s.writeMu.Unlock()
-	if err := writeFrame(s.writer, rpcNotification{JSONRPC: "2.0", Method: "textDocument/publishDiagnostics", Params: params}); err != nil {
+	if err := writeFrameMeasured(s.writer, rpcNotification{JSONRPC: "2.0", Method: "textDocument/publishDiagnostics", Params: params}, s.config.measurement); err != nil {
 		s.logger.Printf("write diagnostics: %v", err)
 	}
 }

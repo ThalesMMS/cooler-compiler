@@ -354,8 +354,23 @@ func TestShutdownResponseFollowsActiveRequestDrain(t *testing.T) {
 	}
 	server.handleRequestSafely(context.Background(), rpcMessage{JSONRPC: "2.0", ID: json.RawMessage("8"), Method: "shutdown"})
 	messages := decodeOutput(t, output.Bytes())
-	if len(messages) != 2 || numberID(messages[0]) != 7 || int(messages[0]["error"].(map[string]any)["code"].(float64)) != jsonRPCRequestCancel || numberID(messages[1]) != 8 {
+	if len(messages) != 2 || numberID(messages[0]) != 7 || numberID(messages[1]) != 8 {
 		t.Fatalf("shutdown ordering %+v", messages)
+	}
+	// Registration precedes the request's shutdown check. Depending on when
+	// shutdown runs, the tracked request is either cancelled during analysis
+	// or rejected before analysis; both must be drained before response 8.
+	requestError, ok := messages[0]["error"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing error object in response: %+v", messages[0])
+	}
+	codeValue, ok := requestError["code"].(float64)
+	if !ok {
+		t.Fatalf("missing numeric error code in response: %+v", messages[0])
+	}
+	code := int(codeValue)
+	if code != jsonRPCRequestCancel && !(code == jsonRPCInvalidRequest && requestError["message"] == "server is shutting down") {
+		t.Fatalf("unexpected drained request response %+v", messages[0])
 	}
 }
 

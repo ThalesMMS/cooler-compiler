@@ -24,6 +24,9 @@ const (
 )
 
 type Config struct {
+	// measurement is an internal, opt-in benchmark probe. It must be fast and
+	// concurrency-safe; callbacks can run while server locks are held.
+	measurement           *measurementProbe
 	Version               string
 	MaxMessageBytes       int
 	MaxOpenDocuments      int
@@ -61,6 +64,10 @@ type Server struct {
 	mu                sync.Mutex
 	documents         map[string]*document
 	roots             []string
+	sourceSet         *sourceSet
+	warningRules      string
+	inlayHints        inlayHintOptions
+	documentChanges   bool
 	generation        uint64
 	cache             *analysis
 	diagnosticTimer   *time.Timer
@@ -264,10 +271,9 @@ func (s *Server) handleNotification(parent context.Context, message rpcMessage) 
 			s.didChangeWatchedFilesContext(parent, params)
 		}
 	case "workspace/didChangeConfiguration":
-		s.mu.Lock()
-		s.invalidateLocked()
-		s.scheduleDiagnosticsLockedContext(parent)
-		s.mu.Unlock()
+		if err := s.updateClientConfiguration(parent, message.Params); err != nil {
+			s.logger.Printf("configuration rejected: %v", err)
+		}
 	}
 	return false
 }
@@ -377,6 +383,16 @@ func (s *Server) handleRequest(ctx context.Context, message rpcMessage) (any, *r
 		return s.requestWorkspaceSymbols(ctx, message.Params)
 	case "textDocument/hover":
 		return s.requestHover(ctx, message.Params)
+	case "textDocument/signatureHelp":
+		return s.requestSignatureHelp(ctx, message.Params)
+	case "textDocument/inlayHint":
+		return s.requestInlayHints(ctx, message.Params)
+	case "textDocument/prepareRename":
+		return s.requestPrepareRename(ctx, message.Params)
+	case "textDocument/rename":
+		return s.requestRename(ctx, message.Params)
+	case "textDocument/formatting":
+		return s.requestFormatting(ctx, message.Params)
 	case "textDocument/definition":
 		return s.requestDefinition(ctx, message.Params)
 	case "textDocument/references":
@@ -396,11 +412,15 @@ func initializeResult(version string) map[string]any {
 	return map[string]any{
 		"serverInfo": map[string]any{"name": "cooler-lsp", "version": version},
 		"capabilities": map[string]any{
-			"positionEncoding":       "utf-16",
-			"textDocumentSync":       map[string]any{"openClose": true, "change": 2, "save": map[string]any{"includeText": false}},
-			"documentSymbolProvider": true, "workspaceSymbolProvider": true, "hoverProvider": true,
+			"positionEncoding":           "utf-16",
+			"inlayHintProvider":          true,
+			"documentFormattingProvider": true,
+			"renameProvider":             map[string]any{"prepareProvider": true},
+			"textDocumentSync":           map[string]any{"openClose": true, "change": 2, "save": map[string]any{"includeText": false}},
+			"documentSymbolProvider":     true, "workspaceSymbolProvider": true, "hoverProvider": true,
 			"definitionProvider": true, "referencesProvider": true,
-			"completionProvider": map[string]any{"triggerCharacters": []string{".", "@", ":"}},
+			"completionProvider":    map[string]any{"triggerCharacters": []string{".", "@", ":"}},
+			"signatureHelpProvider": map[string]any{"triggerCharacters": []string{"(", ","}, "retriggerCharacters": []string{")"}},
 			"semanticTokensProvider": map[string]any{
 				"legend": map[string]any{"tokenTypes": semanticTokenTypes, "tokenModifiers": semanticTokenModifiers},
 				"full":   true,
@@ -467,8 +487,10 @@ func (s *Server) scheduleDiagnosticsLocked() {
 // replacement and generation capture stay atomic with workspace mutation.
 func (s *Server) scheduleDiagnosticsLockedContext(parent context.Context) {
 	generation := s.generation
+	debounceDone := beginMeasurement(s.config.measurement, "debounce")
 	s.wait.Add(1)
 	s.diagnosticTimer = time.AfterFunc(s.config.Debounce, func() {
+		debounceDone()
 		defer s.wait.Done()
 		ctx, cancel := context.WithTimeout(parent, s.config.AnalysisTimeout)
 		s.mu.Lock()

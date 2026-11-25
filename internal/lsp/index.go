@@ -234,7 +234,9 @@ func (index *semanticIndex) walkExpression(node *publiccompiler.ASTNode, class, 
 	switch node.Kind {
 	case "Identifier":
 		decl := index.resolveValue(node.Name, class, environment)
-		index.addReference(node.Name, valueKind(decl), node.Type, node.Span, decl)
+		if token := index.tokenOutsideChildren(node, node.Name); token != nil {
+			index.addReference(node.Name, valueKind(decl), node.Type, token.Span, decl)
+		}
 		return
 	case "Assignment":
 		name := strings.TrimSpace(strings.TrimSuffix(node.Text, "<-"))

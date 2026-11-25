@@ -59,6 +59,18 @@ type didCloseParams struct {
 }
 
 type initializeParams struct {
+	Capabilities struct {
+		Workspace struct {
+			WorkspaceEdit struct {
+				DocumentChanges bool `json:"documentChanges"`
+			} `json:"workspaceEdit"`
+		} `json:"workspace"`
+	} `json:"capabilities"`
+	InitializationOptions struct {
+		SourceSet    *sourceSet         `json:"sourceSet"`
+		WarningRules string             `json:"warningRules"`
+		InlayHints   *inlayHintSettings `json:"inlayHints"`
+	} `json:"initializationOptions"`
 	RootURI          string `json:"rootUri"`
 	RootPath         string `json:"rootPath"`
 	WorkspaceFolders []struct {
@@ -148,7 +160,16 @@ type codeAction struct {
 }
 
 type workspaceEdit struct {
-	Changes map[string][]textEdit `json:"changes"`
+	Changes         map[string][]textEdit `json:"changes,omitempty"`
+	DocumentChanges []textDocumentEdit    `json:"documentChanges,omitempty"`
+}
+
+type textDocumentEdit struct {
+	TextDocument struct {
+		URI     string `json:"uri"`
+		Version *int   `json:"version"`
+	} `json:"textDocument"`
+	Edits []textEdit `json:"edits"`
 }
 
 type textEdit struct {

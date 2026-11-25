@@ -220,6 +220,12 @@ func (s *Server) requestCodeActions(ctx context.Context, raw json.RawMessage) (a
 		return nil, rpcErr
 	}
 	actions := []codeAction{}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if value.Generation != s.generation {
+		return nil, &rpcError{Code: jsonRPCContentModified, Message: "Document changed"}
+	}
+	versionedEdits := s.documentChanges
 	for _, item := range value.Report.Diagnostics {
 		uri := item.Span.SourceID
 		if uri == "" && len(value.Report.SourceUnits) == 1 {
@@ -237,9 +243,20 @@ func (s *Server) requestCodeActions(ctx context.Context, raw json.RawMessage) (a
 			if fixURI != uri || fix.Span.StartLine < 1 || fix.Span.EndLine < fix.Span.StartLine {
 				continue
 			}
+			edit := textEdit{Range: rangeForSpan(value.Documents, fixURI, fix.Span), NewText: fix.Replacement}
+			workspace := &workspaceEdit{Changes: map[string][]textEdit{fixURI: {edit}}}
+			if versionedEdits {
+				change := textDocumentEdit{Edits: []textEdit{edit}}
+				change.TextDocument.URI = fixURI
+				if doc := value.Documents[fixURI]; doc.Open {
+					version := doc.Version
+					change.TextDocument.Version = &version
+				}
+				workspace = &workspaceEdit{DocumentChanges: []textDocumentEdit{change}}
+			}
 			actions = append(actions, codeAction{
 				Title: fix.Title, Kind: "quickfix", Diagnostics: []diagnostic{converted}, IsPreferred: len(item.QuickFix) == 1,
-				Edit: &workspaceEdit{Changes: map[string][]textEdit{fixURI: {{Range: rangeForSpan(value.Documents, fixURI, fix.Span), NewText: fix.Replacement}}}},
+				Edit: workspace,
 			})
 		}
 	}

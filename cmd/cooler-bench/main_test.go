@@ -3,12 +3,20 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestWorkingTreeDirtyCommandFailure(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if workingTreeDirty(context.Background()) {
+		t.Fatal("failed git status reported uncommitted changes")
+	}
+}
 
 type failingWriter struct{ err error }
 

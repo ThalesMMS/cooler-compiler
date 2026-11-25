@@ -19,6 +19,10 @@ and payload serialization paths. A Node benchmark measures the actual client
 helpers used to render ASTs, merge trace deltas, build reports, and serialize
 large result payloads.
 
+The [LSP latency baseline](lsp-performance.md) adds framed editing, multifile,
+concurrent hover, queued cancellation and cache scenarios, with phase and
+end-to-end distributions, allocation measurements and stale-publication checks.
+
 All generators in `internal/benchwork` are deterministic and bounded. The
 standard project sizes are small (2 classes), medium (32), and large (200),
 with separate deep-inheritance, nested-expression, long-text, long-running VM,

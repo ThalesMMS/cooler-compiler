@@ -14,16 +14,17 @@ import (
 )
 
 const (
-	jsonRPCParseError     = -32700
-	jsonRPCInvalidRequest = -32600
-	jsonRPCMethodNotFound = -32601
-	jsonRPCInvalidParams  = -32602
-	jsonRPCInternalError  = -32603
-	jsonRPCServerNotInit  = -32002
-	jsonRPCRequestCancel  = -32800
-	jsonRPCServerBusy     = -32000
-	maxLSPHeaderBytes     = 16 << 10
-	maxRequestIDBytes     = 256
+	jsonRPCParseError      = -32700
+	jsonRPCInvalidRequest  = -32600
+	jsonRPCMethodNotFound  = -32601
+	jsonRPCInvalidParams   = -32602
+	jsonRPCInternalError   = -32603
+	jsonRPCServerNotInit   = -32002
+	jsonRPCRequestCancel   = -32800
+	jsonRPCContentModified = -32801
+	jsonRPCServerBusy      = -32000
+	maxLSPHeaderBytes      = 16 << 10
+	maxRequestIDBytes      = 256
 )
 
 var (
@@ -102,12 +103,20 @@ func readFrame(reader *bufio.Reader, maximum int) ([]byte, error) {
 }
 
 func writeFrame(writer io.Writer, value any) error {
+	return writeFrameMeasured(writer, value, nil)
+}
+
+func writeFrameMeasured(writer io.Writer, value any, measurement *measurementProbe) error {
+	serializationDone := beginMeasurement(measurement, "serialization")
 	payload, err := json.Marshal(value)
+	serializationDone()
 	if err != nil {
 		return err
 	}
 	header := []byte(fmt.Sprintf("Content-Length: %d\r\n\r\n", len(payload)))
+	writeDone := beginMeasurement(measurement, "publication-write")
 	_, err = io.Copy(writer, io.MultiReader(bytes.NewReader(header), bytes.NewReader(payload)))
+	writeDone()
 	return err
 }
 

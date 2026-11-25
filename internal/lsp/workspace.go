@@ -44,6 +44,13 @@ var (
 )
 
 func (s *Server) initializeWorkspace(parent context.Context, params initializeParams) error {
+	if err := validateWarningRules(params.InitializationOptions.WarningRules); err != nil {
+		return err
+	}
+	selection := params.InitializationOptions.SourceSet
+	if err := selection.validate(); err != nil {
+		return err
+	}
 	if err := parent.Err(); err != nil {
 		return err
 	}
@@ -73,7 +80,7 @@ func (s *Server) initializeWorkspace(parent context.Context, params initializePa
 	}
 	ctx, cancel := context.WithTimeout(parent, s.config.WorkspaceScanTimeout)
 	defer cancel()
-	documents, err := s.scanWorkspaceContext(ctx, roots)
+	documents, err := s.scanWorkspaceSelection(ctx, roots, selection, nil)
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) || errors.Is(err, errWorkspaceScanLimit) {
 		return err
 	}
@@ -82,6 +89,10 @@ func (s *Server) initializeWorkspace(parent context.Context, params initializePa
 	}
 	s.mu.Lock()
 	s.roots = roots
+	s.sourceSet = selection
+	s.warningRules = params.InitializationOptions.WarningRules
+	s.inlayHints = params.InitializationOptions.InlayHints.apply(s.inlayHints)
+	s.documentChanges = params.Capabilities.Workspace.WorkspaceEdit.DocumentChanges
 	for uri, doc := range documents {
 		s.documents[uri] = doc
 	}
@@ -95,8 +106,19 @@ func (s *Server) scanWorkspace(roots []string) (map[string]*document, error) {
 }
 
 func (s *Server) scanWorkspaceContext(ctx context.Context, roots []string) (map[string]*document, error) {
+	s.mu.Lock()
+	selection := s.sourceSet
+	s.mu.Unlock()
+	return s.scanWorkspaceSelection(ctx, roots, selection, nil)
+}
+
+func (s *Server) scanWorkspaceSelection(ctx context.Context, roots []string, selection *sourceSet, retained map[string]*document) (map[string]*document, error) {
 	result := map[string]*document{}
 	totalBytes := 0
+	for uri, doc := range retained {
+		result[uri] = doc
+		totalBytes += len(doc.Text)
+	}
 	visitedEntries := 0
 	var problems []error
 	for _, root := range roots {
@@ -121,7 +143,11 @@ func (s *Server) scanWorkspaceContext(ctx context.Context, roots []string) (map[
 				}
 				return nil
 			}
-			if !isCoolPath(path) {
+			if !isCoolPath(path) || !selection.matches(path, roots) {
+				return nil
+			}
+			uri := uriFromPath(path)
+			if result[uri] != nil {
 				return nil
 			}
 			if len(result) >= s.config.MaxWorkspaceFiles {
@@ -146,7 +172,6 @@ func (s *Server) scanWorkspaceContext(ctx context.Context, roots []string) (map[
 				problems = append(problems, err)
 				return nil
 			}
-			uri := uriFromPath(path)
 			result[uri] = &document{URI: uri, Path: path, Text: string(content), Version: 0}
 			totalBytes += len(content)
 			return nil
@@ -307,7 +332,7 @@ func (s *Server) didCloseContext(ctx context.Context, params didCloseParams) {
 	}
 	removed := false
 	if path != "" && isCoolPath(path) {
-		if readErr == nil && len(content) <= s.config.MaxFileBytes && len(content) <= s.config.MaxWorkspaceBytes-s.workspaceTextBytesLocked(doc.URI) {
+		if readErr == nil && s.sourceSet.matches(path, s.roots) && len(content) <= s.config.MaxFileBytes && len(content) <= s.config.MaxWorkspaceBytes-s.workspaceTextBytesLocked(doc.URI) {
 			doc.Text = string(content)
 			doc.Version = 0
 			doc.Open = false
@@ -333,6 +358,9 @@ func (s *Server) didChangeWatchedFiles(params jsonWatchedFiles) {
 }
 
 func (s *Server) didChangeWatchedFilesContext(ctx context.Context, params jsonWatchedFiles) {
+	s.mu.Lock()
+	selection, roots := s.sourceSet, append([]string(nil), s.roots...)
+	s.mu.Unlock()
 	type watchedUpdate struct {
 		uri, path string
 		kind      int
@@ -344,6 +372,10 @@ func (s *Server) didChangeWatchedFilesContext(ctx context.Context, params jsonWa
 	totalBytes := 0
 	for index := len(params.Changes) - 1; index >= 0; index-- {
 		change := params.Changes[index]
+		filePath, pathErr := pathFromURI(change.URI)
+		if pathErr != nil || !selection.matches(filePath, roots) {
+			continue
+		}
 		if change.Type < 1 || change.Type > 3 || !isCoolURI(change.URI) {
 			continue
 		}
@@ -393,6 +425,9 @@ func (s *Server) didChangeWatchedFilesContext(ctx context.Context, params jsonWa
 		if update.kind == 3 {
 			continue
 		}
+		if !s.sourceSet.matches(update.path, s.roots) {
+			continue
+		}
 		if current := s.documents[update.uri]; current != nil && current.Open {
 			continue
 		}
@@ -425,11 +460,16 @@ type jsonWatchedFiles struct {
 }
 
 func (s *Server) snapshotDocuments() (uint64, []documentSnapshot) {
+	generation, documents, _ := s.snapshotAnalysisInputs()
+	return generation, documents
+}
+
+func (s *Server) snapshotAnalysisInputs() (uint64, []documentSnapshot, string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	documents := make([]documentSnapshot, 0, len(s.documents))
 	for _, doc := range s.documents {
-		if doc.Desynchronized {
+		if doc.Desynchronized || !s.sourceSet.matches(doc.Path, s.roots) {
 			continue
 		}
 		documents = append(documents, documentSnapshot{
@@ -438,7 +478,7 @@ func (s *Server) snapshotDocuments() (uint64, []documentSnapshot) {
 		})
 	}
 	sort.Slice(documents, func(i, j int) bool { return documents[i].URI < documents[j].URI })
-	return s.generation, documents
+	return s.generation, documents, s.warningRules
 }
 
 // workspaceTextBytesLocked returns retained source bytes excluding one URI.
