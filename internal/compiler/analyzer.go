@@ -157,15 +157,16 @@ type Analysis struct {
 }
 
 type analyzer struct {
-	program      *Program
-	table        *ClassTable
-	symbols      []Symbol
-	diagnostics  []Diagnostic
-	currentClass string
+	program          *Program
+	table            *ClassTable
+	symbols          []Symbol
+	diagnostics      []Diagnostic
+	currentClass     string
+	suggestionBudget int
 }
 
 func Analyze(program *Program) Analysis {
-	a := &analyzer{program: program, table: newClassTable()}
+	a := &analyzer{program: program, table: newClassTable(), suggestionBudget: 16384}
 	a.installBuiltinSymbols()
 	if program == nil {
 		return Analysis{Table: a.table, Symbols: a.symbols}
@@ -286,6 +287,7 @@ func (a *analyzer) validateInheritance() {
 		default:
 			if _, found := a.table.Classes[parent]; !found {
 				a.error("COL3011", fmt.Sprintf("class %s inherits from undefined class %s", class.Name, parent), "Declare the parent class or inherit from Object.", decl.ParentSpan)
+				a.suggestType(parent, decl.ParentSpan, "parent", class.Name)
 				class.Parent = typeObject
 			}
 		}
@@ -359,6 +361,7 @@ func (a *analyzer) collectAttribute(class *ClassInfo, attr *AttributeDecl) {
 	}
 	if !a.table.Has(attr.TypeName) {
 		a.error("COL3021", fmt.Sprintf("attribute %s has undefined type %s", attr.Name, attr.TypeName), "Use a declared class or SELF_TYPE.", attr.TypeSpan)
+		a.suggestType(attr.TypeName, attr.TypeSpan, "self", "")
 	}
 	if previous, found := class.Attributes[attr.Name]; found {
 		d := errorDiagnostic("semantic", "COL3022", fmt.Sprintf("attribute %s is defined more than once in class %s", attr.Name, class.Name), "Remove or rename one attribute.", attr.NameSpan)
@@ -381,6 +384,7 @@ func (a *analyzer) collectMethod(class *ClassInfo, method *MethodDecl) {
 	}
 	if !a.table.Has(method.ReturnType) {
 		a.error("COL3031", fmt.Sprintf("method %s has undefined return type %s", method.Name, method.ReturnType), "Use a declared class or SELF_TYPE.", method.TypeSpan)
+		a.suggestType(method.ReturnType, method.TypeSpan, "self", "")
 	}
 	formalNames := make([]string, 0, len(method.Formals))
 	formalTypes := make([]string, 0, len(method.Formals))
@@ -393,6 +397,7 @@ func (a *analyzer) collectMethod(class *ClassInfo, method *MethodDecl) {
 			a.error("COL3033", "SELF_TYPE cannot be used as a formal parameter type", "Use the current class or another declared class.", formal.TypeSpan)
 		} else if !a.table.Has(formal.TypeName) {
 			a.error("COL3034", fmt.Sprintf("formal parameter %s has undefined type %s", formal.Name, formal.TypeName), "Use a declared class.", formal.TypeSpan)
+			a.suggestType(formal.TypeName, formal.TypeSpan, "concrete", "")
 		}
 		if previous, found := seen[formal.Name]; found {
 			d := errorDiagnostic("semantic", "COL3035", fmt.Sprintf("formal parameter %s is repeated", formal.Name), "Formal parameter names must be unique within a method.", formal.NameSpan)
@@ -524,23 +529,40 @@ func (a *analyzer) checkMethod(class *ClassInfo, method *MethodInfo) {
 }
 
 type typeEnv struct {
-	scopes []map[string]string
+	scopes []map[string]*localBinding
+}
+
+type localBinding struct {
+	typeName string
+	read     bool
 }
 
 func newTypeEnv() *typeEnv {
-	return &typeEnv{scopes: []map[string]string{{}}}
+	return &typeEnv{scopes: []map[string]*localBinding{{}}}
 }
-func (e *typeEnv) Push() { e.scopes = append(e.scopes, map[string]string{}) }
+func (e *typeEnv) Push() { e.scopes = append(e.scopes, map[string]*localBinding{}) }
 func (e *typeEnv) Pop() {
 	if len(e.scopes) > 1 {
 		e.scopes = e.scopes[:len(e.scopes)-1]
 	}
 }
-func (e *typeEnv) Define(name, typeName string) { e.scopes[len(e.scopes)-1][name] = typeName }
+func (e *typeEnv) Define(name, typeName string) *localBinding {
+	binding := &localBinding{typeName: typeName}
+	e.scopes[len(e.scopes)-1][name] = binding
+	return binding
+}
+func (e *typeEnv) Read(name string) {
+	for i := len(e.scopes) - 1; i >= 0; i-- {
+		if binding := e.scopes[i][name]; binding != nil {
+			binding.read = true
+			return
+		}
+	}
+}
 func (e *typeEnv) Lookup(name string) (string, bool) {
 	for i := len(e.scopes) - 1; i >= 0; i-- {
 		if value, ok := e.scopes[i][name]; ok {
-			return value, true
+			return value.typeName, true
 		}
 	}
 	return "", false
@@ -564,6 +586,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 	case *BoolExpr:
 		return set(typeBool)
 	case *IdentifierExpr:
+		env.Read(e.Name)
 		if e.Name == "self" {
 			return set(typeSelf)
 		}
@@ -580,6 +603,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 			return set(attr.TypeName)
 		}
 		a.error("COL3100", fmt.Sprintf("identifier %s is not declared", e.Name), "Declare it in a let binding, formal parameter, or attribute.", e.GetSpan())
+		a.suggestVariable(e.Name, e.NameSpan, env, false)
 		return set(typeInvalid)
 	case *AssignExpr:
 		valueType := a.checkExpr(e.Value, env, scope)
@@ -595,6 +619,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 		}
 		if !found {
 			a.error("COL3102", fmt.Sprintf("assignment target %s is not declared", e.Name), "Declare the variable or attribute before assigning it.", e.NameSpan)
+			a.suggestVariable(e.Name, e.NameSpan, env, true)
 			return set(typeInvalid)
 		}
 		if valueType == typeInvalid || !a.table.Has(declared) {
@@ -604,10 +629,22 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 			a.typeError("COL3103", fmt.Sprintf("assigned type %s does not conform to declared type %s of %s", valueType, declared, e.Name), e.Value.GetSpan())
 			return set(typeInvalid)
 		}
+		// A direct identifier has no intervening binder or receiver: equal
+		// names resolve through the same environment/attribute lookup here.
+		if value, ok := e.Value.(*IdentifierExpr); ok && value.Name == e.Name {
+			a.selfAssignment(e)
+		}
 		return set(valueType)
 	case *DispatchExpr:
 		return set(a.checkDispatch(e, env, scope))
 	case *IfExpr:
+		if condition, ok := e.Condition.(*BoolExpr); ok {
+			dead := e.Then
+			if condition.Value {
+				dead = e.Else
+			}
+			a.unreachableBranch(dead.GetSpan())
+		}
 		conditionType := a.checkExpr(e.Condition, env, scope)
 		valid := conditionType == typeBool
 		if conditionType != typeBool && conditionType != typeInvalid {
@@ -621,6 +658,9 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 		}
 		return set(result)
 	case *WhileExpr:
+		if condition, ok := e.Condition.(*BoolExpr); ok && !condition.Value {
+			a.unreachableBranch(e.Body.GetSpan())
+		}
 		conditionType := a.checkExpr(e.Condition, env, scope)
 		if conditionType != typeBool && conditionType != typeInvalid {
 			a.typeError("COL3111", fmt.Sprintf("while condition has type %s instead of Bool", conditionType), e.Condition.GetSpan())
@@ -645,7 +685,8 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 		env.Push()
 		defer env.Pop()
 		invalid := false
-		for _, binding := range e.Bindings {
+		bindings := make([]*localBinding, len(e.Bindings))
+		for index, binding := range e.Bindings {
 			if binding.Name == "self" {
 				a.error("COL3120", "'self' cannot be bound in a let expression", "Choose another binding name.", binding.NameSpan)
 				invalid = true
@@ -653,6 +694,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 			knownType := a.table.Has(binding.TypeName)
 			if !knownType {
 				a.error("COL3121", fmt.Sprintf("let binding %s has undefined type %s", binding.Name, binding.TypeName), "Use a declared class or SELF_TYPE.", binding.TypeSpan)
+				a.suggestType(binding.TypeName, binding.TypeSpan, "self", "")
 				invalid = true
 			}
 			if binding.Init != nil {
@@ -669,11 +711,16 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 				if !knownType {
 					declaredType = typeInvalid
 				}
-				env.Define(binding.Name, declaredType)
+				bindings[index] = env.Define(binding.Name, declaredType)
 			}
 			a.addSymbol(binding.Name, "let", binding.TypeName, true, binding.Init != nil, scope+"/let", a.currentClass, binding.NameSpan)
 		}
 		bodyType := a.checkExpr(e.Body, env, scope)
+		for index, binding := range bindings {
+			if binding != nil && !binding.read {
+				a.unusedBinding(e.Bindings[index].Name, e.Bindings[index].NameSpan)
+			}
+		}
 		if invalid || bodyType == typeInvalid {
 			return set(typeInvalid)
 		}
@@ -694,6 +741,7 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 				invalid = true
 			} else if !a.table.Has(branch.TypeName) {
 				a.error("COL3132", fmt.Sprintf("case branch has undefined type %s", branch.TypeName), "Use a declared class.", branch.TypeSpan)
+				a.suggestType(branch.TypeName, branch.TypeSpan, "concrete", "")
 				branchTypeName = typeInvalid
 				invalid = true
 			}
@@ -706,11 +754,15 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 				seenTypes[branch.TypeName] = branch
 			}
 			env.Push()
+			var binding *localBinding
 			if branch.Name != "self" {
-				env.Define(branch.Name, branchTypeName)
+				binding = env.Define(branch.Name, branchTypeName)
 			}
 			a.addSymbol(branch.Name, "case", branch.TypeName, false, true, scope+"/case", a.currentClass, branch.NameSpan)
 			branchType := a.checkExpr(branch.Body, env, scope)
+			if binding != nil && !binding.read {
+				a.unusedBinding(branch.Name, branch.NameSpan)
+			}
 			env.Pop()
 			invalid = invalid || branchType == typeInvalid
 			result = a.join(result, branchType)
@@ -725,12 +777,17 @@ func (a *analyzer) checkExpr(expr Expr, env *typeEnv, scope string) string {
 	case *NewExpr:
 		if !a.table.Has(e.TypeName) {
 			a.error("COL3140", fmt.Sprintf("cannot allocate undefined type %s", e.TypeName), "Declare the class or allocate SELF_TYPE.", e.TypeSpan)
+			a.suggestType(e.TypeName, e.TypeSpan, "self", "")
 			return set(typeInvalid)
 		}
 		return set(e.TypeName)
 	case *IsVoidExpr:
 		if a.checkExpr(e.Value, env, scope) == typeInvalid {
 			return set(typeInvalid)
+		}
+		switch e.Value.(type) {
+		case *IntExpr, *StringExpr, *BoolExpr, *NewExpr:
+			a.redundantIsvoid(e.GetSpan())
 		}
 		return set(typeBool)
 	case *UnaryExpr:
@@ -808,6 +865,7 @@ func (a *analyzer) checkDispatch(e *DispatchExpr, env *typeEnv, scope string) st
 			invalid = true
 		} else if !a.table.Has(e.StaticTypeName) {
 			a.error("COL3171", fmt.Sprintf("static dispatch uses undefined type %s", e.StaticTypeName), "Use a declared ancestor class.", e.GetSpan())
+			a.suggestType(e.StaticTypeName, e.StaticTypeSpan, "ancestor", lookupClass)
 			invalid = true
 		} else {
 			if receiverType != typeInvalid && !a.conforms(receiverType, e.StaticTypeName) {
@@ -827,6 +885,7 @@ func (a *analyzer) checkDispatch(e *DispatchExpr, env *typeEnv, scope string) st
 	method, found := a.table.LookupMethod(lookupClass, e.Method)
 	if !found {
 		a.error("COL3173", fmt.Sprintf("type %s has no method %s", lookupClass, e.Method), "Check the method name and the receiver's static type.", e.MethodSpan)
+		a.suggestMethod(e.Method, e.MethodSpan, lookupClass)
 		for _, arg := range e.Arguments {
 			a.checkExpr(arg, env, scope)
 		}

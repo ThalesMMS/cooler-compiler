@@ -90,6 +90,10 @@ func NewProjectCompilationSession(units []SourceUnit, contract ResultContract) *
 	}
 	session := &CompilationSession{source: legacySource, units: cloned, result: newResult(legacySource, contract)}
 	session.result.Diagnostics = validateSourceUnits(cloned)
+	if err := ValidateWarningRules(contract.Options.WarningRules); err != nil {
+		session.result.Diagnostics = append(session.result.Diagnostics, errorDiagnostic("input", "COL0007", err.Error(), "Use all, none, or comma-separated warning codes.", emptySpan()))
+		session.blocked = true
+	}
 	if policyErr != nil {
 		session.result.Diagnostics = append(session.result.Diagnostics, errorDiagnostic(
 			"input", "COL0005", "invalid VM execution policy: "+policyErr.Error(),
@@ -246,6 +250,7 @@ func validateSourceUnits(units []SourceUnit) []Diagnostic {
 
 func (s *CompilationSession) runSemantic() {
 	s.analysis = Analyze(s.program)
+	s.analysis.Diagnostics = selectWarnings(s.analysis.Diagnostics, s.result.Options.WarningRules)
 	s.result.Symbols = append([]Symbol(nil), s.analysis.Symbols...)
 	s.result.Diagnostics = append(s.result.Diagnostics, s.analysis.Diagnostics...)
 	if s.program != nil {

@@ -261,7 +261,7 @@ test("the complete report preserves metrics and control-flow artifacts", () => {
   assert.equal(report.optimization.mode, "basic");
   assert.equal(report.exportedAt, "2026-08-20T12:00:00.000Z");
   assert.equal(buildCompileReport({}, "main.cl").exportedAt, undefined);
-  assert.equal(buildCompileReport({}, "main.cl").schemaVersion, "1.4.0");
+  assert.equal(buildCompileReport({}, "main.cl").schemaVersion, "1.5.0");
   assert.equal(buildCompileReport({}, "main.cl").optimization.mode, "none");
 });
 

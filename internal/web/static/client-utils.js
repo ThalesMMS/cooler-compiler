@@ -223,7 +223,7 @@
   function buildCompileReport(result, documentName, exportedAt = null) {
     const report = {
       project: "cooler-compiler",
-      schemaVersion: result?.schemaVersion || "1.4.0",
+      schemaVersion: result?.schemaVersion || "1.5.0",
       compilerVersion: result?.compilerVersion || "dev",
       ...(result?.compilerCommit ? { compilerCommit: result.compilerCommit } : {}),
       target: result?.target || {},

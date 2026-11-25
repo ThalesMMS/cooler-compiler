@@ -45,6 +45,7 @@ Project-input codes are stable before language analysis:
 | `COL0004` | Source unit has an empty display name |
 | `COL0005` | VM execution policy is invalid or above a local ceiling |
 | `COL0006` | Optimization mode is neither `none` nor `basic` |
+| `COL0007` | Warning selector exceeds its size limit or contains an unknown warning code |
 
 Lexer codes are divided by stable error category:
 
@@ -98,12 +99,18 @@ Class-table semantic codes preserve these category boundaries:
 | `COL3140` | Allocation of an undefined type |
 | `COL3150`–`COL3163` | Unary, arithmetic, comparison, equality, and constant-zero checks |
 | `COL3170`–`COL3175` | Static/dynamic dispatch type, lookup, arity, and arguments |
+| `COL3180` | Warning: a local binding is never read; its initializer and assignments still execute |
+| `COL3181` | Warning: a Boolean literal condition makes a branch unreachable; it remains type-checked |
+| `COL3182` | Warning: assigning a variable to itself preserves its value |
+| `COL3183` | Warning: `isvoid` is false if the literal or allocation evaluates successfully; evaluation remains required |
 
 Class collection, parent recovery, feature collection, inherited-feature
 validation, entry-point validation, and body checking run in that fixed order.
 Within a pass, user classes and features use project source-unit order. Duplicate,
 cycle, and override diagnostics include related spans when another declaration
 participates. An error in this range blocks all backend phases.
+`COL3180`–`COL3183` have severity `warning` and do not block backend phases,
+including Runtime.
 
 After a root expression error, its AST node and dependent parents use
 `<error_type>`. Operators, conditions, dispatch, conformance, and LUB suppress
@@ -189,6 +196,7 @@ in the same change that introduces it.
 - `COL0004`
 - `COL0005`
 - `COL0006`
+- `COL0007`
 - `COL1001`
 - `COL1002`
 - `COL1003`
@@ -300,6 +308,10 @@ in the same change that introduces it.
 - `COL3173`
 - `COL3174`
 - `COL3175`
+- `COL3180`
+- `COL3181`
+- `COL3182`
+- `COL3183`
 - `COL5001`
 - `COL5101`
 - `COL5102`

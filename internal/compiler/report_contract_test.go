@@ -201,3 +201,33 @@ func TestReportOptimizationContractAndLegacyUpgrade(t *testing.T) {
 		t.Fatalf("legacy optimization defaults = %+v / %+v", upgraded.Options, upgraded.Optimization)
 	}
 }
+
+func TestWarningRulesReportVersionGate(t *testing.T) {
+	result := CompileWithContract(pipelineProgram, "", ResultContract{Options: CompilationOptions{WarningRules: "none"}})
+	if result.SchemaVersion != "1.5.0" {
+		t.Fatalf("new report version = %s", result.SchemaVersion)
+	}
+	for _, tc := range []struct {
+		version, rules, want string
+		invalid              bool
+	}{{"1.5.0", "none", "none", false}, {"1.5.0", "", "", false}, {"1.5.0", "bogus", "", true}, {"1.4.0", "none", "", false}, {"1.0.0", "bogus", "", false}} {
+		t.Run(tc.version+"/"+tc.rules, func(t *testing.T) {
+			result.SchemaVersion = tc.version
+			result.Options.WarningRules = tc.rules
+			data, _ := json.Marshal(result)
+			decoded, err := DecodeReport(data)
+			if tc.invalid {
+				if err == nil {
+					t.Fatal("invalid warning selector accepted")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if decoded.Options.WarningRules != tc.want {
+				t.Fatalf("rules=%q want %q", decoded.Options.WarningRules, tc.want)
+			}
+		})
+	}
+}

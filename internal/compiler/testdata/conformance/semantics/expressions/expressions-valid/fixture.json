@@ -15,18 +15,128 @@
   ],
   "validity": "valid",
   "expectedLastSuccessfulStage": "runtime",
-  "expectedDiagnostics": [],
+  "expectedDiagnostics": [
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 12,
+        "startColumn": 9,
+        "endLine": 12,
+        "endColumn": 14,
+        "startOffset": 334,
+        "endOffset": 339
+      }
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 13,
+        "startColumn": 9,
+        "endLine": 13,
+        "endColumn": 15,
+        "startOffset": 373,
+        "endOffset": 379
+      }
+    }
+  ],
   "expectedAst": [
-    {"path": [0, 0, 0], "kind": "Identifier", "name": "self", "type": "SELF_TYPE"},
-    {"path": [2, 1, 0], "kind": "Let", "type": "A"},
-    {"path": [2, 1, 0, 4], "kind": "Block", "type": "A"},
-    {"path": [2, 1, 0, 4, 0], "kind": "Assignment", "type": "Int"},
-    {"path": [2, 1, 0, 4, 1], "kind": "If", "type": "SELF_TYPE"},
-    {"path": [2, 1, 0, 4, 2], "kind": "Case", "type": "SELF_TYPE"},
-    {"path": [2, 1, 0, 4, 2, 1], "kind": "CaseBranch", "name": "child", "type": "B"},
-    {"path": [2, 1, 0, 4, 3], "kind": "Dispatch", "text": "same(...)", "type": "A"}
+    {
+      "path": [
+        0,
+        0,
+        0
+      ],
+      "kind": "Identifier",
+      "name": "self",
+      "type": "SELF_TYPE"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0
+      ],
+      "kind": "Let",
+      "type": "A"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0,
+        4
+      ],
+      "kind": "Block",
+      "type": "A"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0,
+        4,
+        0
+      ],
+      "kind": "Assignment",
+      "type": "Int"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0,
+        4,
+        1
+      ],
+      "kind": "If",
+      "type": "SELF_TYPE"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0,
+        4,
+        2
+      ],
+      "kind": "Case",
+      "type": "SELF_TYPE"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0,
+        4,
+        2,
+        1
+      ],
+      "kind": "CaseBranch",
+      "name": "child",
+      "type": "B"
+    },
+    {
+      "path": [
+        2,
+        1,
+        0,
+        4,
+        3
+      ],
+      "kind": "Dispatch",
+      "text": "same(...)",
+      "type": "A"
+    }
   ],
   "expectedOutput": "defaults/B",
-  "sources": ["main.cl"],
+  "sources": [
+    "main.cl"
+  ],
   "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
 }

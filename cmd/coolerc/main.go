@@ -51,6 +51,7 @@ type cliOptions struct {
 	runBeforeEmit        bool
 	interactive          bool
 	optimization         string
+	warningRules         string
 	emitIR               string
 	explainOptimizations bool
 }
@@ -200,6 +201,7 @@ func parseSubcommand(options cliOptions, args []string, stderr io.Writer) (cliOp
 	flags.StringVar(&options.diagnosticFormat, "diagnostic-format", "text", "text or json")
 	flags.StringVar(&options.color, "color", "auto", "auto, always, or never")
 	flags.StringVar(&options.optimization, "opt", compiler.OptimizationNone, "optimization mode: none or basic")
+	flags.StringVar(&options.warningRules, "warnings", "", "warning rules: all, none, or comma-separated diagnostic codes")
 	if options.command == "emit" && options.emit == "ir" {
 		flags.StringVar(&options.emitIR, "emit-ir", "after", "IR view: before, after, or both")
 		flags.BoolVar(&options.explainOptimizations, "explain-optimizations", false, "include pass decisions when emitting IR")
@@ -228,6 +230,7 @@ func parseLegacy(options cliOptions, args []string, stderr io.Writer) (cliOption
 	flags.StringVar(&options.diagnosticFormat, "diagnostic-format", "text", "text or json")
 	flags.StringVar(&options.color, "color", "auto", "auto, always, or never")
 	flags.StringVar(&options.optimization, "opt", compiler.OptimizationNone, "optimization mode: none or basic")
+	flags.StringVar(&options.warningRules, "warnings", "", "warning rules: all, none, or comma-separated diagnostic codes")
 	usage := legacyUsage(stderr, flags)
 	if err := flags.Parse(args); err != nil {
 		return options, usage, err
@@ -279,6 +282,9 @@ func validateOptions(options cliOptions) error {
 	}
 	if _, err := compiler.NormalizeOptimizationMode(options.optimization); err != nil {
 		return usageError{"--opt must be none or basic"}
+	}
+	if err := compiler.ValidateWarningRules(options.warningRules); err != nil {
+		return usageError{err.Error()}
 	}
 	if options.emitIR != "before" && options.emitIR != "after" && options.emitIR != "both" {
 		return usageError{"--emit-ir must be before, after, or both"}
@@ -411,7 +417,8 @@ func compileForCommand(options cliOptions, _ string, source string, files []sour
 		mode = publiccompiler.ModeCheck
 	}
 	publicOptions := publiccompiler.Options{
-		Mode: mode, Input: input, MaxSteps: options.maxSteps, Limits: publicLimits(options.vmPolicy),
+		WarningRules: options.warningRules,
+		Mode:         mode, Input: input, MaxSteps: options.maxSteps, Limits: publicLimits(options.vmPolicy),
 		Optimization: options.optimization, CompilerVersion: version, CompilerCommit: resolvedCommit(),
 	}
 	project := publiccompiler.Project{}
@@ -483,6 +490,7 @@ func compilationPipeline(options cliOptions, source string, files []sourceFile, 
 		CompilerVersion: version,
 		CompilerCommit:  resolvedCommit(),
 		Options: compiler.CompilationOptions{
+			WarningRules:  options.warningRules,
 			Execute:       options.command == "run" || options.runBeforeEmit,
 			VMMaxSteps:    options.maxSteps,
 			InputProvided: inputProvided,

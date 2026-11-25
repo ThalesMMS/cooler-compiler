@@ -115,7 +115,15 @@ func TestGeneratedProgramsMetamorphicTransformations(t *testing.T) {
 		assertMetamorphicEquivalent(t, "proven static dispatch", base, compileFuzzSource(staticDispatch, program.input), map[string]string{"source-1": staticDispatch}, false)
 
 		unreachable := program.render(generatedRenderOptions{unreachableBranch: true})
-		assertMetamorphicEquivalent(t, "type-correct unreachable branch", base, compileFuzzSource(unreachable, program.input), map[string]string{"source-1": unreachable}, true)
+		unreachableResult := compileFuzzSource(unreachable, program.input)
+		assertGeneratedSuccess(t, unreachableResult, map[string]string{"source-1": unreachable})
+		if len(base.Diagnostics) != 0 || len(unreachableResult.Diagnostics) != 1 || unreachableResult.Diagnostics[0].Code != "COL3181" || unreachableResult.Diagnostics[0].Severity != SeverityWarning {
+			t.Fatalf("inserted literal-dead branch should add exactly COL3181: %+v", unreachableResult.Diagnostics)
+		}
+		// The new warning is intentional; execution and static type must still
+		// satisfy the original metamorphic equivalence checks below.
+		unreachableResult.Diagnostics = base.Diagnostics
+		assertMetamorphicEquivalent(t, "type-correct unreachable branch", base, unreachableResult, map[string]string{"source-1": unreachable}, true)
 
 		units := program.renderUnits(generatedRenderOptions{})
 		sources := map[string]string{}

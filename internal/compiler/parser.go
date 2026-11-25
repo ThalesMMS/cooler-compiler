@@ -305,7 +305,7 @@ func (p *parser) parseDispatch() Expr {
 			args, end := p.parseArguments()
 			expr = &DispatchExpr{
 				exprBase: exprBase{Span: joinSpans(expr.GetSpan(), end)}, Receiver: expr,
-				StaticTypeName: staticType.Lexeme, Method: method.Lexeme, MethodSpan: method.Span, Arguments: args,
+				StaticTypeName: staticType.Lexeme, StaticTypeSpan: staticType.Span, Method: method.Lexeme, MethodSpan: method.Span, Arguments: args,
 			}
 			_ = at
 			continue
@@ -443,7 +443,7 @@ func (p *parser) parsePrimary() Expr {
 				Method:   identifier.Lexeme, MethodSpan: identifier.Span, Arguments: args,
 			}
 		}
-		return &IdentifierExpr{exprBase: exprBase{Span: identifier.Span}, Name: identifier.Lexeme}
+		return &IdentifierExpr{exprBase: exprBase{Span: identifier.Span}, Name: identifier.Lexeme, NameSpan: identifier.Span}
 	}
 
 	unexpected := p.peek()

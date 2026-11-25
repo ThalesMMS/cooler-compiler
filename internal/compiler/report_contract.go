@@ -53,6 +53,9 @@ func DecodeReport(data []byte) (Result, error) {
 		result.Options.Optimization = OptimizationNone
 		result.Optimization = OptimizationReport{Mode: OptimizationNone, ExecutionIR: "unoptimized"}
 	}
+	if !reportSchemaAtLeast(result.SchemaVersion, 1, 5) {
+		result.Options.WarningRules = ""
+	}
 	return result, nil
 }
 
@@ -63,6 +66,11 @@ func compatibleReportSchema(version string) bool {
 }
 
 func validateReportContract(result Result) error {
+	if reportSchemaAtLeast(result.SchemaVersion, 1, 5) {
+		if err := ValidateWarningRules(result.Options.WarningRules); err != nil {
+			return fmt.Errorf("invalid Cooler report: options.warningRules: %w", err)
+		}
+	}
 	if strings.TrimSpace(result.CompilerVersion) == "" {
 		return errors.New("invalid Cooler report: compilerVersion is required")
 	}

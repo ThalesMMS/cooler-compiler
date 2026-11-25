@@ -2,20 +2,75 @@
   "schemaVersion": "1.0.0",
   "id": "semantic-assignment-dispatch-invalid",
   "title": "Assignment targets plus implicit, dynamic, and static dispatch rejection",
-  "ruleIds": ["SEM-EXPR-ASSIGNMENT", "SEM-EXPR-DISPATCH"],
+  "ruleIds": [
+    "SEM-EXPR-ASSIGNMENT",
+    "SEM-EXPR-DISPATCH"
+  ],
   "validity": "invalid",
   "expectedLastSuccessfulStage": "parser",
   "expectedDiagnostics": [
-    {"code": "COL3101", "stage": "semantic", "severity": "error"},
-    {"code": "COL3102", "stage": "semantic", "severity": "error"},
-    {"code": "COL3103", "stage": "semantic", "severity": "error"},
-    {"code": "COL3170", "stage": "semantic", "severity": "error"},
-    {"code": "COL3171", "stage": "semantic", "severity": "error"},
-    {"code": "COL3172", "stage": "semantic", "severity": "error"},
-    {"code": "COL3173", "stage": "semantic", "severity": "error"},
-    {"code": "COL3174", "stage": "semantic", "severity": "error"},
-    {"code": "COL3175", "stage": "semantic", "severity": "error"}
+    {
+      "code": "COL3101",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3102",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3103",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 9,
+        "startColumn": 9,
+        "endLine": 9,
+        "endColumn": 10,
+        "startOffset": 156,
+        "endOffset": 157
+      }
+    },
+    {
+      "code": "COL3170",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3171",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3172",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3173",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3174",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3175",
+      "stage": "semantic",
+      "severity": "error"
+    }
   ],
-  "sources": ["main.cl"],
+  "sources": [
+    "main.cl"
+  ],
   "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
 }

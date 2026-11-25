@@ -43,7 +43,8 @@
         "vmMaxSteps": { "type": "integer", "minimum": 1 },
         "inputProvided": { "type": "boolean" },
         "vmPolicy": { "$ref": "#/$defs/vmPolicy" },
-        "optimization": { "enum": ["none", "basic"] }
+        "optimization": { "enum": ["none", "basic"] },
+        "warningRules": { "type": "string" }
       },
       "additionalProperties": false
     },
@@ -52,6 +53,17 @@
       "minItems": 1,
       "items": { "$ref": "#/$defs/sourceUnit" }
     },
+    "sources": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["id", "name", "content"],
+        "properties": {"id": {"type":"string","minLength":1}, "name": {"type":"string","minLength":1}, "content": {"type":"string"}},
+        "additionalProperties": false
+      }
+    },
+    "project": {"const":"cooler-compiler"},
+    "sourceFile": {"type":"string","minLength":1},
+    "exportedAt": {"type":"string","minLength":1},
     "source": { "type": "string" },
     "stages": { "type": "array", "items": { "$ref": "#/$defs/stage" } },
     "tokens": { "type": "array", "items": { "$ref": "#/$defs/token" } },
@@ -102,6 +114,7 @@
     }
   },
   "allOf": [
+    {"if":{"properties":{"schemaVersion":{"pattern":"^1\\.[0-4]\\."}}},"then":{"properties":{"sources":false,"options":{"properties":{"warningRules":false}}}}},
     {
       "if": {
         "properties": {

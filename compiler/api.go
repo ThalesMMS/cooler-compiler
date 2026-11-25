@@ -51,6 +51,9 @@ func MaximumLimits() Limits { return fromInternalLimits(internal.MaximumVMPolicy
 // NormalizeOptions fills defaults and rejects unsupported modes, optimization
 // names, and unsafe runtime limits.
 func NormalizeOptions(options Options) (Options, error) {
+	if err := internal.ValidateWarningRules(options.WarningRules); err != nil {
+		return Options{}, fmt.Errorf("%w: %w", ErrInvalidOptions, err)
+	}
 	if options.Mode == "" {
 		options.Mode = ModeRun
 	}
@@ -270,7 +273,8 @@ func NewSession(ctx context.Context, project Project, options Options) (*Compila
 		CompilerVersion: normalized.CompilerVersion,
 		CompilerCommit:  normalized.CompilerCommit,
 		Options: internal.CompilationOptions{
-			Execute: normalized.Mode == ModeRun, VMMaxSteps: normalized.MaxSteps,
+			WarningRules: normalized.WarningRules,
+			Execute:      normalized.Mode == ModeRun, VMMaxSteps: normalized.MaxSteps,
 			InputProvided: normalized.Input != "", VMPolicy: toInternalLimits(normalized.Limits),
 			Optimization: normalized.Optimization,
 		},

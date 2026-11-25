@@ -1,5 +1,8 @@
 # Public Go API
 
+Educational diagnostics can be selected with `Options.WarningRules`; see
+[compiler warnings](warnings.md) for codes, defaults, and suppression.
+
 The supported import path is:
 
 ```go

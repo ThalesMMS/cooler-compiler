@@ -64,8 +64,8 @@ Rules: **63**; fixtures: **90**; supported: **61**; intentional divergences: **2
 | Rule | Status | Stage | Fixtures | Evidence | Reference relationship |
 | --- | --- | --- | ---: | --- | --- |
 | LEX-IDENTIFIERS | supported | lexer | 3 | tokens, ordered diagnostics, runtime output/state, artifacts | Matches the manual's TYPEID and OBJECTID distinction. |
-| LEX-KEYWORDS | supported | lexer | 2 | tokens, runtime output/state, artifacts | Matches the reference lexer contract. |
-| LEX-BOOLEANS | supported | lexer | 2 | tokens, runtime output/state, artifacts | Matches the manual's special Boolean casing rule. |
+| LEX-KEYWORDS | supported | lexer | 2 | tokens, ordered diagnostics, runtime output/state, artifacts | Matches the reference lexer contract. |
+| LEX-BOOLEANS | supported | lexer | 2 | tokens, ordered diagnostics, runtime output/state, artifacts | Matches the manual's special Boolean casing rule. |
 | LEX-COMMENTS | supported | lexer | 4 | tokens, ordered diagnostics, runtime output/state, artifacts | Matches the nested block-comment behavior. |
 | LEX-STRINGS | supported | lexer | 4 | tokens, ordered diagnostics, runtime output/state, artifacts | Matches the supported manual escape set. |
 | LEX-DIAGNOSTICS | supported | lexer | 9 | tokens, ordered diagnostics, artifacts | Diagnostic identity and structure are Cooler-specific. |
@@ -103,7 +103,7 @@ Rules: **63**; fixtures: **90**; supported: **61**; intentional divergences: **2
 | SEM-EXPR-COMPARISON-EQUALITY | supported | semantic | 2 | AST/types, ordered diagnostics | Matches the formal comparison and equality typing rules. |
 | SEM-EXPR-SCOPES | supported | semantic | 3 | AST/types, ordered diagnostics, runtime output/state | Matches the manual lexical-scope rules. |
 | SEM-EXPR-CONFORMANCE | supported | semantic | 3 | AST/types, ordered diagnostics, runtime output/state | Matches the manual conformance relation. |
-| RUN-OBJECT-INITIALIZATION | supported | runtime | 3 | runtime output/state, artifacts | Matches observable reference allocation and initialization semantics. |
+| RUN-OBJECT-INITIALIZATION | supported | runtime | 3 | ordered diagnostics, runtime output/state, artifacts | Matches observable reference allocation and initialization semantics. |
 | RUN-OBJECT-DISPATCH | supported | runtime | 4 | AST/types, ordered diagnostics, runtime output/state, artifacts | Matches observable reference dispatch semantics. |
 | RUN-CASE-SELECTION | supported | runtime | 4 | ordered diagnostics, runtime output/state, artifacts | Matches the reference case-selection rule. |
 | RUN-ARITHMETIC | supported | runtime | 2 | ordered diagnostics, runtime output/state | Matches observable reference arithmetic except overflow, tracked separately. |
@@ -115,11 +115,11 @@ Rules: **63**; fixtures: **90**; supported: **61**; intentional divergences: **2
 | RUN-BUILTIN-FAILURES | supported | runtime | 2 | ordered diagnostics | Matches the manual failure conditions; diagnostic structure is Cooler-specific. |
 | RUN-SAFETY-LIMITS | supported | runtime | 13 | ordered diagnostics, runtime output/state, artifacts | These deterministic educational limits are Cooler-specific. |
 | RUN-INT-OVERFLOW | supported | runtime | 2 | runtime output/state | The manual does not specify overflow. Cooler makes the classic 32-bit representation architecture-independent with an explicit modular policy; differential reference execution requires an optional local toolchain. |
-| BUILTIN-BASIC-CLASSES | supported | semantic | 1 | runtime output/state, artifacts | Matches the declared basic-class surface. |
+| BUILTIN-BASIC-CLASSES | supported | semantic | 1 | ordered diagnostics, runtime output/state, artifacts | Matches the declared basic-class surface. |
 | BUILTIN-OBJECT | supported | runtime | 3 | ordered diagnostics, runtime output/state | Matches observable behavior; allocation identity is Cooler-internal. |
 | BUILTIN-IO | supported | runtime | 5 | runtime output/state, source-unit identity, artifacts | Method values match; input delivery and deterministic out-of-range recovery are adapted to local GUI/CLI execution. |
 | BUILTIN-STRING | supported | runtime | 3 | ordered diagnostics, runtime output/state | The manual specifies characters without an encoding model; Cooler explicitly extends classic ASCII sources with Unicode code-point behavior. |
-| TOOL-BACKEND-ARTIFACTS | supported | codegen | 4 | AST/types, runtime output/state, source-unit identity, artifacts | Artifacts are intentionally Cooler-specific rather than MIPS/SPIM output. |
+| TOOL-BACKEND-ARTIFACTS | supported | codegen | 4 | AST/types, ordered diagnostics, runtime output/state, source-unit identity, artifacts | Artifacts are intentionally Cooler-specific rather than MIPS/SPIM output. |
 | TOOL-DEBUGGER | supported | runtime | 12 | ordered diagnostics, runtime output/state, source-unit identity, debugger scenario | Cooler exposes its own debugger protocol and controls. Machine-readable scenarios exercise bounded debugger actions and stable snapshot fields. |
 | TOOL-MULTIFILE | supported | parser | 1 | runtime output/state, source-unit identity, artifacts | Matches the reference compiler's ordered whole-program class semantics while retaining native source origins. |
 | TOOL-MULTIFILE-MAPPING | supported | parser | 1 | runtime output/state, source-unit identity, artifacts | Cooler-specific artifact identity; observable whole-program behavior remains comparable to the reference toolchain. |

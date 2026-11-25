@@ -2,14 +2,58 @@
   "schemaVersion": "1.0.0",
   "id": "semantic-let-invalid",
   "title": "Let names, declared types, and initializer conformance",
-  "ruleIds": ["SEM-EXPR-LET-DEFAULTS"],
+  "ruleIds": [
+    "SEM-EXPR-LET-DEFAULTS"
+  ],
   "validity": "invalid",
   "expectedLastSuccessfulStage": "parser",
   "expectedDiagnostics": [
-    {"code": "COL3120", "stage": "semantic", "severity": "error"},
-    {"code": "COL3121", "stage": "semantic", "severity": "error"},
-    {"code": "COL3122", "stage": "semantic", "severity": "error"}
+    {
+      "code": "COL3120",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3121",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3122",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 3,
+        "startColumn": 26,
+        "endLine": 3,
+        "endColumn": 33,
+        "startOffset": 58,
+        "endOffset": 65
+      }
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 3,
+        "startColumn": 50,
+        "endLine": 3,
+        "endColumn": 58,
+        "startOffset": 82,
+        "endOffset": 90
+      }
+    }
   ],
-  "sources": ["main.cl"],
+  "sources": [
+    "main.cl"
+  ],
   "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
 }

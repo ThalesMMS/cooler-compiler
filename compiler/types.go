@@ -70,6 +70,7 @@ type Limits struct {
 // Options configures compilation, execution limits, optimization, and report
 // provenance. Use NormalizeOptions to validate and fill zero-value defaults.
 type Options struct {
+	WarningRules    string
 	Mode            Mode
 	Input           string
 	MaxSteps        int
@@ -310,6 +311,7 @@ type ReportTarget struct {
 
 // ReportOptions records normalized execution and optimization settings.
 type ReportOptions struct {
+	WarningRules  string `json:"warningRules,omitempty"`
 	Execute       bool   `json:"execute"`
 	VMMaxSteps    int    `json:"vmMaxSteps"`
 	InputProvided bool   `json:"inputProvided"`

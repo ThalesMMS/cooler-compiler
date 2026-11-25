@@ -133,6 +133,7 @@ type DispatchExpr struct {
 	exprBase
 	Receiver       Expr
 	StaticTypeName string
+	StaticTypeSpan Span
 	Method         string
 	MethodSpan     Span
 	Arguments      []Expr
@@ -300,7 +301,8 @@ func (e *UnaryExpr) ToAST() ASTNode {
 
 type IdentifierExpr struct {
 	exprBase
-	Name string
+	Name     string
+	NameSpan Span
 }
 
 func (*IdentifierExpr) exprNode() {}

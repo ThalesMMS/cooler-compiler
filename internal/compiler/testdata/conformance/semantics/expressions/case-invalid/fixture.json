@@ -2,15 +2,77 @@
   "schemaVersion": "1.0.0",
   "id": "semantic-case-invalid",
   "title": "Case branch names, types, uniqueness, and recovery",
-  "ruleIds": ["SEM-EXPR-CASE"],
+  "ruleIds": [
+    "SEM-EXPR-CASE"
+  ],
   "validity": "invalid",
   "expectedLastSuccessfulStage": "parser",
   "expectedDiagnostics": [
-    {"code": "COL3130", "stage": "semantic", "severity": "error"},
-    {"code": "COL3131", "stage": "semantic", "severity": "error"},
-    {"code": "COL3132", "stage": "semantic", "severity": "error"},
-    {"code": "COL3133", "stage": "semantic", "severity": "error"}
+    {
+      "code": "COL3130",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3131",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 5,
+        "startColumn": 7,
+        "endLine": 5,
+        "endColumn": 8,
+        "startOffset": 76,
+        "endOffset": 77
+      }
+    },
+    {
+      "code": "COL3132",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 6,
+        "startColumn": 7,
+        "endLine": 6,
+        "endColumn": 8,
+        "startOffset": 102,
+        "endOffset": 103
+      }
+    },
+    {
+      "code": "COL3133",
+      "stage": "semantic",
+      "severity": "error"
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 7,
+        "startColumn": 7,
+        "endLine": 7,
+        "endColumn": 8,
+        "startOffset": 126,
+        "endOffset": 127
+      }
+    }
   ],
-  "sources": ["main.cl"],
+  "sources": [
+    "main.cl"
+  ],
   "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
 }

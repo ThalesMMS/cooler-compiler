@@ -2,11 +2,30 @@
   "schemaVersion": "1.0.0",
   "id": "runtime-case-order-valid",
   "title": "Case evaluates once, ignores branch source order, and binds the original closest-match value",
-  "ruleIds": ["RUN-CASE-SELECTION"],
+  "ruleIds": [
+    "RUN-CASE-SELECTION"
+  ],
   "validity": "valid",
   "expectedLastSuccessfulStage": "runtime",
-  "expectedDiagnostics": [],
+  "expectedDiagnostics": [
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 8,
+        "startColumn": 7,
+        "endLine": 8,
+        "endColumn": 11,
+        "startOffset": 203,
+        "endOffset": 207
+      }
+    }
+  ],
   "expectedOutput": "SDeep",
-  "sources": ["main.cl"],
+  "sources": [
+    "main.cl"
+  ],
   "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
 }

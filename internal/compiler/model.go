@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-const ReportSchemaVersion = "1.4.0"
+const ReportSchemaVersion = "1.5.0"
 
 // Span identifies a source range. Lines and columns are 1-based, the end is
 // exclusive, and offsets are UTF-16 code units so browser clients can select
@@ -655,6 +655,7 @@ type ReportTarget struct {
 }
 
 type CompilationOptions struct {
+	WarningRules  string   `json:"warningRules,omitempty"`
 	Execute       bool     `json:"execute"`
 	VMMaxSteps    int      `json:"vmMaxSteps"`
 	InputProvided bool     `json:"inputProvided"`

@@ -66,6 +66,22 @@ decoder upgrades earlier v1 reports to the `none` default. Optimized instruction
 counts and stepping can differ while source spans and original-IR identities
 remain traceable; see the [optimization contract](optimization.md).
 
+Schema `1.5.0` adds optional `options.warningRules` and optional top-level
+`sources`. Warning rules use the compiler selector (`all`, `none`, or a
+comma-separated list of supported warning codes); absence/empty means all.
+The Go decoder validates selectors for `1.5+` and ignores the field in older
+reports, supplying the empty/default selector without changing their version.
+The schema forbids these two additions in reports advertising `1.0`–`1.4`.
+
+The GUI may include `sources` as ordered `{id, name, content}` objects matching
+`sourceUnits`; contents preserve each source independently. GUI import verifies
+identity, order, byte size and SHA-256 before offering recompilation. The field
+is optional in complete reports and the Go report projection may omit this GUI
+extension. Re-exporting an older report does not attach `sources` or silently
+upgrade its advertised schema. The schema also declares the GUI's existing
+optional `project`, `sourceFile`, and explicitly requested `exportedAt` metadata,
+so individual JSON downloads and ZIP-contained reports can be validated in full.
+
 Every source-linked span includes its `sourceId`. Token and diagnostic
 lines/columns are 1-based and count decoded Unicode runes;
 ends are exclusive. Offsets are 0-based UTF-16 code units, not UTF-8 byte

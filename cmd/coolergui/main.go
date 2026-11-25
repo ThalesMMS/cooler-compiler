@@ -71,6 +71,7 @@ type debugSessionRequest struct {
 	ReverseMode      compiler.ReverseMode       `json:"reverseMode,omitempty"`
 	TimelineRevision uint64                     `json:"timelineRevision,omitempty"`
 	Optimization     string                     `json:"optimization,omitempty"`
+	WarningRules     string                     `json:"warningRules,omitempty"`
 }
 
 type debugSessionResponse struct {
@@ -107,6 +108,7 @@ type compileRequest struct {
 	VMPolicy     *compiler.VMPolicy    `json:"vmPolicy,omitempty"`
 	Interactive  bool                  `json:"interactive,omitempty"`
 	Optimization string                `json:"optimization,omitempty"`
+	WarningRules string                `json:"warningRules,omitempty"`
 }
 
 type securityPolicy struct {
@@ -421,6 +423,10 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "interactive execution requires a pipeline or VM session"})
 		return
 	}
+	if err := compiler.ValidateWarningRules(request.WarningRules); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		return
+	}
 	if err := validateOptimizationMode(request.Optimization); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
@@ -431,6 +437,7 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	options := publicCompileOptions(request.Input, steps, request.Optimization, request.VMPolicy)
+	options.WarningRules = request.WarningRules
 	var result publiccompiler.Result
 	if len(request.Sources) > 0 {
 		project := publiccompiler.Project{Sources: make([]publiccompiler.SourceUnit, len(request.Sources))}
@@ -574,6 +581,7 @@ func (s *sessionStore) startHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	contract := apiResultContract(request.Source, valueOrEmpty(request.Input), true, request.VMPolicy)
 	contract.Options.Optimization = request.Optimization
+	contract.Options.WarningRules = request.WarningRules
 	pipeline := projectPipeline(request.Source, request.Sources, contract)
 	pipeline.Complete()
 	session, ok := pipeline.DebugSession()
@@ -610,12 +618,17 @@ func (s *sessionStore) pipelineStartHandler(w http.ResponseWriter, r *http.Reque
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
+	if err := compiler.ValidateWarningRules(request.WarningRules); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		return
+	}
 	if err := validateOptimizationMode(request.Optimization); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
 	contract := apiResultContract(request.Source, request.Input, true, request.VMPolicy)
 	contract.Options.Optimization = request.Optimization
+	contract.Options.WarningRules = request.WarningRules
 	pipeline := projectPipeline(request.Source, request.Sources, contract)
 	snapshot := pipeline.NextPhase()
 	entry := &sessionEntry{pipeline: pipeline, input: request.Input, interactive: request.Interactive}
@@ -1034,6 +1047,9 @@ func decodeDebugSessionRequest(r *http.Request, destination *debugSessionRequest
 }
 
 func validateDebugSessionRequest(request debugSessionRequest) error {
+	if err := compiler.ValidateWarningRules(request.WarningRules); err != nil {
+		return err
+	}
 	if request.ID != "" && !validSessionID(request.ID) {
 		return errors.New("invalid session id")
 	}

@@ -18,9 +18,48 @@
   ],
   "validity": "valid",
   "expectedLastSuccessfulStage": "runtime",
-  "expectedDiagnostics": [],
+  "expectedDiagnostics": [
+    {
+      "code": "COL3181",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 10,
+        "startColumn": 24,
+        "endLine": 10,
+        "endColumn": 42,
+        "startOffset": 242,
+        "endOffset": 260
+      }
+    },
+    {
+      "code": "COL3180",
+      "stage": "semantic",
+      "severity": "warning",
+      "source": "main.cl",
+      "span": {
+        "startLine": 11,
+        "startColumn": 38,
+        "endLine": 11,
+        "endColumn": 46,
+        "startOffset": 304,
+        "endOffset": 312
+      }
+    }
+  ],
   "expectedOutput": "7/if/case",
-  "expectedArtifacts": ["tokens", "ast", "symbols", "ir", "assembly", "controlFlow", "runtimeTrace"],
-  "sources": ["main.cl"],
+  "expectedArtifacts": [
+    "tokens",
+    "ast",
+    "symbols",
+    "ir",
+    "assembly",
+    "controlFlow",
+    "runtimeTrace"
+  ],
+  "sources": [
+    "main.cl"
+  ],
   "provenance": "Original Cooler project fixture, AGPL-3.0-or-later"
 }
