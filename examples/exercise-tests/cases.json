@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "cases": [
+    {
+      "name": "increment 41",
+      "sources": ["helper.cl", "main.cl"],
+      "input": "41\n",
+      "expect": {"outcome": "success", "output": "42"}
+    },
+    {
+      "name": "fresh input and output",
+      "sources": ["helper.cl", "main.cl"],
+      "input": "3\n",
+      "expect": {"outcome": "success", "output": "4"}
+    },
+    {
+      "name": "missing input",
+      "sources": ["helper.cl", "main.cl"],
+      "expect": {"outcome": "input-required", "output": ""}
+    },
+    {
+      "name": "unknown identifier",
+      "sources": ["semantic.cl"],
+      "expect": {
+        "outcome": "error", "output": "",
+        "diagnostics": [{"code": "COL3100", "stage": "semantic"}]
+      }
+    },
+    {
+      "name": "division failure",
+      "sources": ["runtime.cl"],
+      "expect": {
+        "outcome": "error", "output": "",
+        "diagnostics": [{"code": "COL6015", "stage": "runtime"}]
+      }
+    },
+    {
+      "name": "bounded loop",
+      "sources": ["loop.cl"],
+      "limits": {"maxSteps": 25, "timeoutMs": 2000},
+      "expect": {"outcome": "step-limit", "output": ""}
+    }
+  ]
+}

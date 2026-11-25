@@ -5,6 +5,7 @@
 ```text
 coolerc run [options] [file.cl ...]
 coolerc check [options] [file.cl ...]
+coolerc test [--json] exercise.json
 coolerc emit tokens|ast|symbols|cfg|ir|assembly|report [options] [file.cl ...]
 coolerc version [--json|--verbose]
 ```
@@ -51,6 +52,10 @@ JSON diagnostics contain `file`, `line`, `column`, `code`, `stage`, `severity`,
 originating source unit's stable `sourceId` and file-local coordinates.
 
 Exit codes are stable:
+
+The `test` command has [its own manifest and result contract](program-tests.md):
+expected errors can pass, and exit `1` means a test mismatch. The following
+compiler/runtime exit descriptions apply to ordinary compilation commands.
 
 - `0`: success;
 - `1`: compiler or runtime error, including an exhausted step budget;
