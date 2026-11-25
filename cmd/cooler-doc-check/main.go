@@ -118,7 +118,7 @@ func collectMarkdown(root string) ([]string, error) {
 			return err
 		}
 		if entry.IsDir() {
-			if path != root && (entry.Name() == ".git" || entry.Name() == "bin" || entry.Name() == "dist") {
+			if path != root && (entry.Name() == ".git" || entry.Name() == "bin" || entry.Name() == "dist" || entry.Name() == "node_modules" || entry.Name() == ".vscode-test") {
 				return filepath.SkipDir
 			}
 			return nil

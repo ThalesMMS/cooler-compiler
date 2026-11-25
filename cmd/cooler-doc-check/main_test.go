@@ -23,6 +23,16 @@ func TestMarkdownLinksAndAnchors(t *testing.T) {
 	}
 }
 
+func TestMarkdownDiscoveryIgnoresInstalledExtensionDependencies(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, root, "extensions/cooler/README.md", "# Extension")
+	writeTestFile(t, root, "extensions/cooler/node_modules/dependency/README.md", "[external packaging omission](missing.md)")
+	files, err := collectMarkdown(root)
+	if err != nil || len(files) != 1 || files[0] != filepath.Join(root, "extensions/cooler/README.md") {
+		t.Fatalf("repository docs %v: %v", files, err)
+	}
+}
+
 func TestMarkdownAnchorsIgnoreFencesAndDisambiguateDuplicates(t *testing.T) {
 	anchors := markdownAnchors("# Same\n## Same\n```\n# Hidden\n```\n")
 	for _, name := range []string{"same", "same-1"} {

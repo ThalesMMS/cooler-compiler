@@ -1,0 +1,5 @@
+{
+ "scopeName":"source.cool",
+ "patterns":[{"include":"#comment"},{"name":"comment.line.double-dash.cool","begin":"--","end":"$"},{"name":"string.quoted.double.cool","begin":"\"","end":"\"","patterns":[{"name":"constant.character.escape.cool","match":"\\\\."}]},{"name":"keyword.control.cool","match":"(?i)\\b(class|inherits|if|then|else|fi|while|loop|pool|let|in|case|of|esac|new|isvoid|not)\\b"},{"name":"constant.language.cool","match":"\\b(true|false|self|SELF_TYPE)\\b"},{"name":"entity.name.type.cool","match":"\\b[A-Z][A-Za-z0-9_]*\\b"},{"name":"constant.numeric.cool","match":"\\b[0-9]+\\b"}],
+ "repository":{"comment":{"name":"comment.block.cool","begin":"\\(\\*","end":"\\*\\)","patterns":[{"include":"#comment"}]}}
+}

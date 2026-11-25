@@ -1,0 +1,207 @@
+{
+  "name": "cooler-local",
+  "displayName": "Cooler COOL",
+  "description": "Local COOL language tools for the Cooler compiler",
+  "version": "1.0.0",
+  "publisher": "cooler-compiler",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ThalesMMS/cooler-compiler-dev.git"
+  },
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Debuggers"
+  ],
+  "activationEvents": [
+    "onLanguage:cool",
+    "onDebug:cooler"
+  ],
+  "main": "./out/extension.cjs",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Local compiler processes require a trusted workspace."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "cool",
+        "aliases": [
+          "COOL",
+          "cool"
+        ],
+        "extensions": [
+          ".cl",
+          ".cool"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "cool",
+        "scopeName": "source.cool",
+        "path": "./syntaxes/cool.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "cooler.check",
+        "title": "Cooler: Check Project"
+      },
+      {
+        "command": "cooler.run",
+        "title": "Cooler: Run Project"
+      },
+      {
+        "command": "cooler.restart",
+        "title": "Cooler: Restart Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "Cooler",
+      "properties": {
+        "cooler.lspPath": {
+          "type": "string",
+          "default": "cooler-lsp",
+          "scope": "machine-overridable",
+          "description": "Local cooler-lsp executable. No downloads are performed."
+        },
+        "cooler.compilerPath": {
+          "type": "string",
+          "default": "coolerc",
+          "scope": "machine-overridable",
+          "description": "Local coolerc executable for Check and Run."
+        },
+        "cooler.sourceSet": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "default": null,
+          "description": "Exact workspace-relative files or directory prefixes ending in /. All selected files form one COOL program.",
+          "properties": {
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exclude": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "cooler.warningRules": {
+          "type": "string",
+          "default": "all",
+          "description": "all, none, or comma-separated warning codes."
+        },
+        "cooler.inlayHints.parameterNames": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show concise parameter names at calls."
+        },
+        "cooler.inlayHints.selfType": {
+          "type": "boolean",
+          "default": false,
+          "description": "Explain static SELF_TYPE context."
+        },
+        "cooler.dapPath": {
+          "type": "string",
+          "default": "cooler-dap",
+          "scope": "machine-overridable",
+          "description": "Local cooler-dap executable for VS Code debugging. No downloads are performed."
+        }
+      }
+    },
+    "breakpoints": [
+      {
+        "language": "cool"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "cooler",
+        "label": "Cooler COOL",
+        "languages": [
+          "cool"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Single source path. Omit to use cooler.sourceSet."
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Explicit ordered source paths compiled as one program (1–64 files)."
+              },
+              "input": {
+                "type": "string",
+                "default": "",
+                "description": "Preloaded input, consumed before live Debug Console input."
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "default": true
+              },
+              "maxSteps": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000,
+                "default": 100000
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "cooler",
+            "request": "launch",
+            "name": "Debug selected COOL project",
+            "stopOnEntry": true
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Cooler: local project",
+            "body": {
+              "type": "cooler",
+              "request": "launch",
+              "name": "Debug selected COOL project",
+              "stopOnEntry": true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository --out ../../dist/cooler-local.vsix",
+    "test": "node --test test/command-guard.test.cjs && node test/run.cjs"
+  },
+  "dependencies": {
+    "vscode-languageclient": "9.0.1"
+  },
+  "devDependencies": {
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "3.9.2",
+    "esbuild": "0.25.12"
+  }
+}
