@@ -562,6 +562,12 @@ h1, h2 { margin: 0; font-size: 13px; letter-spacing: -.01em; }
 .status-pill.paused { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 38%, var(--border)); background: var(--warning-soft); }
 .timeline-status { max-width: 330px; overflow: hidden; color: var(--muted); font: 8.5px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
 .timeline-status.historical { color: var(--warning); }
+.history-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.history-navigation label { font-size: 12px; }
+.history-navigation input[type="range"] { flex: 1; min-width: 100px; min-height: 28px; }
+.history-navigation input[type="number"] { width: 85px; min-height: 28px; }
+.history-navigation span { flex-basis: 100%; color: var(--muted); font-size: 11px; }
+.history-navigation input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .reverse-mode-wrap select { min-width: 86px; max-width: 96px; }
 
 .stage-guide {

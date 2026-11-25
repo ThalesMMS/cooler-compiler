@@ -260,6 +260,24 @@ Both accept light snapshots, `traceFrom`, and watches, and are valid while the
 VM is stopped in ready, paused, waiting-input, halted, or resettable failed
 states.
 
+`POST /api/vm/seek` requires `{ "id", "timelineRevision", "targetStep": N }`
+and accepts the same light/trace/watch options. It selects any retained step
+between `earliestReversibleStep` and `latestStep`, in either direction, without
+truncating checkpoints, events or recorded input. Invalid/missing steps return
+400; stale revisions and unavailable/evicted targets return 409. The public
+`DebugSession.SeekRetainedStep(ctx, step, revision)` and optional
+`HistoryNavigator` interface expose the same operation, with
+`ErrTimelineRevision` and `ErrReverseUnavailable` identities.
+
+The result uses `history-seek`. At a step with multiple non-instruction events,
+the latest retained checkpoint at that step wins; this is instruction navigation,
+not selection of each individual input/breakpoint event. Replay consumes saved
+input automatically and is bounded by the retained checkpoint interval (hard
+maximum 10,000 instructions). Cancellation is checked before cloning, during
+replay and before publication; failed/cancelled replay leaves the live VM and
+history position unchanged. Unlike forward execution cancellation, it does not
+insert a runtime diagnostic into the selected program.
+
 Restoration clones the nearest checkpoint and replays forward at most the
 retained interval. Breakpoint conditions/hit counts and logpoint state are
 re-evaluated deterministically; UI log rendering itself is not an execution
@@ -281,6 +299,23 @@ Reverse buttons, disabled states derived from `canStepBack` and
 earliest, latest, and revision. When current is behind latest it labels console
 output as historical; a branch announces future discard. Existing client epoch
 checks and the server timeline revision jointly prevent stale responses.
+
+The GUI also provides a native range slider and numeric step field with keyboard
+support. Drags coalesce for 80 ms with at most one request in flight and one latest
+destination queued. A request sequence rejects older drag responses even within
+the same revision. Historical input display is filtered without deleting the
+saved entries, so returning to the retained future restores them. Actual forward
+execution prunes the obsolete future. This remains a bounded, linear timeline,
+not a persistent tree of branches.
+
+Validation for #78: sparse-checkpoint snapshot hashes, input/error round trips,
+eviction, stale revision, cancellation before and during replay, forward branch
+discard, public facade, HTTP and JavaScript coalescing tests. Chromium browser
+validation exercised step 19 → 0 via the numeric field → 19 via the slider,
+restoring the original console output with revision 1 unchanged; resuming at
+step 0 produced step/latest 1, revision 2 and explicit future discard. Native WebView
+interaction is unavailable through the current automation surface and was not
+claimed as validated.
 
 Disconnecting or cancelling a running HTTP request cancels its VM context and
 halts it with `COL6056`. An unexpected panic inside a locked session becomes an

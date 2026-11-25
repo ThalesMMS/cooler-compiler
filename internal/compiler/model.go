@@ -511,6 +511,7 @@ const (
 	StopReasonCancelled        DebugStopReason = "cancelled"
 	StopReasonReverseStep      DebugStopReason = "reverse-step"
 	StopReasonReverseContinue  DebugStopReason = "reverse-continue"
+	StopReasonHistorySeek      DebugStopReason = "history-seek"
 )
 
 // SourcePosition identifies a requested user source position. Column zero

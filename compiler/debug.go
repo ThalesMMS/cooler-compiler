@@ -28,6 +28,8 @@ var (
 	ErrHeapObjectNotFound = errors.New("compiler: heap object not found")
 	// ErrReverseUnavailable means requested history is disabled or was evicted.
 	ErrReverseUnavailable = errors.New("compiler: reverse history is unavailable")
+	// ErrTimelineRevision means a history request used an obsolete revision.
+	ErrTimelineRevision = errors.New("compiler: timeline revision is stale")
 )
 
 // Debugger is the stable core debugger contract. Concrete DebugSession values
@@ -290,7 +292,7 @@ func (d *DebugSession) StepBack(ctx context.Context, mode ReverseMode) (DebugSna
 		return DebugSnapshot{}, err
 	}
 	defer release()
-	snapshot, actionErr := raw.StepBack(internal.ReverseMode(mode))
+	snapshot, actionErr := raw.StepBackContext(ctx, internal.ReverseMode(mode))
 	public, convertErr := publicDebugSnapshot(snapshot)
 	if convertErr != nil {
 		return DebugSnapshot{}, convertErr
@@ -305,10 +307,32 @@ func (d *DebugSession) ReverseContinue(ctx context.Context) (DebugSnapshot, erro
 		return DebugSnapshot{}, err
 	}
 	defer release()
-	snapshot, actionErr := raw.ReverseContinue()
+	snapshot, actionErr := raw.ReverseContinueContext(ctx)
 	public, convertErr := publicDebugSnapshot(snapshot)
 	if convertErr != nil {
 		return DebugSnapshot{}, convertErr
+	}
+	return public, publicDebugError(actionErr)
+}
+
+// SeekRetainedStep selects an existing instruction state without discarding its
+// future. revision must match Snapshot.Timeline.Revision. Resuming execution
+// from the past discards the old future; this is not a branch tree.
+func (d *DebugSession) SeekRetainedStep(ctx context.Context, step int, revision uint64) (DebugSnapshot, error) {
+	if step < 0 || revision == 0 {
+		return DebugSnapshot{}, fmt.Errorf("%w: step must be nonnegative and revision positive", ErrInvalidOptions)
+	}
+	raw, release, err := d.acquire(ctx)
+	if err != nil {
+		return DebugSnapshot{}, err
+	}
+	defer release()
+	operation, finish := d.runningContext(ctx)
+	snapshot, actionErr := raw.SeekRetainedStep(operation, step, revision)
+	finish()
+	public, err := publicDebugSnapshot(snapshot)
+	if err != nil {
+		return DebugSnapshot{}, err
 	}
 	return public, publicDebugError(actionErr)
 }
@@ -488,6 +512,8 @@ func publicDebugError(err error) error {
 		return fmt.Errorf("%w: %w", ErrHeapObjectNotFound, err)
 	case errors.Is(err, internal.ErrReverseHistoryUnavailable), errors.Is(err, internal.ErrReverseTargetEvicted):
 		return fmt.Errorf("%w: %w", ErrReverseUnavailable, err)
+	case errors.Is(err, internal.ErrTimelineRevision):
+		return fmt.Errorf("%w: %w", ErrTimelineRevision, err)
 	default:
 		return fmt.Errorf("compiler: debugger operation: %w", err)
 	}

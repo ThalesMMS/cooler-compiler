@@ -70,6 +70,7 @@ type debugSessionRequest struct {
 	Heap             *compiler.HeapQuery        `json:"heap,omitempty"`
 	ReverseMode      compiler.ReverseMode       `json:"reverseMode,omitempty"`
 	TimelineRevision uint64                     `json:"timelineRevision,omitempty"`
+	TargetStep       *int                       `json:"targetStep,omitempty"`
 	Optimization     string                     `json:"optimization,omitempty"`
 	WarningRules     string                     `json:"warningRules,omitempty"`
 }
@@ -225,6 +226,7 @@ func buildMux(sessions *sessionStore, policy securityPolicy) http.Handler {
 	mux.HandleFunc("/api/vm/heap", apiGuard(policy, http.MethodPost, true, sessions.heapHandler))
 	mux.HandleFunc("/api/vm/step-back", apiGuard(policy, http.MethodPost, true, sessions.stepBackHandler))
 	mux.HandleFunc("/api/vm/reverse-continue", apiGuard(policy, http.MethodPost, true, sessions.reverseContinueHandler))
+	mux.HandleFunc("/api/vm/seek", apiGuard(policy, http.MethodPost, true, sessions.seekHandler))
 	mux.HandleFunc("/api/vm/dispose", apiGuard(policy, http.MethodPost, true, sessions.disposeHandler))
 	mux.HandleFunc("/api/examples", apiGuard(policy, http.MethodGet, false, examplesHandler))
 	mux.HandleFunc("/api/health", apiGuard(policy, http.MethodGet, false, healthHandler))
@@ -772,11 +774,11 @@ func (s *sessionStore) heapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *sessionStore) stepBackHandler(w http.ResponseWriter, r *http.Request) {
-	s.withSessionResult(r.Context(), w, r, sessionOperationStepBack, func(_ context.Context, entry *sessionEntry, request debugSessionRequest) (compiler.DebugSnapshot, error) {
+	s.withSessionResult(r.Context(), w, r, sessionOperationStepBack, func(ctx context.Context, entry *sessionEntry, request debugSessionRequest) (compiler.DebugSnapshot, error) {
 		if entry.session.ReverseTimeline().Revision != request.TimelineRevision {
 			return entry.session.Snapshot(request.Light, request.TraceFrom), compiler.ErrTimelineRevision
 		}
-		snapshot, err := entry.session.StepBack(request.ReverseMode)
+		snapshot, err := entry.session.StepBackContext(ctx, request.ReverseMode)
 		if request.Light && err == nil {
 			snapshot = entry.session.Snapshot(true, request.TraceFrom)
 		}
@@ -785,11 +787,21 @@ func (s *sessionStore) stepBackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *sessionStore) reverseContinueHandler(w http.ResponseWriter, r *http.Request) {
-	s.withSessionResult(r.Context(), w, r, sessionOperationReverseContinue, func(_ context.Context, entry *sessionEntry, request debugSessionRequest) (compiler.DebugSnapshot, error) {
+	s.withSessionResult(r.Context(), w, r, sessionOperationReverseContinue, func(ctx context.Context, entry *sessionEntry, request debugSessionRequest) (compiler.DebugSnapshot, error) {
 		if entry.session.ReverseTimeline().Revision != request.TimelineRevision {
 			return entry.session.Snapshot(request.Light, request.TraceFrom), compiler.ErrTimelineRevision
 		}
-		snapshot, err := entry.session.ReverseContinue()
+		snapshot, err := entry.session.ReverseContinueContext(ctx)
+		if request.Light && err == nil {
+			snapshot = entry.session.Snapshot(true, request.TraceFrom)
+		}
+		return snapshot, err
+	})
+}
+
+func (s *sessionStore) seekHandler(w http.ResponseWriter, r *http.Request) {
+	s.withSessionResult(r.Context(), w, r, sessionOperationSeek, func(ctx context.Context, entry *sessionEntry, request debugSessionRequest) (compiler.DebugSnapshot, error) {
+		snapshot, err := entry.session.SeekRetainedStep(ctx, *request.TargetStep, request.TimelineRevision)
 		if request.Light && err == nil {
 			snapshot = entry.session.Snapshot(true, request.TraceFrom)
 		}
@@ -1114,7 +1126,14 @@ func validateDebugSessionRequest(request debugSessionRequest) error {
 }
 
 func validateSessionOperationRequest(operation sessionOperation, request debugSessionRequest) error {
-	if operation == sessionOperationStepBack || operation == sessionOperationReverseContinue {
+	if operation == sessionOperationSeek {
+		if request.TargetStep == nil || *request.TargetStep < 0 {
+			return errors.New("targetStep must be nonnegative")
+		}
+	} else if request.TargetStep != nil {
+		return errors.New("targetStep is only valid for seek")
+	}
+	if operation == sessionOperationStepBack || operation == sessionOperationReverseContinue || operation == sessionOperationSeek {
 		if request.TimelineRevision == 0 {
 			return errors.New("missing timelineRevision")
 		}

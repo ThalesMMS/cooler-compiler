@@ -43,6 +43,7 @@ const (
 	sessionOperationHeap             sessionOperation = "heap"
 	sessionOperationStepBack         sessionOperation = "step-back"
 	sessionOperationReverseContinue  sessionOperation = "reverse-continue"
+	sessionOperationSeek             sessionOperation = "seek"
 )
 
 var (
@@ -443,7 +444,7 @@ func (entry *sessionEntry) allows(operation sessionOperation) bool {
 		return entry.resettable && (entry.state == sessionStateReady || entry.state == sessionStatePaused || entry.state == sessionStateWaitingInput || entry.state == sessionStateHalted || entry.state == sessionStateFailed)
 	case sessionOperationHeap:
 		return entry.resettable && (entry.state == sessionStateReady || entry.state == sessionStatePaused || entry.state == sessionStateWaitingInput || entry.state == sessionStateHalted || entry.state == sessionStateFailed)
-	case sessionOperationStepBack, sessionOperationReverseContinue:
+	case sessionOperationStepBack, sessionOperationReverseContinue, sessionOperationSeek:
 		return entry.resettable && (entry.state == sessionStateReady || entry.state == sessionStatePaused || entry.state == sessionStateWaitingInput || entry.state == sessionStateHalted || entry.state == sessionStateFailed)
 	default:
 		return false

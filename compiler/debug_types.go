@@ -75,6 +75,8 @@ const (
 	// StopReverseContinue means reverse execution reached an earlier meaningful
 	// stop.
 	StopReverseContinue StopReason = "reverse-continue"
+	// StopHistorySeek means a retained instruction state was selected.
+	StopHistorySeek StopReason = "history-seek"
 )
 
 // WatchExpression is an expression evaluated whenever the debugger stops.
@@ -259,4 +261,10 @@ type WatchController interface {
 type ReverseDebugger interface {
 	StepBack(context.Context, ReverseMode) (DebugSnapshot, error)
 	ReverseContinue(context.Context) (DebugSnapshot, error)
+}
+
+// HistoryNavigator selects retained states without advancing execution.
+// It is separate from ReverseDebugger to preserve existing implementations.
+type HistoryNavigator interface {
+	SeekRetainedStep(context.Context, int, uint64) (DebugSnapshot, error)
 }

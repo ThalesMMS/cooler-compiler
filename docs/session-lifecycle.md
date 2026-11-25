@@ -35,7 +35,7 @@ store immediately and cannot be looked up or resurrected.
 | VM `input` | `waiting-input` | Accepts one matching request sequence and executes exactly its pending opcode |
 | VM `reset` | `ready`, `paused`, `waiting-input`, `halted`, resettable runtime `failed` | Rebuilds the VM without changing its session ID |
 | VM `heap` | `ready`, `paused`, `waiting-input`, `halted`, resettable runtime `failed` | Returns a bounded read-only heap projection without changing state |
-| VM `step-back` / `reverse-continue` | `ready`, `paused`, `waiting-input`, `halted`, resettable runtime `failed` | Restores a retained timeline state; requires the current revision |
+| VM `step-back` / `reverse-continue` / `seek` | `ready`, `paused`, `waiting-input`, `halted`, resettable runtime `failed` | Restores a retained timeline state; requires the current revision |
 | Dispose | Any retained state | Removes the ID immediately; reports whether it existed |
 
 Compilation failures are not resettable because the verified executable does

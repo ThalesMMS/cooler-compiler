@@ -3,11 +3,128 @@
 package compiler
 
 import (
+	"context"
 	"errors"
 	"math/rand"
 	"reflect"
 	"testing"
 )
+
+func TestSeekRetainedHistoryRoundTripAndCancellation(t *testing.T) {
+	s := NewDebugSession(reverseObjectProgram)
+	original := map[int]string{}
+	for i := 0; i < 90; i++ {
+		snap := s.StepInstruction()
+		original[snap.Timeline.CurrentStep] = snap.Timeline.StateHash
+		if snap.Runtime.Halted {
+			break
+		}
+	}
+	latest := s.ReverseTimeline()
+	// Populate the subject in one run, so navigation must replay between sparse
+	// checkpoints instead of merely cloning our per-instruction reference stops.
+	s = NewDebugSession(reverseObjectProgram)
+	s.RunWithBreakpoints(latest.CurrentStep, nil)
+	latest = s.ReverseTimeline()
+	for _, target := range []int{latest.CurrentStep - 5, latest.CurrentStep, latest.CurrentStep - 17, latest.CurrentStep - 2} {
+		snap, err := s.SeekRetainedStep(context.Background(), target, latest.Revision)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if snap.Timeline.StateHash != original[target] || snap.Timeline.LatestStep != latest.LatestStep || snap.Timeline.EventCount != latest.EventCount || snap.Timeline.Revision != latest.Revision {
+			t.Fatalf("history changed at %d: %+v", target, snap.Timeline)
+		}
+	}
+	before := s.ReverseTimeline()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := s.SeekRetainedStep(ctx, latest.CurrentStep, latest.Revision); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancel: %v", err)
+	}
+	if s.ReverseTimeline() != before {
+		t.Fatal("cancel mutated history")
+	}
+	if _, err := s.SeekRetainedStep(context.Background(), 0, latest.Revision+1); !errors.Is(err, ErrTimelineRevision) {
+		t.Fatalf("revision: %v", err)
+	}
+	if _, err := s.SeekRetainedStep(context.Background(), latest.LatestStep+1, latest.Revision); err == nil {
+		t.Fatal("accepted unrecorded future")
+	}
+	s.StepInstruction()
+	if !s.ReverseTimeline().FutureDiscarded || s.ReverseTimeline().Revision == latest.Revision {
+		t.Fatal("execution did not discard future")
+	}
+}
+
+func TestSeekRetainedInputAndError(t *testing.T) {
+	s := NewDebugSession(`class Main inherits IO {main():Object {{out_string(in_string()); 1/0;}};};`)
+	s.SetInteractiveInput(true)
+	waiting := s.RunWithBreakpoints(1000, nil)
+	if _, err := s.ProvideInputLine("retained", waiting.Runtime.WaitingInput.Sequence); err != nil {
+		t.Fatal(err)
+	}
+	final := s.RunWithBreakpoints(1000, nil)
+	if _, err := s.SeekRetainedStep(context.Background(), waiting.Timeline.CurrentStep, final.Timeline.Revision); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.SeekRetainedStep(context.Background(), final.Timeline.CurrentStep, final.Timeline.Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got.Runtime.Output, final.Runtime.Output) || got.Runtime.WaitingInput != nil || got.Timeline.StateHash != final.Timeline.StateHash {
+		t.Fatalf("input/error roundtrip changed state: %+v", got.Runtime)
+	}
+}
+
+func TestSeekRetainedEviction(t *testing.T) {
+	s := NewDebugSession(reverseObjectProgram)
+	if err := s.SetReverseHistoryLimits(ReverseHistoryLimits{CheckpointInterval: 2, MaxCheckpoints: 2}); err != nil {
+		t.Fatal(err)
+	}
+	s.RunWithBreakpoints(80, nil)
+	timeline := s.ReverseTimeline()
+	if timeline.EarliestReversibleStep <= 0 {
+		t.Fatal("history was not evicted")
+	}
+	if _, err := s.SeekRetainedStep(context.Background(), timeline.EarliestReversibleStep-1, timeline.Revision); !errors.Is(err, ErrReverseTargetEvicted) {
+		t.Fatalf("evicted target: %v", err)
+	}
+	if _, err := s.SeekRetainedStep(context.Background(), timeline.EarliestReversibleStep, timeline.Revision); err != nil {
+		t.Fatal(err)
+	}
+}
+
+type replayCancellationContext struct {
+	context.Context //nolint:containedctx // Test decorator injects deterministic cancellation during replay.
+	checks          int
+	cancel          context.CancelFunc
+}
+
+func (c *replayCancellationContext) Err() error {
+	c.checks++
+	if c.checks == 6 {
+		c.cancel()
+	}
+	return c.Context.Err()
+}
+
+func TestSeekRetainedCancellationDuringReplayIsAtomic(t *testing.T) {
+	s := NewDebugSession(reverseObjectProgram)
+	s.RunWithBreakpoints(90, nil)
+	before := s.ReverseTimeline()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	probe := &replayCancellationContext{Context: ctx, cancel: cancel}
+	if _, err := s.SeekRetainedStep(probe, 85, before.Revision); !errors.Is(err, context.Canceled) {
+		t.Fatalf("mid replay cancellation: %v", err)
+	}
+	if s.ReverseTimeline() != before || s.reverse.replaying {
+		t.Fatal("cancelled replay changed live history")
+	}
+	if _, err := s.SeekRetainedStep(context.Background(), 85, before.Revision); err != nil {
+		t.Fatal(err)
+	}
+}
 
 const reverseObjectProgram = `class Box { value : Int <- 1; next : Box; set(n : Box) : Box {{ next <- n; self; }}; };
 class Main {

@@ -8,6 +8,7 @@ import {
   requestRunPause,
 	shouldAcceptTimeline,
 } from "./app-state.mjs";
+import { createHistorySeeker } from "./history-seek.mjs";
 
 export async function startCoolerApp() {
 
@@ -66,6 +67,8 @@ export async function startCoolerApp() {
     sessionStatus: $("#sessionStatus"),
     debugLocation: $("#debugLocation"),
 	timelineStatus: $("#timelineStatus"),
+	historySlider: $("#historySlider"),
+	historyStep: $("#historyStep"),
     console: $("#consoleOutput"),
     executionSummary: $("#executionSummary"),
     clearConsoleButton: $("#clearConsoleButton"),
@@ -762,10 +765,10 @@ export async function startCoolerApp() {
 	state.breakpointStates = new Map((snapshot.breakpoints || []).map((item) => [item.breakpoint?.id || `${item.breakpoint?.sourceId || ""}:${item.breakpoint?.line || 0}`, item]));
 	state.watchResults = snapshot.watches || [];
 	state.debugLog = snapshot.debugLog || [];
-	state.timeline = snapshot.timeline || state.timeline;
-	if (replaceRuntime && state.timeline) {
+	if (snapshot.timeline && state.timeline && snapshot.timeline.revision > state.timeline.revision) {
 	  state.inputHistory = state.inputHistory.filter((entry) => Number(entry.step || 0) <= Number(state.timeline.currentStep || 0));
 	}
+	state.timeline = snapshot.timeline || state.timeline;
     if (light) renderRuntimeSnapshot();
     else renderAll();
     updateSessionStatus(snapshot.status || "ready");
@@ -803,6 +806,30 @@ export async function startCoolerApp() {
 	  } finally {
 		setBusy(false);
 	  }
+	}
+
+	let historySeeking = false;
+	const submitHistorySeek = createHistorySeeker({
+	  busy(value) { historySeeking = value; setBusy(value, "Loading retained step…"); updateSessionStatus(); },
+	  request(value) { return api("/api/vm/seek", { id: value.id, targetStep: value.step, timelineRevision: value.revision, light: true, traceFrom: 0, watches: projectWatches() }); },
+	  apply(payload, value) {
+	    if (!client.shouldAcceptResponse(value.id, state.pipeline.id, value.epoch, state.sessionEpoch)) return;
+	    if (!shouldAcceptTimeline(state.timeline, payload.snapshot?.timeline)) return;
+	    state.activeTab = "vm";
+	    applySnapshot(payload.snapshot, true, true);
+	    state.consoleCleared = false;
+	    if (payload.snapshot.location?.span) selectSpan(payload.snapshot.location.span, false);
+	    setGlobalStatus("Retained step loaded", "idle");
+	  },
+	  fail(error, value) { if (value.epoch === state.sessionEpoch) { handleMissingSession(error); toast(error.message, "error"); } },
+	});
+	function seekHistory(value) {
+	  if ((state.busy && !historySeeking) || state.autoRunning || !state.timeline || !state.pipeline.id) return;
+	  const step = Number(value);
+	  if (!Number.isSafeInteger(step) || step < state.timeline.earliestReversibleStep || step > state.timeline.latestStep) return;
+	  elements.historySlider.value = String(step);
+	  elements.historyStep.value = String(step);
+	  submitHistorySeek({ step, id: state.pipeline.id, epoch: state.sessionEpoch, revision: state.timeline.revision });
 	}
 
   function handleMissingSession(error) {
@@ -862,7 +889,7 @@ export async function startCoolerApp() {
     if (elements.sendInputButton) elements.sendInputButton.disabled = busy || !waitingInput;
     setRunButtonMode(busy && active === "run" ? "pause" : "idle");
     if (busy) setGlobalStatus(label, "busy");
-    if (!busy) updateButtons();
+    if (!busy) { updateButtons(); updateSessionStatus(); }
   }
 
 
@@ -916,6 +943,13 @@ export async function startCoolerApp() {
 		elements.timelineStatus.textContent = `step ${timeline.currentStep} · earliest ${timeline.earliestReversibleStep} · latest ${timeline.latestStep} · rev ${timeline.revision}${historical ? " · historical output" : ""}${discarded ? " · future discarded" : ""}`;
 		elements.timelineStatus.classList.toggle("historical", historical || discarded);
 	  }
+	}
+	for (const control of [elements.historySlider, elements.historyStep]) {
+	  if (!control) continue;
+	  control.disabled = !state.timeline || state.autoRunning || (state.busy && !historySeeking) || state.timeline.checkpointCount === 0;
+	  control.min = String(state.timeline?.earliestReversibleStep || 0);
+	  control.max = String(state.timeline?.latestStep || 0);
+	  if (!historySeeking) control.value = String(state.timeline?.currentStep || 0);
 	}
   }
 
@@ -1581,7 +1615,7 @@ export async function startCoolerApp() {
     if (elements.liveInputLine) elements.liveInputLine.disabled = !inputRequest || state.busy;
     if (elements.sendInputButton) elements.sendInputButton.disabled = !inputRequest || state.busy;
     if (elements.inputHistory) {
-      elements.inputHistory.innerHTML = state.inputHistory
+      elements.inputHistory.innerHTML = state.inputHistory.filter((entry) => !state.timeline || Number(entry.step || 0) <= state.timeline.currentStep)
         .map((entry) => `<li><span class="sr-only">Submitted to ${escapeHTML(entry.builtin)}: </span>${escapeHTML(entry.line || "[empty line]")}</li>`)
         .join("");
     }
@@ -2180,6 +2214,9 @@ export async function startCoolerApp() {
     elements.runToCursorButton.addEventListener("click", () => sourceCommand("run-to-cursor"));
 	elements.stepBackButton.addEventListener("click", () => reverseCommand("step-back"));
 	elements.reverseContinueButton.addEventListener("click", () => reverseCommand("reverse-continue"));
+	elements.historySlider.addEventListener("input", () => seekHistory(elements.historySlider.value));
+	elements.historyStep.addEventListener("change", () => seekHistory(elements.historyStep.value));
+	elements.historyStep.addEventListener("keydown", (event) => { if (event.key === "Enter") seekHistory(elements.historyStep.value); });
     elements.resetButton.addEventListener("click", resetSession);
     elements.liveInputForm?.addEventListener("submit", sendLiveInput);
     window.CoolerAbout.createAboutController({

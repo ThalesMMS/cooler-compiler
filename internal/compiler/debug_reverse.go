@@ -3,6 +3,7 @@
 package compiler
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -120,6 +121,10 @@ func (s *DebugSession) ReverseTimeline() ReverseTimelineState {
 }
 
 func (s *DebugSession) StepBack(mode ReverseMode) (DebugSnapshot, error) {
+	return s.StepBackContext(context.Background(), mode)
+}
+
+func (s *DebugSession) StepBackContext(ctx context.Context, mode ReverseMode) (DebugSnapshot, error) {
 	s.ensureReverseHistory()
 	if s.reverse == nil || s.vm == nil {
 		return s.Snapshot(false, 0), ErrReverseHistoryUnavailable
@@ -141,7 +146,7 @@ func (s *DebugSession) StepBack(mode ReverseMode) (DebugSnapshot, error) {
 	if !found {
 		return s.Snapshot(false, 0), ErrReverseHistoryUnavailable
 	}
-	vm, err := s.reverse.restore(target, StopReasonReverseStep)
+	vm, err := s.reverse.restoreContext(ctx, target, StopReasonReverseStep)
 	if err != nil {
 		return s.Snapshot(false, 0), err
 	}
@@ -152,6 +157,10 @@ func (s *DebugSession) StepBack(mode ReverseMode) (DebugSnapshot, error) {
 }
 
 func (s *DebugSession) ReverseContinue() (DebugSnapshot, error) {
+	return s.ReverseContinueContext(context.Background())
+}
+
+func (s *DebugSession) ReverseContinueContext(ctx context.Context) (DebugSnapshot, error) {
 	s.ensureReverseHistory()
 	if s.reverse == nil || s.vm == nil {
 		return s.Snapshot(false, 0), ErrReverseHistoryUnavailable
@@ -160,13 +169,40 @@ func (s *DebugSession) ReverseContinue() (DebugSnapshot, error) {
 	if !found {
 		return s.Snapshot(false, 0), ErrReverseHistoryUnavailable
 	}
-	vm, err := s.reverse.restore(target, StopReasonReverseContinue)
+	vm, err := s.reverse.restoreContext(ctx, target, StopReasonReverseContinue)
 	if err != nil {
 		return s.Snapshot(false, 0), err
 	}
 	s.vm = vm
 	s.vm.watches = append([]WatchExpression(nil), s.watches...)
 	s.breakpoints = append([]Breakpoint(nil), s.vm.activeBreakpoints...)
+	return s.Snapshot(false, 0), nil
+}
+
+// SeekRetainedStep navigates the existing linear history without executing a
+// new future. At a step with several non-instruction events, the latest retained
+// checkpoint at that step is selected. Cancellation leaves the session intact.
+func (s *DebugSession) SeekRetainedStep(ctx context.Context, target int, revision uint64) (DebugSnapshot, error) {
+	if err := ctx.Err(); err != nil {
+		return s.Snapshot(false, 0), err
+	}
+	s.ensureReverseHistory()
+	if s.reverse == nil || s.vm == nil {
+		return s.Snapshot(false, 0), ErrReverseHistoryUnavailable
+	}
+	if revision != s.reverse.revision {
+		return s.Snapshot(false, 0), ErrTimelineRevision
+	}
+	if target < 0 || target > s.reverse.latestStep {
+		return s.Snapshot(false, 0), ErrReverseHistoryUnavailable
+	}
+	vm, err := s.reverse.restoreContext(ctx, target, StopReasonHistorySeek)
+	if err != nil {
+		return s.Snapshot(false, 0), err
+	}
+	s.vm = vm
+	s.vm.watches = append([]WatchExpression(nil), s.watches...)
+	s.breakpoints = append([]Breakpoint(nil), vm.activeBreakpoints...)
 	return s.Snapshot(false, 0), nil
 }
 
@@ -420,7 +456,10 @@ func (history *reverseHistory) noteBreakpoints(vm *VM, breakpoints []Breakpoint)
 	history.captureCheckpoint(vm, "")
 }
 
-func (history *reverseHistory) restore(target int, reason DebugStopReason) (*VM, error) {
+func (history *reverseHistory) restoreContext(ctx context.Context, target int, reason DebugStopReason) (*VM, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if history == nil || len(history.checkpoints) == 0 {
 		return nil, ErrReverseHistoryUnavailable
 	}
@@ -437,6 +476,9 @@ func (history *reverseHistory) restore(target int, reason DebugStopReason) (*VM,
 		return nil, ErrReverseTargetEvicted
 	}
 	checkpoint := history.checkpoints[checkpointIndex]
+	if target-checkpoint.step > maximumReverseHistoryLimits.CheckpointInterval {
+		return nil, ErrReverseHistoryUnavailable
+	}
 	vm := cloneMutableVM(checkpoint.vm)
 	history.replaying = true
 	defer func() {
@@ -445,6 +487,9 @@ func (history *reverseHistory) restore(target int, reason DebugStopReason) (*VM,
 	}()
 	stepsWithoutProgress := 0
 	for vm.executed < target && !vm.halted {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		before := vm.executed
 		if vm.waitingInput != nil {
 			input, found := history.inputFor(vm.waitingInput.Sequence, target)
@@ -489,6 +534,9 @@ func (history *reverseHistory) restore(target int, reason DebugStopReason) (*VM,
 	}
 	if vm.executed != target {
 		return nil, fmt.Errorf("could not replay to instruction %d from checkpoint %d", target, checkpoint.step)
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	if !vm.halted && vm.waitingInput == nil {
 		vm.paused = true

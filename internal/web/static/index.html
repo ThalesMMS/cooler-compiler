@@ -221,6 +221,13 @@
           </div>
 
           <aside id="stageGuide" class="stage-guide" aria-live="polite"></aside>
+		  <div class="history-navigation">
+		    <label for="historySlider">Retained history</label>
+		    <input id="historySlider" type="range" min="0" max="0" value="0" step="1" disabled aria-describedby="historyHint">
+		    <label for="historyStep">Step</label>
+		    <input id="historyStep" type="number" min="0" max="0" value="0" step="1" disabled aria-describedby="historyHint">
+		    <span id="historyHint">Browse saved steps. Resuming from the past replaces the future.</span>
+		  </div>
 
           <div id="artifactContent" class="artifact-content" tabindex="0"></div>
         </section>

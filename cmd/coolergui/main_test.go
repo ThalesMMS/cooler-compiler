@@ -528,6 +528,27 @@ func TestReverseDebuggerAPIRevisionBranchingAndMeaningfulStops(t *testing.T) {
 	if !finished.Snapshot.Runtime.Halted {
 		t.Fatalf("reverse fixture did not halt: %+v", finished.Snapshot.Runtime)
 	}
+	for _, target := range []int{limitedStep, finished.Snapshot.Timeline.LatestStep} {
+		response := postJSON(t, server.URL+"/api/vm/seek", map[string]any{"id": started.ID, "targetStep": target, "timelineRevision": oldRevision, "light": true})
+		var got struct {
+			Snapshot compiler.DebugSnapshot `json:"snapshot"`
+		}
+		err := json.NewDecoder(response.Body).Decode(&got)
+		response.Body.Close()
+		if err != nil || response.StatusCode != http.StatusOK || got.Snapshot.Timeline.CurrentStep != target || got.Snapshot.Timeline.LatestStep != finished.Snapshot.Timeline.LatestStep {
+			t.Fatalf("seek status=%d snapshot=%+v err=%v", response.StatusCode, got, err)
+		}
+	}
+	for _, body := range []map[string]any{
+		{"id": started.ID, "timelineRevision": oldRevision},
+		{"id": started.ID, "timelineRevision": oldRevision, "targetStep": -1},
+	} {
+		response := postJSON(t, server.URL+"/api/vm/seek", body)
+		response.Body.Close()
+		if response.StatusCode != http.StatusBadRequest {
+			t.Fatalf("invalid seek status=%d", response.StatusCode)
+		}
+	}
 
 	reverseResponse := postJSON(t, server.URL+"/api/vm/reverse-continue", map[string]any{
 		"id": started.ID, "timelineRevision": oldRevision, "light": true,
@@ -1262,6 +1283,7 @@ func TestEveryStateChangingEndpointRequiresCapability(t *testing.T) {
 		"/api/vm/heap",
 		"/api/vm/step-back",
 		"/api/vm/reverse-continue",
+		"/api/vm/seek",
 		"/api/vm/dispose",
 	}
 	for _, path := range paths {

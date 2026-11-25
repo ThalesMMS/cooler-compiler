@@ -19,6 +19,53 @@ import (
 
 const helloProgram = `class Main inherits IO { main() : Object { out_string("hello\n") }; };`
 
+func TestPublicHistoryNavigation(t *testing.T) {
+	ctx := context.Background()
+	s, err := api.NewSession(ctx, api.Project{Sources: []api.SourceUnit{{ID: "main", Name: "main.cl", Content: helloProgram}}}, api.DefaultOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := s.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	if _, err := s.Complete(ctx); err != nil {
+		t.Fatal(err)
+	}
+	d, err := s.Debugger(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := d.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	final, err := d.Run(ctx, 1000, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.SeekRetainedStep(ctx, 0, final.Timeline.Revision); err != nil {
+		t.Fatal(err)
+	}
+	got, err := d.SeekRetainedStep(ctx, final.Timeline.LatestStep, final.Timeline.Revision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Timeline.StateHash != final.Timeline.StateHash || got.StopReason != api.StopHistorySeek {
+		t.Fatalf("round trip: %+v", got)
+	}
+	if _, err := d.SeekRetainedStep(ctx, 0, final.Timeline.Revision+1); !errors.Is(err, api.ErrTimelineRevision) {
+		t.Fatalf("revision identity: %v", err)
+	}
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := d.SeekRetainedStep(cancelled, 0, final.Timeline.Revision); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancel identity: %v", err)
+	}
+}
+
 func TestCompileRunAndImmutableArtifacts(t *testing.T) {
 	result, err := api.Compile(context.Background(), helloProgram, api.DefaultOptions())
 	if err != nil {
