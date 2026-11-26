@@ -913,6 +913,18 @@ html[data-theme="light"] .code-block { background: #202532; color: #f1f4fa; }
 .about-github:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 2100px) {
+  .app-shell { grid-template-rows: auto minmax(0, 1fr) 28px; }
+  .topbar {
+    grid-template-columns: minmax(82px, 260px) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 6px 9px;
+    min-height: 100px;
+    padding-block: 8px;
+  }
+  .brand-area { grid-column: 1; grid-row: 1; }
+  .topbar-actions { grid-column: 2 / -1; grid-row: 1; justify-content: flex-end; min-width: 0; }
+  .toolbar { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; align-content: start; }
+  .toolbar > * { flex: 0 0 auto; }
   .toolbar { gap: 4px; }
   .responsive-action-button {
     flex: 0 0 34px;
@@ -929,13 +941,13 @@ html[data-theme="light"] .code-block { background: #202532; color: #f1f4fa; }
 
 @media (max-width: 1900px) {
   .brand-copy { display: none; }
-  .topbar { grid-template-columns: 82px minmax(0, 1fr) auto; gap: 9px; padding-inline: 12px; }
+  .topbar { grid-template-columns: 82px minmax(0, 1fr); gap: 9px; padding-inline: 12px; }
 }
 
 @media (max-width: 1180px) {
-  .topbar { grid-template-columns: 82px 1fr auto; }
+  .topbar { grid-template-columns: 82px minmax(0, 1fr); }
   .button { padding-left: 9px; padding-right: 9px; }
-  .toolbar { justify-content: flex-start; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .toolbar { justify-content: flex-start; flex-wrap: nowrap; gap: 4px; overflow-x: auto; scrollbar-width: none; }
   .toolbar::-webkit-scrollbar { display: none; }
   select { min-width: 130px; }
   .toolbar .select-wrap select { min-width: 112px; }
@@ -946,7 +958,7 @@ html[data-theme="light"] .code-block { background: #202532; color: #f1f4fa; }
 }
 
 @media (max-width: 1450px) and (min-width: 1181px) {
-  .topbar { grid-template-columns: 82px minmax(0, 1fr) auto; gap: 9px; padding-left: 12px; padding-right: 12px; }
+  .topbar { grid-template-columns: 82px minmax(0, 1fr); gap: 9px; padding-left: 12px; padding-right: 12px; }
   .brand { gap: 8px; }
   .brand-mark { width: 30px; height: 30px; }
   .button { padding-left: 7px; padding-right: 7px; font-size: 11px; }
@@ -970,10 +982,13 @@ html[data-theme="light"] .code-block { background: #202532; color: #f1f4fa; }
 
 @media (max-width: 560px) {
   /* Let the topbar actions shrink so the bar never exceeds a 375px viewport. */
-  .topbar { grid-template-columns: auto minmax(0, 1fr); }
-  .topbar-actions { min-width: 0; justify-content: flex-end; }
+  .topbar { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto auto; }
+  .topbar-actions { grid-column: 1 / -1; grid-row: 2; min-width: 0; justify-content: flex-start; }
   .topbar-actions .select-wrap { flex: 0 1 auto; min-width: 0; }
   .topbar-actions .select-wrap select { min-width: 0; width: 100%; }
+  .topbar-actions > label:last-of-type { min-width: 0; }
+  .topbar-actions > label:last-of-type select { width: 48px; min-width: 48px; }
+  .toolbar { grid-row: 3; }
   .about-surface { padding: 22px 18px; }
   .about-hero { grid-template-columns: 64px minmax(0, 1fr); gap: 13px; }
   .about-app-icon { width: 64px; height: 64px; border-radius: 15px; }
