@@ -21,3 +21,12 @@ This dual-license offer applies only to material for which
 Thales Matheus Mendonça Santos owns the copyright or has authority to offer alternative terms. Third-party
 software, assets, data, models, and other materials remain under their
 respective licenses and notices.
+
+## Contributions
+
+Outside contributions are accepted only under the
+[Contributor License Agreement](CLA.md). It gives the copyright holder the
+right to distribute contributed material under both alternatives above, so
+accepted contributions are covered by this dual-license offer. Contributors
+keep the copyright in their work, and every accepted contribution remains
+available under the AGPL or another OSI-approved license.

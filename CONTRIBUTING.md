@@ -4,6 +4,19 @@ Cooler Compiler is a local-first educational compiler. Contributions should
 preserve deterministic behavior, explicit compatibility boundaries, and the
 absence of hosted build or test dependencies.
 
+## Contributor License Agreement
+
+Every outside contribution requires agreement to the
+[Contributor License Agreement](CLA.md). You keep the copyright in your work;
+the agreement lets the maintainer keep offering Cooler Compiler under the AGPL
+and under commercial terms, including in app stores whose terms conflict with
+copyleft licenses. In return, every accepted contribution stays available under
+the AGPL or another OSI-approved license.
+
+To agree, include the acceptance statement in [`CLA.md`](CLA.md#7-how-to-agree)
+with your contribution. If you contribute for a company or other organization,
+contact the maintainer first so the organization can sign an entity agreement.
+
 ## Development setup
 
 Install the Go version declared in [`go.mod`](go.mod) and Node.js 20 or newer, then clone
@@ -22,25 +35,6 @@ go run ./cmd/coolergui --browser
 The GUI is served locally. No account, database, cloud service, or CI runner is
 required. Platform-specific prerequisites and the full gate are documented in
 [`docs/release.md`](docs/release.md).
-
-## Repository and branch model
-
-`main` represents reviewed project history and is the repository default. The
-v1.0.0 stabilization sequence is a maintainer-only exception to the usual
-feature-branch workflow: issues #51 through #61 are completed strictly in order,
-committed directly to `main`, and do not use implementation branches or pull
-requests. Each issue must be locally validated, committed, pushed, commented
-with exact evidence, and closed before the next issue begins. A later regression
-reopens the earliest issue whose contract was violated.
-
-Work outside that locked sequence uses a focused branch for each unit of work,
-keeps unrelated edits separate, and links the issue in the pull request or
-commit discussion. The complete state model and immutable-candidate rules are
-in the [v1.0.0 completion contract](docs/v1.0-completion-contract.md).
-
-This development repository can contain unreleased planning and evidence. Only
-reviewed release history is promoted to the public distribution repository, and
-release-affecting changes must preserve the repository's publication boundary.
 
 Keep commits reviewable and include tests with behavior changes. Do not commit
 `bin/`, `dist/`, downloaded toolchains, credentials, or machine-specific paths.
@@ -70,7 +64,7 @@ Compiler robustness work also uses `make fuzz-smoke`, `make property-test`, and
 targeted campaigns such as `make fuzz TARGET=FuzzCompile DURATION=10m`. Inputs
 are bounded and fuzzing stays local. Minimize a reproduced failure, add it to
 `internal/compiler/testdata/fuzz-regressions/`, and record its bug class and
-issue in the manifest. See the [robustness testing guide](docs/robustness-testing.md).
+expected invariant in the manifest.
 
 If a user-supplied Stanford-compatible toolchain is available, `make
 differential` compares the original corpus locally. Do not download or commit
@@ -130,7 +124,7 @@ large inventories. `make docs-check` rejects broken relative links, missing
 anchors, invalid schema identities, missing document-index entries, and a stale
 diagnostic code catalog.
 
-## Reporting security issues
+## Reporting a vulnerability
 
-Do not open a public issue for a suspected vulnerability. Follow
+Do not post vulnerability details publicly. Follow
 [`SECURITY.md`](SECURITY.md#reporting-a-vulnerability).
