@@ -2,7 +2,7 @@
 
 **Cooler Compiler** is a standalone educational compiler and debugger for the **COOL (Classroom Object-Oriented Language)** programming language. It combines a Go compiler core, an embedded browser/WebView interface, source-linked artifacts, a stack IR, pseudo-assembly, and an interactive VM session.
 
-**Current supported release:** [Cooler Compiler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0). Release assets include checksums and a build manifest.
+**Current supported release:** [Cooler Compiler v1.1.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.1.0). Release assets include checksums and a build manifest.
 
 The compiler and local server are self-contained. On macOS, the GUI opens in a native `WKWebView`; on Windows, a CGO build uses the native WebView2-backed window. Linux and CGO-disabled desktop builds automatically use the default browser.
 
@@ -11,7 +11,7 @@ The compiler and local server are self-contained. On macOS, the GUI opens in a n
 ```bash
 git clone https://github.com/ThalesMMS/cooler-compiler.git
 cd cooler-compiler
-git checkout v1.0.0
+git checkout v1.1.0
 ```
 
 ## Scope and compatibility
@@ -69,6 +69,14 @@ This section is the canonical release-note link for the v1.0.0 compatibility con
   heap/watch/reverse capabilities;
 - local `cooler-lsp` stdio language server with diagnostics, navigation,
   symbols, hover, completion, semantic tokens, and safe quick fixes.
+- configurable compiler warnings and symbol suggestions, comment-preserving
+  source formatting, and manifest-driven program tests;
+- LSP rename, signature help, and optional inlay hints, plus a local VS Code
+  extension with a DAP debugger;
+- AST/CFG graph visualization and export, automatic draft recovery, and
+  read-only inspection of exported reports;
+- opt-in Course mode for reference formats, a generated front-end, and MIPS
+  assembly with an embedded simulator.
 
 ## Use as a Go library
 
@@ -220,7 +228,7 @@ make fuzz-smoke
 make property-test
 make build
 make build-all
-make release-artifacts VERSION=1.0.0
+make release-artifacts VERSION=1.1.0
 ```
 
 Before preparing a release, run the complete local gate:
@@ -263,6 +271,8 @@ go build ./cmd/cooler-lsp
   [educational optimization contract](docs/optimization.md),
   [visualization and provenance model](docs/visualization-model.md).
 - Engineering/release: [architecture](docs/architecture.md),
+  [v1.1.0 release notes](docs/release-notes-v1.1.0.md),
+  [v1.1.0 platform support](docs/release-validation-v1.1.0.md),
   [v1.0.0 release notes](docs/release-notes-v1.0.0.md),
   [v1.0.0 platform support](docs/release-validation-v1.0.0.md),
   [local release process](docs/release.md).

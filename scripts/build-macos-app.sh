@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-VERSION="${1:-1.0.0}"
+VERSION="${1:-1.1.0}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="${DIST_DIR:-$ROOT/dist}"
 COMMIT="${COMMIT:-$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null || true)}"

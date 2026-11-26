@@ -124,6 +124,40 @@ CLI, JSON, archive, and Go-facing contracts.
   `cooler-lsp` binary, and neither debugger nor LSP capabilities are required
   for compilation.
 
+## 1.1.0
+
+### Added
+
+- Optional Course mode for course-style token, AST, and semantic output; a
+  generated lexer/parser front-end; MIPS code generation; and an embedded MIPS
+  simulator. Existing defaults remain unchanged.
+- CLI source formatting and manifest-driven tests for COOL programs.
+- Configurable semantic warnings, symbol suggestions, rename, signature help,
+  and inlay hints across the CLI, GUI, and language server.
+- AST and control-flow graph visualization/export, durable GUI draft recovery,
+  and read-only inspection of exported reports.
+- A local VS Code extension and DAP debugger adapter.
+- Contributor license terms for accepting outside contributions.
+
+### Changed
+
+- The public Go API advances to 1.1.0 with the optional front-end selector.
+- Compile-report schema 1.6.0 records the selected front-end while preserving
+  decoding of earlier 1.x reports.
+- Educational IR optimization includes algebraic simplification and safe
+  removal of discarded local computations. Reverse-debug history supports
+  direct seeking within its retained range.
+- Release packages include updated application branding and the current local
+  command-line, GUI, language-server, and debugger features.
+
+### Migration notes
+
+- Existing compiler behavior, diagnostics, and artifacts remain the defaults;
+  select the new Course mode options explicitly to use course formats or MIPS.
+- Report consumers should accept schema 1.6.0 and continue handling compatible
+  additive 1.x fields. Go clients can check `compiler.APIVersion` before using
+  the new `Options.Frontend` field.
+
 ## 0.1.0
 
 ### Added
@@ -148,5 +182,6 @@ version and a migration note here. One previous report-schema major is readable
 for at least one maintenance release or rejected with a specific unsupported
 version error. See the canonical [artifact version policy](docs/artifact-contract.md#version-policy).
 
+[1.1.0]: https://github.com/ThalesMMS/cooler-compiler/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ThalesMMS/cooler-compiler/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/ThalesMMS/cooler-compiler/releases/tag/v0.1.0

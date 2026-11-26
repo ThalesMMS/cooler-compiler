@@ -52,7 +52,7 @@ commit and an empty `dist/`, produce the actual deterministic release packages
 and provenance with:
 
 ```bash
-make release-artifacts VERSION=1.0.0
+make release-artifacts VERSION=1.1.0
 ```
 
 The four packages, `release-manifest.json`, and `SHA256SUMS` are described by

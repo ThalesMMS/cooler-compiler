@@ -97,7 +97,7 @@ function Invoke-Build {
     }
     
     $env:CGO_ENABLED = "0"
-    $ldflags = "-s -w -X main.version=1.0.0"
+    $ldflags = "-s -w -X main.version=1.1.0"
     
     Write-Host "Building coolergui..." -ForegroundColor Cyan
     go build -trimpath -ldflags $ldflags -o "$binDir\coolergui.exe" ./cmd/coolergui
@@ -126,9 +126,9 @@ function Invoke-Package {
     Copy-Item -Path "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md" -Destination $distDir -Force
     
     $env:CGO_ENABLED = "0"
-    $ldflags = "-s -w -X main.version=1.0.0"
+    $ldflags = "-s -w -X main.version=1.1.0"
     
-    $version = "1.0.0"
+    $version = "1.1.0"
     $outputName = "coolergui-windows-amd64-v$version.exe"
     
     Write-Host "Building standalone executable (browser mode)..." -ForegroundColor Cyan
@@ -166,9 +166,9 @@ function Invoke-PackageNative {
     Copy-Item -Path "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md" -Destination $distDir -Force
     
     $env:CGO_ENABLED = "1"
-    $ldflags = "-s -w -X main.version=1.0.0"
+    $ldflags = "-s -w -X main.version=1.1.0"
     
-    $version = "1.0.0"
+    $version = "1.1.0"
     $outputName = "coolergui-windows-amd64-native-v$version.exe"
     
     Write-Host "Building standalone executable with native window support..." -ForegroundColor Cyan

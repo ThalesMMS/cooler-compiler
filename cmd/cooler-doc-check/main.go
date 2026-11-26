@@ -35,7 +35,7 @@ var requiredDocuments = []string{
 	"docs/debugger-protocol.md", "docs/artifact-contract.md",
 	"docs/multifile.md", "docs/conformance.md", "docs/lsp.md",
 	"docs/conformance-summary.md",
-	"docs/release-notes-v1.0.0.md", "docs/release-validation-v1.0.0.md",
+	"docs/release-notes-v1.1.0.md", "docs/release-validation-v1.1.0.md",
 	"docs/course-assignments.md",
 	"docs/mips-backend.md",
 }

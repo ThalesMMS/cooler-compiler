@@ -26,7 +26,7 @@ cd "$ROOT"
 commit="$(git rev-parse --verify HEAD)"
 epoch="$(git show -s --format=%ct "$commit")"
 for run in first second; do
-  RELEASE_ALLOW_DIRTY=1 VERSION="${VERSION:-1.0.0}" COMMIT="$commit" SOURCE_DATE_EPOCH="$epoch" \
+  RELEASE_ALLOW_DIRTY=1 VERSION="${VERSION:-1.1.0}" COMMIT="$commit" SOURCE_DATE_EPOCH="$epoch" \
     ./scripts/build-release.sh "$work_dir/$run" >/dev/null
 done
 

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 APP_NAME := Cooler Compiler
-VERSION ?= 1.0.0
+VERSION ?= 1.1.0
 COMMIT ?= $(shell git rev-parse --verify HEAD 2>/dev/null)
 SOURCE_DATE_EPOCH ?= $(shell git show -s --format=%ct HEAD 2>/dev/null)
 BUILD_DATE ?= $(SOURCE_DATE_EPOCH)

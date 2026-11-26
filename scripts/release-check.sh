@@ -114,7 +114,8 @@ check_javascript() {
   node --test \
     internal/web/static/about.test.js \
     internal/web/static/client-utils.test.js \
-    internal/web/static/app-modules.test.mjs
+    internal/web/static/app-modules.test.mjs \
+    internal/web/static/course.test.mjs
 }
 
 check_shell_scripts() {
