@@ -16,17 +16,24 @@ if [[ ! -d "$APP" ]]; then
 fi
 
 bundle_id="thalesmms.coolercompiler"
-running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
-if [[ "$running_info" == *'"pid"='* ]]; then
+read_app_pid() {
+  local info
+  info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
+  sed -nE \
+    -e 's/.*"pid"=([0-9]+).*/\1/p' \
+    -e 's/.*pid[[:space:]]*=[[:space:]]*([0-9]+).*/\1/p' \
+    -e 's/^ *([0-9]+)[[:space:]].*/\1/p' <<<"$info" | head -n 1
+}
+
+app_pid="$(read_app_pid)"
+if [[ -n "$app_pid" ]]; then
   echo "an application with bundle identifier $bundle_id is already running" >&2
   exit 1
 fi
 
 open -n "$APP"
-app_pid=""
 for _ in {1..100}; do
-  running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
-  app_pid="$(sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p' <<<"$running_info")"
+  app_pid="$(read_app_pid)"
   [[ -n "$app_pid" ]] && break
   sleep 0.1
 done

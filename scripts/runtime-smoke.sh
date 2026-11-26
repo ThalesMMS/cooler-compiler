@@ -15,15 +15,11 @@ architecture="$(uname -m)"
 smoke_port="${COOLER_SMOKE_PORT:-0}"
 smoke_root="$(mktemp -d "${TMPDIR:-/tmp}/cooler-runtime-smoke.XXXXXX")"
 gui_pid=""
-native_pid=""
 
 cleanup() {
   if [[ -n "$gui_pid" ]] && kill -0 "$gui_pid" 2>/dev/null; then
     kill "$gui_pid" 2>/dev/null || true
     wait "$gui_pid" 2>/dev/null || true
-  fi
-  if [[ -n "$native_pid" ]] && kill -0 "$native_pid" 2>/dev/null; then
-    kill "$native_pid" 2>/dev/null || true
   fi
   if [[ -d "$smoke_root" && "$(basename "$smoke_root")" == cooler-runtime-smoke.* ]]; then
     find "$smoke_root" -depth -delete
@@ -222,36 +218,7 @@ grep -q 'Cooler Compiler' "$smoke_root/index.html"
 printf '[PASS] browser GUI served health and secured application HTML\n'
 
 if [[ "$platform" == Darwin && -d "$package_dir/Cooler Compiler.app" ]]; then
-  bundle_id="thalesmms.coolercompiler"
-  running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
-  if [[ "$running_info" == *'"pid"='* ]]; then
-    printf '[FAIL] an application with bundle identifier %s is already running\n' "$bundle_id" >&2
-    exit 1
-  fi
-  open -n "$package_dir/Cooler Compiler.app"
-  for _ in {1..100}; do
-    running_info="$(lsappinfo info -only pid -app "$bundle_id" 2>/dev/null || true)"
-    native_pid="$(sed -n 's/.*"pid"=\([0-9][0-9]*\).*/\1/p' <<<"$running_info")"
-    [[ -n "$native_pid" ]] && break
-    sleep 0.1
-  done
-  if [[ -z "$native_pid" ]]; then
-    printf '[FAIL] packaged native macOS app did not launch\n' >&2
-    exit 1
-  fi
-  osascript -e "tell application id \"$bundle_id\" to quit"
-  for _ in {1..100}; do
-    if ! kill -0 "$native_pid" 2>/dev/null; then
-      native_pid=""
-      printf '[PASS] packaged native macOS app launch and Apple Quit event\n'
-      break
-    fi
-    sleep 0.1
-  done
-  if [[ -n "$native_pid" ]]; then
-    printf '[FAIL] packaged native macOS app remained running after Apple Quit event\n' >&2
-    exit 1
-  fi
+  ./scripts/test-macos-quit.sh "$package_dir/Cooler Compiler.app"
 fi
 
 if [[ "$platform" == Linux ]] && command -v ldd >/dev/null 2>&1; then
