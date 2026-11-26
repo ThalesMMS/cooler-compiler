@@ -75,6 +75,7 @@ Parser codes preserve these category boundaries:
 | `COL2060`–`COL2107` | Control, block, let, and case forms |
 | `COL2110` | Expression nesting exceeded 512 levels |
 | `COL2111` | The deterministic 100-diagnostic parser cap was reached |
+| `COL2200` | Syntax error reported by the opt-in generated LALR parser (`--frontend=generated`), worded like the course parser |
 
 Parser diagnostics are emitted in encounter order. Missing delimiters can share
 a recovery position, but one root error cannot produce an unbounded cascade.
@@ -174,6 +175,11 @@ class Main {
 };
 ```
 
+Course-compatible error text (PA2–PA4) is an opt-in view, not a diagnostic
+format change: `coolerc check --diagnostic-format=reference` and the GUI's
+Diagnostics **Reference format** toggle print the course lexer/parser/semant
+report described in [`cli.md`](cli.md#check---diagnostic-formatreference-pa4).
+
 Request stable JSON-shaped diagnostics with:
 
 ```bash
@@ -197,6 +203,7 @@ in the same change that introduces it.
 - `COL0005`
 - `COL0006`
 - `COL0007`
+- `COL0008`
 - `COL1001`
 - `COL1002`
 - `COL1003`
@@ -261,6 +268,7 @@ in the same change that introduces it.
 - `COL2107`
 - `COL2110`
 - `COL2111`
+- `COL2200`
 - `COL3001`
 - `COL3002`
 - `COL3010`

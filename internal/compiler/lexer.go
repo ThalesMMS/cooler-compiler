@@ -28,6 +28,11 @@ type lexer struct {
 	tokens      []Token
 	diagnostics []Diagnostic
 	previousCR  bool
+	// reference enables the course-lexer compatibility mode used by the
+	// reference token dump: lexical errors also become ERROR tokens in the
+	// stream, and byte-oriented rules follow the classic cool.flex contract.
+	reference bool
+	rawBytes  map[int]byte
 }
 
 func Lex(source string) ([]Token, []Diagnostic) {
@@ -39,6 +44,26 @@ func LexSource(sourceID, source string) ([]Token, []Diagnostic) {
 	l := &lexer{sourceID: sourceID, runes: runes, invalidUTF8: invalidUTF8, line: 1, column: 1}
 	l.scan()
 	return l.tokens, l.diagnostics
+}
+
+// LexReferenceSource lexes source in course-compatibility mode. The returned
+// stream interleaves TokenError tokens whose Literal is the reference lexer's
+// error message, mirroring the ERROR tokens printed by the course lexer.
+func LexReferenceSource(sourceID, source string) []Token {
+	runes, invalidUTF8 := decodeSource(source)
+	raw := map[int]byte{}
+	index, offset := 0, 0
+	for offset < len(source) {
+		r, size := utf8.DecodeRuneInString(source[offset:])
+		if r == utf8.RuneError && size == 1 {
+			raw[index] = source[offset]
+		}
+		offset += size
+		index++
+	}
+	l := &lexer{sourceID: sourceID, runes: runes, invalidUTF8: invalidUTF8, line: 1, column: 1, reference: true, rawBytes: raw}
+	l.scan()
+	return l.tokens
 }
 
 func (l *lexer) scan() {
@@ -62,7 +87,7 @@ func (l *lexer) scanToken() {
 	invalidUTF8 := l.invalidUTF8[l.current]
 	c := l.advance()
 	if invalidUTF8 {
-		l.addError("COL1008", "source contains malformed UTF-8", "Save COOL source as valid UTF-8.", l.currentSpan())
+		l.invalidSourceByte()
 		return
 	}
 	switch c {
@@ -102,8 +127,7 @@ func (l *lexer) scanToken() {
 		l.addSimple(TokenMinus)
 	case '*':
 		if l.match(')') {
-			span := l.currentSpan()
-			l.addError("COL1004", "unmatched block-comment terminator '*)'", "Remove the terminator or add the matching '(*'.", span)
+			l.unmatchedCommentEnd()
 			return
 		}
 		l.addSimple(TokenStar)
@@ -128,10 +152,16 @@ func (l *lexer) scanToken() {
 	case '"':
 		l.stringLiteral()
 	case '_':
+		if l.reference {
+			// cool.flex has no rule for a leading '_': it is one invalid
+			// character, and lexing resumes immediately after it.
+			l.refError("_")
+			return
+		}
 		for isIdentifierPart(l.peek()) {
 			l.advance()
 		}
-		l.addError("COL1009", "identifier cannot begin with '_'", "Begin object identifiers with a lowercase ASCII letter and type identifiers with an uppercase ASCII letter.", l.currentSpan())
+		l.leadingUnderscore()
 	default:
 		switch {
 		case isASCIIDigit(c):
@@ -139,8 +169,7 @@ func (l *lexer) scanToken() {
 		case isIdentifierStart(c):
 			l.identifier()
 		default:
-			span := l.currentSpan()
-			l.addError("COL1001", "unrecognized character "+strconv.QuoteRune(c), "Use a token from the COOL lexical grammar.", span)
+			l.unrecognized(c)
 		}
 	}
 }
@@ -169,7 +198,7 @@ func (l *lexer) blockComment() {
 		l.advance()
 	}
 	if depth > 0 {
-		l.addError("COL1003", "unterminated block comment", "Close every '(*' with a matching '*)'.", l.currentSpan())
+		l.unterminatedComment()
 	}
 }
 
@@ -177,18 +206,26 @@ func (l *lexer) stringLiteral() {
 	var value strings.Builder
 	characters := 0
 	failed := false
+	referenceMessage := ""
 	fail := func(code, message, hint string, span Span) {
 		if failed {
 			return
 		}
 		failed = true
+		if referenceMessage == "" {
+			referenceMessage = referenceLexerMessage(code)
+		}
 		l.addError(code, message, hint, span)
 	}
 	appendCharacter := func(r rune, span Span) {
 		if failed {
 			return
 		}
-		characters++
+		if l.reference {
+			characters += utf8.RuneLen(r)
+		} else {
+			characters++
+		}
 		if characters > maxCoolStringCharacters {
 			fail("COL1006", "string constant is too long", "Keep string constants at or below 1024 characters.", span)
 			return
@@ -197,10 +234,23 @@ func (l *lexer) stringLiteral() {
 	}
 	for !l.atEnd() {
 		characterLine, characterColumn, characterOffset := l.line, l.column, l.offset16
+		characterIndex := l.current
 		invalidUTF8 := l.invalidUTF8[l.current]
 		c := l.advance()
 		characterSpan := l.spanFrom(characterLine, characterColumn, characterOffset)
 		if invalidUTF8 {
+			if l.reference {
+				// Bytes are ordinary string characters for the course lexer.
+				if !failed {
+					characters++
+					if characters > maxCoolStringCharacters {
+						fail("COL1006", "string constant is too long", "Keep string constants at or below 1024 characters.", characterSpan)
+						continue
+					}
+					value.WriteByte(l.rawBytes[characterIndex])
+				}
+				continue
+			}
 			fail("COL1008", "string contains malformed UTF-8", "Save COOL source as valid UTF-8.", characterSpan)
 			continue
 		}
@@ -208,10 +258,21 @@ func (l *lexer) stringLiteral() {
 		case '"':
 			if !failed {
 				l.addToken(TokenString, value.String())
+			} else {
+				l.refError(referenceMessage)
 			}
 			return
 		case '\n', '\r':
+			if c == '\r' && l.reference {
+				// Only '\n' ends a line for the course lexer.
+				appendCharacter(c, characterSpan)
+				continue
+			}
+			if !failed {
+				referenceMessage = "Unterminated string constant"
+			}
 			fail("COL1002", "unterminated string constant", "Keep the string on one line or escape the newline with a backslash.", l.currentSpan())
+			l.refError(referenceMessage)
 			return
 		case 0:
 			fail("COL1005", "string contains a null character", "Remove the null character from the string.", characterSpan)
@@ -223,6 +284,13 @@ func (l *lexer) stringLiteral() {
 			escaped := l.advance()
 			escapeSpan := l.spanFrom(characterLine, characterColumn, characterOffset)
 			if l.invalidUTF8[escapeIndex] {
+				if l.reference {
+					if !failed {
+						characters++
+						value.WriteByte(l.rawBytes[escapeIndex])
+					}
+					continue
+				}
 				fail("COL1008", "string escape contains malformed UTF-8", "Save COOL source as valid UTF-8.", escapeSpan)
 				continue
 			}
@@ -238,6 +306,10 @@ func (l *lexer) stringLiteral() {
 			case '\n':
 				appendCharacter('\n', escapeSpan)
 			case '\r':
+				if l.reference {
+					appendCharacter('\r', escapeSpan)
+					continue
+				}
 				if l.peek() == '\n' {
 					l.advance()
 					escapeSpan = l.spanFrom(characterLine, characterColumn, characterOffset)
@@ -253,16 +325,40 @@ func (l *lexer) stringLiteral() {
 			appendCharacter(c, characterSpan)
 		}
 	}
+	if !failed {
+		referenceMessage = "EOF in string constant"
+	}
 	fail("COL1002", "unterminated string constant", "Add a closing double quote.", l.currentSpan())
+	l.refError(referenceMessage)
+}
+
+// referenceLexerMessage maps a string-literal diagnostic to the message the
+// course lexer reports in its ERROR token.
+func referenceLexerMessage(code string) string {
+	switch code {
+	case "COL1005":
+		return "String contains null character."
+	case "COL1010":
+		return "String contains escaped null character."
+	case "COL1006":
+		return "String constant too long"
+	default:
+		return "Unterminated string constant"
+	}
 }
 
 func (l *lexer) number() {
 	for isASCIIDigit(l.peek()) {
 		l.advance()
 	}
+	l.finishNumber()
+}
+
+// finishNumber adds the integer token for the digits already consumed.
+func (l *lexer) finishNumber() {
 	lexeme := string(l.runes[l.start:l.current])
 	literal := lexeme
-	if !validIntegerLiteral(lexeme) {
+	if !validIntegerLiteral(lexeme) && !l.reference {
 		l.addError("COL1007", "integer constant is outside the signed 32-bit range", "Use a value from 0 through 2147483647; write negative values with '~'.", l.currentSpan())
 		literal = "0"
 	}
@@ -273,6 +369,12 @@ func (l *lexer) identifier() {
 	for isIdentifierPart(l.peek()) {
 		l.advance()
 	}
+	l.finishIdentifier()
+}
+
+// finishIdentifier classifies the identifier already consumed as a keyword,
+// Boolean constant, type identifier, or object identifier.
+func (l *lexer) finishIdentifier() {
 	lexeme := string(l.runes[l.start:l.current])
 	lower := strings.ToLower(lexeme)
 	if keyword, ok := coolKeywords[lower]; ok {
@@ -302,6 +404,51 @@ func (l *lexer) addToken(t TokenType, literal string) {
 	span := l.currentSpan()
 	l.tokens = append(l.tokens, Token{
 		Type: t, Lexeme: lexeme, Literal: literal,
+		Line: span.StartLine, Column: span.StartColumn, Offset: span.StartOffset, Span: span,
+	})
+}
+
+// Shared token and diagnostic helpers. The hand-written scanner and the
+// generated (spec-driven) scanner both call them, so the two lexers report
+// identical tokens, spans, and diagnostics.
+
+func (l *lexer) invalidSourceByte() {
+	l.addError("COL1008", "source contains malformed UTF-8", "Save COOL source as valid UTF-8.", l.currentSpan())
+	l.refError(string([]byte{l.rawBytes[l.start]}))
+}
+
+func (l *lexer) unmatchedCommentEnd() {
+	l.addError("COL1004", "unmatched block-comment terminator '*)'", "Remove the terminator or add the matching '(*'.", l.currentSpan())
+	l.refError("Unmatched *)")
+}
+
+func (l *lexer) leadingUnderscore() {
+	l.addError("COL1009", "identifier cannot begin with '_'", "Begin object identifiers with a lowercase ASCII letter and type identifiers with an uppercase ASCII letter.", l.currentSpan())
+}
+
+func (l *lexer) unrecognized(c rune) {
+	l.addError("COL1001", "unrecognized character "+strconv.QuoteRune(c), "Use a token from the COOL lexical grammar.", l.currentSpan())
+	// The course lexer is byte-oriented: every byte of a multibyte
+	// character is a separate invalid character.
+	for _, b := range []byte(string(c)) {
+		l.refError(string([]byte{b}))
+	}
+}
+
+func (l *lexer) unterminatedComment() {
+	l.addError("COL1003", "unterminated block comment", "Close every '(*' with a matching '*)'.", l.currentSpan())
+	l.refError("EOF in comment")
+}
+
+// refError appends a course-style ERROR token covering the current lexeme.
+// It is a no-op outside reference mode.
+func (l *lexer) refError(message string) {
+	if !l.reference {
+		return
+	}
+	span := l.currentSpan()
+	l.tokens = append(l.tokens, Token{
+		Type: TokenError, Lexeme: string(l.runes[l.start:l.current]), Literal: message,
 		Line: span.StartLine, Column: span.StartColumn, Offset: span.StartOffset, Span: span,
 	})
 }
@@ -346,7 +493,7 @@ func (l *lexer) advance() rune {
 	r := l.runes[l.current]
 	l.current++
 	l.offset16 += utf16RuneLen(r)
-	if r == '\r' {
+	if r == '\r' && !l.reference {
 		l.line++
 		l.column = 1
 		l.previousCR = true

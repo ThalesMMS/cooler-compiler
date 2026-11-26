@@ -63,7 +63,7 @@ func TestBuildProducesDeterministicSafePackagesAndVerifiedMetadata(t *testing.T)
 	if decoded.SchemaVersion != ManifestSchemaVersion || decoded.SourceCommit != options.SourceCommit || decoded.Validation.BuildStatus != "built" {
 		t.Fatalf("unexpected release manifest: %+v", decoded)
 	}
-	if decoded.Validation.EvidenceDocument != "docs/release-validation-v0.1.1.md" {
+	if decoded.Validation.EvidenceDocument != "docs/release-validation-v1.0.0.md" {
 		t.Fatalf("evidence document = %q", decoded.Validation.EvidenceDocument)
 	}
 	assertReleaseSchemaFields(t, filepath.Join("..", "..", "schemas", "release-manifest-v1.schema.json"), manifestData)
@@ -342,5 +342,16 @@ func assertChecksumFile(t *testing.T, directory string) {
 	}
 	if !sort.StringsAreSorted(names) {
 		t.Fatalf("checksums are not sorted: %v", names)
+	}
+}
+
+func TestArchiveRejectsCourseTools(t *testing.T) {
+	for _, name := range []string{"bin/spim", "cooler/coolc.exe", "lib/trap.handler", "goyacc", "x/Bison"} {
+		if err := validateArchiveEntries([]archiveEntry{{Name: name}}); err == nil {
+			t.Fatalf("%s was accepted", name)
+		}
+	}
+	if err := validateArchiveEntries([]archiveEntry{{Name: "cooler/coolerc"}, {Name: "cooler/coolergui.exe"}, {Name: "cooler/docs/parser.md"}}); err != nil {
+		t.Fatal(err)
 	}
 }

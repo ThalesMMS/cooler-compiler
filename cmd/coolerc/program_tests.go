@@ -276,6 +276,13 @@ func writeProgramTestError(writer io.Writer, err error, code int) int {
 
 func loadProgramCase(ctx context.Context, root string, item programTestCase) (api.Project, error) {
 	project := api.Project{Sources: []api.SourceUnit{}}
+	// Sources are resolved through symlinks, so the root must be too, or a
+	// root under a symlinked directory (macOS /var -> /private/var) would
+	// make every source look like it escapes it.
+	root, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		return project, err
+	}
 	total := 0
 	for _, source := range item.Sources {
 		if err := ctx.Err(); err != nil {

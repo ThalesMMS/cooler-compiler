@@ -44,7 +44,8 @@
         "inputProvided": { "type": "boolean" },
         "vmPolicy": { "$ref": "#/$defs/vmPolicy" },
         "optimization": { "enum": ["none", "basic"] },
-        "warningRules": { "type": "string" }
+        "warningRules": { "type": "string" },
+        "frontend": { "enum": ["handwritten", "generated"] }
       },
       "additionalProperties": false
     },

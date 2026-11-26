@@ -77,6 +77,8 @@ func NewProjectCompilationSession(units []SourceUnit, contract ResultContract) *
 	contract.Options.VMPolicy = policy
 	optimization, optimizationErr := NormalizeOptimizationMode(contract.Options.Optimization)
 	contract.Options.Optimization = optimization
+	frontend, frontendErr := NormalizeFrontend(contract.Options.Frontend)
+	contract.Options.Frontend = frontend
 	cloned := append([]SourceUnit(nil), units...)
 	legacySource := ""
 	if len(cloned) == 1 {
@@ -105,6 +107,13 @@ func NewProjectCompilationSession(units []SourceUnit, contract ResultContract) *
 		session.result.Diagnostics = append(session.result.Diagnostics, errorDiagnostic(
 			"input", "COL0006", "invalid optimization mode: "+optimizationErr.Error(),
 			"Use none for the baseline pipeline or basic for conservative educational passes.", emptySpan(),
+		))
+		session.blocked = true
+	}
+	if frontendErr != nil {
+		session.result.Diagnostics = append(session.result.Diagnostics, errorDiagnostic(
+			"input", "COL0008", "invalid front-end: "+frontendErr.Error(),
+			"Use handwritten for the default front-end or generated for the spec-driven lexer and LALR parser.", emptySpan(),
 		))
 		session.blocked = true
 	}
@@ -175,7 +184,7 @@ func (s *CompilationSession) runLexer() {
 	s.tokens = nil
 	s.unitTokens = nil
 	for _, unit := range s.units {
-		tokens, diagnostics := LexSource(unit.ID, unit.Content)
+		tokens, diagnostics := lexForFrontend(s.result.Options.Frontend, unit.ID, unit.Content)
 		s.unitTokens = append(s.unitTokens, tokens)
 		s.tokens = append(s.tokens, tokens...)
 		s.result.Diagnostics = append(s.result.Diagnostics, diagnostics...)
@@ -191,7 +200,7 @@ func (s *CompilationSession) runParser() {
 		if usefulTokenCount(tokens) == 0 {
 			continue
 		}
-		unitProgram, diagnostics := Parse(tokens)
+		unitProgram, diagnostics := parseForFrontend(s.result.Options.Frontend, tokens)
 		s.result.Diagnostics = append(s.result.Diagnostics, diagnostics...)
 		if unitProgram != nil {
 			program.Classes = append(program.Classes, unitProgram.Classes...)

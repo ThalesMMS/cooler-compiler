@@ -380,40 +380,7 @@ func (p *parser) parsePrimary() Expr {
 		expr := p.parseExpression()
 		close, ok := p.consume(TokenRParen, "COL2051", "expected ')' after the parenthesized expression", "Close the expression with ')'.")
 		if ok {
-			// Preserve the grouped range without introducing a separate AST node.
-			expr.SetType(expr.GetType())
-			switch concrete := expr.(type) {
-			case *AssignExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *DispatchExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *IfExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *WhileExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *BlockExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *LetExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *CaseExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *NewExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *IsVoidExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *BinaryExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *UnaryExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *IdentifierExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *IntExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *StringExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			case *BoolExpr:
-				concrete.Span = joinSpans(open.Span, close.Span)
-			}
+			expr = groupExpr(expr, open.Span, close.Span)
 		}
 		return expr
 	}
@@ -434,8 +401,25 @@ func (p *parser) parsePrimary() Expr {
 		tok := p.previous()
 		return &BoolExpr{exprBase: exprBase{Span: tok.Span}, Value: tok.Literal == "true"}
 	}
+	if p.match(TokenNot) {
+		// In operand position ('1 + not b'), 'not' still extends over the
+		// comparison and arithmetic that follow, as in the COOL grammar.
+		op := p.previous()
+		value := p.parseExpressionLevel(p.parseNot)
+		return &UnaryExpr{exprBase: exprBase{Span: joinSpans(op.Span, value.GetSpan())}, Operator: TokenNot, OpSpan: op.Span, Value: value}
+	}
 	if p.match(TokenObjectID) {
 		identifier := p.previous()
+		if p.check(TokenAssign) {
+			// 'x <- e' is an expression wherever an operand may appear
+			// ('1 + x <- 3', '~ x <- 3'); assignment extends to the right.
+			p.advance()
+			value := p.parseExpressionLevel(p.parseAssignment)
+			return &AssignExpr{
+				exprBase: exprBase{Span: joinSpans(identifier.Span, value.GetSpan())},
+				Name:     identifier.Lexeme, NameSpan: identifier.Span, Value: value,
+			}
+		}
 		if p.check(TokenLParen) {
 			args, end := p.parseArguments()
 			return &DispatchExpr{
@@ -452,6 +436,44 @@ func (p *parser) parsePrimary() Expr {
 		p.advance()
 	}
 	return &NoExpr{exprBase: exprBase{Span: unexpected.Span}}
+}
+
+// groupExpr widens a parenthesized expression's span to include the
+// parentheses without introducing a separate AST node.
+func groupExpr(expr Expr, open, close Span) Expr {
+	switch concrete := expr.(type) {
+	case *AssignExpr:
+		concrete.Span = joinSpans(open, close)
+	case *DispatchExpr:
+		concrete.Span = joinSpans(open, close)
+	case *IfExpr:
+		concrete.Span = joinSpans(open, close)
+	case *WhileExpr:
+		concrete.Span = joinSpans(open, close)
+	case *BlockExpr:
+		concrete.Span = joinSpans(open, close)
+	case *LetExpr:
+		concrete.Span = joinSpans(open, close)
+	case *CaseExpr:
+		concrete.Span = joinSpans(open, close)
+	case *NewExpr:
+		concrete.Span = joinSpans(open, close)
+	case *IsVoidExpr:
+		concrete.Span = joinSpans(open, close)
+	case *BinaryExpr:
+		concrete.Span = joinSpans(open, close)
+	case *UnaryExpr:
+		concrete.Span = joinSpans(open, close)
+	case *IdentifierExpr:
+		concrete.Span = joinSpans(open, close)
+	case *IntExpr:
+		concrete.Span = joinSpans(open, close)
+	case *StringExpr:
+		concrete.Span = joinSpans(open, close)
+	case *BoolExpr:
+		concrete.Span = joinSpans(open, close)
+	}
+	return expr
 }
 
 func (p *parser) parseIf(start Token) Expr {

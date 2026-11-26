@@ -93,6 +93,13 @@
 			<option value="basic">Opt: basic</option>
 		  </select>
 		</label>
+		<label class="select-wrap compact frontend-mode-wrap">
+		  <span class="sr-only">Front-end</span>
+		  <select id="frontendMode" aria-label="Front-end" title="Hand-written lexer and parser (default), or the generated spec-driven lexer and goyacc LALR parser">
+			<option value="handwritten">Front-end: hand-written</option>
+			<option value="generated">Front-end: generated</option>
+		  </select>
+		</label>
         <button id="nextPhaseButton" class="button secondary" type="button" title="Execute the next compiler phase">Next: Lexer</button>
         <button id="runButton" class="button secondary responsive-action-button" type="button" title="Run until halt or breakpoint" aria-label="Run" data-action-icon="run">
           <svg class="action-icon run-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"></path></svg>
@@ -146,10 +153,15 @@
           <select id="exportSelect" aria-label="Export artifact">
             <option value="report">JSON report</option>
             <option value="tokens">Tokens JSON</option>
+            <option value="ref-tokens">Reference tokens (PA2)</option>
             <option value="ast">AST JSON</option>
+            <option value="ref-ast">Reference AST (PA3)</option>
+            <option value="ref-semant">Reference typed AST (PA4)</option>
+            <option value="ref-diagnostics">Reference diagnostics (PA4)</option>
             <option value="symbols">Symbols JSON</option>
             <option value="ir">IR text</option>
             <option value="assembly">Assembly text</option>
+            <option value="mips-s">MIPS assembly (.s)</option>
             <option value="trace">VM trace JSON</option>
 			<option value="visualizations">Visualization JSON</option>
 			<option value="inheritance-svg">Inheritance SVG</option>
@@ -230,11 +242,13 @@
 			  <button class="tab" data-tab="symbols" role="tab" aria-selected="false" tabindex="-1">Symbols</button>
 			  <button class="tab" data-tab="ir" role="tab" aria-selected="false" tabindex="-1">IR</button>
 			  <button class="tab" data-tab="assembly" role="tab" aria-selected="false" tabindex="-1">Assembly</button>
+			  <button class="tab" data-tab="mips" role="tab" aria-selected="false" tabindex="-1" title="Optional MIPS backend (PA5): SPIM assembly for the Cool runtime">MIPS</button>
 			  <button class="tab" data-tab="cfg" role="tab" aria-selected="false" tabindex="-1">Control flow</button>
 			  <button class="tab" data-tab="explore" role="tab" aria-selected="false" tabindex="-1">Explore</button>
 			  <button class="tab" data-tab="optimization" role="tab" aria-selected="false" tabindex="-1">Optimize</button>
 			  <button class="tab" data-tab="vm" role="tab" aria-selected="false" tabindex="-1">VM</button>
 			  <button class="tab" data-tab="heap" role="tab" aria-selected="false" tabindex="-1">Heap</button>
+			  <button class="tab" data-tab="course" role="tab" aria-selected="false" tabindex="-1" title="Course mode: each phase as its practical assignment (PA1–PA5)">Course</button>
             </div>
             <div class="artifact-actions">
 			  <span id="timelineStatus" class="timeline-status" role="status" aria-live="polite">timeline unavailable</span>

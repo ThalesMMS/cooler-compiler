@@ -54,6 +54,12 @@ type cliOptions struct {
 	warningRules         string
 	emitIR               string
 	explainOptimizations bool
+	// Course-assignment (opt-in) modes; see docs/course-assignments.md.
+	format   string
+	stage    string
+	frontend string
+	target   string
+	gc       compiler.MIPSGCOptions
 }
 
 type usageError struct{ message string }
@@ -115,6 +121,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 			return exitTool
 		}
 		return exitTool
+	}
+	if courseModeRequested(options) {
+		return runCourseMode(options, name, string(source), files, programInput, stdout, stderr)
 	}
 
 	var result compiler.Result
@@ -204,10 +213,23 @@ func parseSubcommand(options cliOptions, args []string, stderr io.Writer) (cliOp
 		}
 	}
 	flags.StringVar(&options.vmPolicyFile, "vm-policy", "", "read bounded VM policy overrides from JSON FILE")
-	flags.StringVar(&options.diagnosticFormat, "diagnostic-format", "text", "text or json")
+	flags.StringVar(&options.diagnosticFormat, "diagnostic-format", "text", "text, json, or reference (course semant text; check only)")
 	flags.StringVar(&options.color, "color", "auto", "auto, always, or never")
 	flags.StringVar(&options.optimization, "opt", compiler.OptimizationNone, "optimization mode: none or basic")
+	flags.StringVar(&options.frontend, "frontend", compiler.FrontendHandwritten, "front-end: handwritten (default) or generated (spec-driven lexer + LALR parser)")
 	flags.StringVar(&options.warningRules, "warnings", "", "warning rules: all, none, or comma-separated diagnostic codes")
+	if options.command == "emit" && (options.emit == "tokens" || options.emit == "ast") {
+		flags.StringVar(&options.format, "format", "cooler", "artifact format: cooler (JSON) or reference (course text)")
+	}
+	if options.command == "run" || (options.command == "emit" && options.emit == "assembly") {
+		flags.StringVar(&options.target, "target", "vm", "assembly target: vm (educational pseudo-assembly) or mips (SPIM, Cool runtime)")
+		flags.BoolVar(&options.gc.Generational, "g", false, "with --target=mips: generational garbage collector (coolc -g)")
+		flags.BoolVar(&options.gc.Test, "t", false, "with --target=mips: collect at every allocation (coolc -t)")
+		flags.BoolVar(&options.gc.Debug, "T", false, "with --target=mips: check object headers on attribute stores (coolc -T)")
+	}
+	if options.command == "emit" && options.emit == "ast" {
+		flags.StringVar(&options.stage, "stage", "parser", "reference AST stage: parser or semant")
+	}
 	if options.command == "emit" && options.emit == "ir" {
 		flags.StringVar(&options.emitIR, "emit-ir", "after", "IR view: before, after, or both")
 		flags.BoolVar(&options.explainOptimizations, "explain-optimizations", false, "include pass decisions when emitting IR")
@@ -233,9 +255,10 @@ func parseLegacy(options cliOptions, args []string, stderr io.Writer) (cliOption
 	flags.StringVar(&options.inputFile, "input", "", "read program input from FILE")
 	flags.IntVar(&options.maxSteps, "max-steps", defaultSteps, "maximum VM instructions")
 	flags.StringVar(&options.vmPolicyFile, "vm-policy", "", "read bounded VM policy overrides from JSON FILE")
-	flags.StringVar(&options.diagnosticFormat, "diagnostic-format", "text", "text or json")
+	flags.StringVar(&options.diagnosticFormat, "diagnostic-format", "text", "text, json, or reference (course semant text; check only)")
 	flags.StringVar(&options.color, "color", "auto", "auto, always, or never")
 	flags.StringVar(&options.optimization, "opt", compiler.OptimizationNone, "optimization mode: none or basic")
+	flags.StringVar(&options.frontend, "frontend", compiler.FrontendHandwritten, "front-end: handwritten (default) or generated (spec-driven lexer + LALR parser)")
 	flags.StringVar(&options.warningRules, "warnings", "", "warning rules: all, none, or comma-separated diagnostic codes")
 	usage := legacyUsage(stderr, flags)
 	if err := flags.Parse(args); err != nil {
@@ -280,8 +303,8 @@ func validateOptions(options cliOptions) error {
 	if options.maxSteps < 1 || options.maxSteps > maxSteps {
 		return usageError{fmt.Sprintf("--max-steps must be between 1 and %d", maxSteps)}
 	}
-	if options.diagnosticFormat != "text" && options.diagnosticFormat != "json" {
-		return usageError{"--diagnostic-format must be text or json"}
+	if options.diagnosticFormat != "text" && options.diagnosticFormat != "json" && options.diagnosticFormat != "reference" {
+		return usageError{"--diagnostic-format must be text, json, or reference"}
 	}
 	if options.color != "auto" && options.color != "always" && options.color != "never" {
 		return usageError{"--color must be auto, always, or never"}
@@ -289,11 +312,17 @@ func validateOptions(options cliOptions) error {
 	if _, err := compiler.NormalizeOptimizationMode(options.optimization); err != nil {
 		return usageError{"--opt must be none or basic"}
 	}
+	if _, err := compiler.NormalizeFrontend(options.frontend); err != nil {
+		return usageError{"--frontend must be handwritten or generated"}
+	}
 	if err := compiler.ValidateWarningRules(options.warningRules); err != nil {
 		return usageError{err.Error()}
 	}
 	if options.emitIR != "before" && options.emitIR != "after" && options.emitIR != "both" {
 		return usageError{"--emit-ir must be before, after, or both"}
+	}
+	if err := validateCourseOptions(options); err != nil {
+		return err
 	}
 	if (options.emitIR != "after" || options.explainOptimizations) && !(options.command == "emit" && options.emit == "ir") {
 		return usageError{"--emit-ir and --explain-optimizations are only available with 'emit ir'"}
@@ -431,7 +460,7 @@ func compileForCommand(options cliOptions, _ string, source string, files []sour
 	publicOptions := publiccompiler.Options{
 		WarningRules: options.warningRules,
 		Mode:         mode, Input: input, MaxSteps: options.maxSteps, Limits: publicLimits(options.vmPolicy),
-		Optimization: options.optimization, CompilerVersion: version, CompilerCommit: resolvedCommit(),
+		Optimization: options.optimization, Frontend: options.frontend, CompilerVersion: version, CompilerCommit: resolvedCommit(),
 	}
 	project := publiccompiler.Project{}
 	if len(files) == 0 {
@@ -508,6 +537,7 @@ func compilationPipeline(options cliOptions, source string, files []sourceFile, 
 			InputProvided: inputProvided,
 			VMPolicy:      options.vmPolicy,
 			Optimization:  options.optimization,
+			Frontend:      options.frontend,
 		},
 	}
 	if len(files) > 0 {

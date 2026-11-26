@@ -26,8 +26,9 @@ BENCH_THRESHOLD ?= 10
 PROFILE_TARGET ?= compile-large
 PROFILE_TIME ?= 3s
 PROFILE_DIR ?= dist/profiles
+GOYACC_VERSION := v0.24.0
 
-.PHONY: test vet fmt lint check docs-check conformance differential fuzz-smoke fuzz property-test session-stress benchmark benchmark-save benchmark-compare benchmark-smoke profile release-check release-artifacts build build-all build-windows-native run browser clean macos-app test-macos-quit package
+.PHONY: generate-frontend frontend-equivalence test vet fmt lint check docs-check conformance differential fuzz-smoke fuzz property-test session-stress benchmark benchmark-save benchmark-compare benchmark-smoke profile release-check release-artifacts build build-all build-windows-native run browser clean macos-app test-macos-quit package
 
 test:
 	CGO_ENABLED=0 go test ./...
@@ -43,7 +44,22 @@ lint:
 
 check: test vet
 	find internal/web/static -type f \( -name '*.js' -o -name '*.mjs' \) -print0 | xargs -0 -n1 node --check
-	node --test internal/web/static/about.test.js internal/web/static/client-utils.test.js internal/web/static/app-modules.test.mjs
+	node --test internal/web/static/about.test.js internal/web/static/client-utils.test.js internal/web/static/app-modules.test.mjs internal/web/static/course.test.mjs
+
+# Regenerates the committed generated front-end sources (developer machines
+# only; builds and the app never run a generator): the spec-driven lexer from
+# cool.lex (cmd/cooler-lexgen) and the LALR parser from cool.y. goyacc is fetched by the Go
+# toolchain at the pinned version; the conflict report is written to
+# internal/compiler/cool.y.output, which is not committed.
+generate-frontend:
+	go run ./cmd/cooler-lexgen -i internal/compiler/cool.lex -o internal/compiler/lexer_generated.go
+	cd internal/compiler && go run golang.org/x/tools/cmd/goyacc@$(GOYACC_VERSION) -l -p coolyy -o parser_lalr_generated.go -v cool.y.output cool.y
+	gofmt -w internal/compiler/parser_lalr_generated.go
+
+# Proves the hand-written and generated front-ends are interchangeable on the
+# shared corpus. Needs no course toolchain and runs no generator.
+frontend-equivalence:
+	go test -count=1 ./internal/compiler -run '^Test(FrontendEquivalence|GeneratedLexer|LALRParser|FrontendsAgree|GeneratedFrontend)'
 
 docs-check:
 	go run ./cmd/cooler-doc-check

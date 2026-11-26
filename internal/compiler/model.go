@@ -662,6 +662,9 @@ type CompilationOptions struct {
 	InputProvided bool     `json:"inputProvided"`
 	VMPolicy      VMPolicy `json:"vmPolicy"`
 	Optimization  string   `json:"optimization"`
+	// Frontend selects the lexer/parser pair; empty means the default
+	// hand-written front-end. See NormalizeFrontend.
+	Frontend string `json:"frontend,omitempty"`
 }
 
 type SourceUnitMetadata struct {

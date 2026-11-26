@@ -70,12 +70,15 @@ type Limits struct {
 // Options configures compilation, execution limits, optimization, and report
 // provenance. Use NormalizeOptions to validate and fill zero-value defaults.
 type Options struct {
-	WarningRules    string
-	Mode            Mode
-	Input           string
-	MaxSteps        int
-	Limits          Limits
-	Optimization    string
+	WarningRules string
+	Mode         Mode
+	Input        string
+	MaxSteps     int
+	Limits       Limits
+	Optimization string
+	// Frontend selects "handwritten" (default, also "") or "generated", the
+	// spec-driven lexer and goyacc LALR parser.
+	Frontend        string
 	CompilerVersion string
 	CompilerCommit  string
 }

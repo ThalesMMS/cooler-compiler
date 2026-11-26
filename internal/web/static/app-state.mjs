@@ -36,6 +36,7 @@ export function createAppState() {
 	exploreClass: "",
 	selectedSpan: null,
 	optimization: "none",
+	frontend: "handwritten",
     inputHistory: [],
     debugLocation: null,
     stopReason: "ready",

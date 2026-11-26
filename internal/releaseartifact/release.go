@@ -392,9 +392,29 @@ func validateArchiveEntries(entries []archiveEntry) error {
 		if _, exists := seen[name]; exists {
 			return fmt.Errorf("duplicate archive path %q", name)
 		}
+		if tool := courseToolName(name); tool != "" {
+			return fmt.Errorf("archive path %q looks like the course tool %s; shipped artifacts must not bundle spim, the reference compiler, Flex, Bison, or goyacc", name, tool)
+		}
 		seen[name] = struct{}{}
 	}
 	return nil
+}
+
+// courseTools are reference tools and generators that are not included in
+// Cooler release archives. An archive containing one was packaged incorrectly.
+var courseTools = map[string]struct{}{
+	"spim": {}, "xspim": {}, "qtspim": {}, "trap.handler": {},
+	"coolc": {}, "lexer": {}, "parser": {}, "semant": {}, "cgen": {},
+	"flex": {}, "bison": {}, "yacc": {}, "goyacc": {},
+}
+
+func courseToolName(name string) string {
+	base := strings.ToLower(name[strings.LastIndex(name, "/")+1:])
+	base = strings.TrimSuffix(base, ".exe")
+	if _, ok := courseTools[base]; ok {
+		return base
+	}
+	return ""
 }
 
 func copyFile(destination io.Writer, source string) (returnErr error) {

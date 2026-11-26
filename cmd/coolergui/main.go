@@ -75,6 +75,7 @@ type debugSessionRequest struct {
 	TargetStep       *int                       `json:"targetStep,omitempty"`
 	Optimization     string                     `json:"optimization,omitempty"`
 	WarningRules     string                     `json:"warningRules,omitempty"`
+	Frontend         string                     `json:"frontend,omitempty"`
 }
 
 type debugSessionResponse struct {
@@ -112,6 +113,7 @@ type compileRequest struct {
 	Interactive  bool                  `json:"interactive,omitempty"`
 	Optimization string                `json:"optimization,omitempty"`
 	WarningRules string                `json:"warningRules,omitempty"`
+	Frontend     string                `json:"frontend,omitempty"`
 }
 
 type securityPolicy struct {
@@ -223,6 +225,7 @@ func buildMux(sessions *sessionStore, policy securityPolicy) http.Handler {
 	mux.Handle("/", web.Handler(policy.capability))
 	mux.HandleFunc("/api/compile", apiGuard(policy, http.MethodPost, true, compileHandler))
 	mux.HandleFunc("/api/format", apiGuard(policy, http.MethodPost, true, formatHandler))
+	mux.HandleFunc("/api/course", apiGuard(policy, http.MethodPost, true, courseHandler))
 	mux.HandleFunc("/api/report/import", apiGuard(policy, http.MethodPost, true, reportImportHandler))
 	mux.HandleFunc("/api/pipeline/start", apiGuard(policy, http.MethodPost, true, sessions.pipelineStartHandler))
 	mux.HandleFunc("/api/pipeline/next", apiGuard(policy, http.MethodPost, true, sessions.pipelineNextHandler))
@@ -452,8 +455,13 @@ func compileHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
+	if _, err := compiler.NormalizeFrontend(request.Frontend); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "frontend must be handwritten or generated"})
+		return
+	}
 	options := publicCompileOptions(request.Input, steps, request.Optimization, request.VMPolicy)
 	options.WarningRules = request.WarningRules
+	options.Frontend = request.Frontend
 	var result publiccompiler.Result
 	if len(request.Sources) > 0 {
 		project := publiccompiler.Project{Sources: make([]publiccompiler.SourceUnit, len(request.Sources))}
@@ -598,6 +606,7 @@ func (s *sessionStore) startHandler(w http.ResponseWriter, r *http.Request) {
 	contract := apiResultContract(request.Source, valueOrEmpty(request.Input), true, request.VMPolicy)
 	contract.Options.Optimization = request.Optimization
 	contract.Options.WarningRules = request.WarningRules
+	contract.Options.Frontend = request.Frontend
 	pipeline := projectPipeline(request.Source, request.Sources, contract)
 	pipeline.Complete()
 	session, ok := pipeline.DebugSession()
@@ -645,6 +654,7 @@ func (s *sessionStore) pipelineStartHandler(w http.ResponseWriter, r *http.Reque
 	contract := apiResultContract(request.Source, request.Input, true, request.VMPolicy)
 	contract.Options.Optimization = request.Optimization
 	contract.Options.WarningRules = request.WarningRules
+	contract.Options.Frontend = request.Frontend
 	pipeline := projectPipeline(request.Source, request.Sources, contract)
 	snapshot := pipeline.NextPhase()
 	entry := &sessionEntry{pipeline: pipeline, input: request.Input, interactive: request.Interactive}

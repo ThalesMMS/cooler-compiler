@@ -13,6 +13,7 @@ import {
 } from "./app-state.mjs";
 import { createHistorySeeker } from "./history-seek.mjs";
 import { createDraftWriter, draftWorkspace } from "./drafts.mjs";
+import { createCourseController, COURSE_CLICK_SELECTOR, shareOrDownload } from "./course.mjs";
 
 export async function startCoolerApp() {
 
@@ -34,6 +35,7 @@ export async function startCoolerApp() {
     compileButton: $("#compileButton"),
 	formatButton: $("#formatButton"),
 	optimizationMode: $("#optimizationMode"),
+	frontendMode: $("#frontendMode"),
     nextPhaseButton: $("#nextPhaseButton"),
     runButton: $("#runButton"),
     stepButton: $("#stepButton"),
@@ -90,6 +92,29 @@ export async function startCoolerApp() {
   };
 
   const state = createAppState();
+  const course = createCourseController({
+    api: (path, body) => api(path, body),
+    sources: () => { flushActiveTab(); return state.sourceTabs.map((tab) => ({ id: tab.id || tab.name, name: tab.name, content: tab.source })); },
+    input: () => programInput(),
+    escapeHTML: (value) => escapeHTML(value),
+    rerender: () => renderArtifact(),
+    toast: (message, kind) => toast(message, kind),
+    stem: () => client.stripExtension(state.documentName || "program.cl"),
+    hooks: {
+      openStackMachine: () => {
+        const example = state.examples.find((item) => item.id === "13_stack_machine");
+        if (example) loadExample(example);
+        else toast("The stack-machine example is not available in this build.", "error");
+      },
+      runVM: () => { void runSession(); },
+      frontend: () => state.frontend,
+      setFrontend: (value) => {
+        if (!elements.frontendMode || elements.frontendMode.value === value) return;
+        elements.frontendMode.value = value;
+        elements.frontendMode.dispatchEvent(new Event("change"));
+      },
+    },
+  });
 
   const recentStorageKey = "coolerRecentFiles";
 	const debuggerStorageKey = "coolerDebuggerWorkspace";
@@ -201,6 +226,8 @@ export async function startCoolerApp() {
     symbols: ["Semantic analysis", "Inspect declarations, inheritance ownership, scopes, mutability, and inferred types."],
     ir: ["Stack IR", "Follow the language-neutral stack instructions generated for each COOL method."],
     assembly: ["Pseudo-assembly", "Inspect the readable target form emitted after IR generation."],
+    course: ["Course mode (PA1–PA5)", "Opt-in view of each phase as its practical assignment, with reference formats, MIPS, the simulator, and exports."],
+    mips: ["MIPS backend (PA5)", "Optional SPIM assembly for the Cool runtime: object layout, tables, init methods, and code; export the .s file."],
     cfg: ["Control flow", "See basic blocks and the branches connecting each compiled method."],
 	explore: ["Relationship explorer", "Navigate inheritance, logical layouts, dispatch, and many-to-many lowering provenance."],
 	optimization: ["Educational optimization", "Compare verified baseline and optimized IR, CFG, source mappings, transformations, and refusals."],
@@ -351,6 +378,7 @@ export async function startCoolerApp() {
       input: programInput(),
       interactive: true,
 	  optimization: state.optimization,
+	  ...(state.frontend === "generated" ? { frontend: "generated" } : {}),
     };
   }
 
@@ -1150,6 +1178,13 @@ export async function startCoolerApp() {
     elements.diagnosticCount.textContent = String(diagnostics.length);
     elements.diagnosticCount.classList.toggle("has-errors", hasErrors(diagnostics));
 
+    if (!state.result && (state.activeTab === "course" || state.activeTab === "mips")) {
+      // Course mode and the MIPS panel build their artifacts from the
+      // current sources, so they work before a Cooler compilation.
+      elements.content.innerHTML = state.activeTab === "course" ? course.courseModeHTML() : course.mipsHTML();
+      wireArtifactInteractions();
+      return;
+    }
     if (!state.result) {
       elements.content.replaceChildren(elements.emptyTemplate.content.cloneNode(true));
       updateSessionStatus("not compiled");
@@ -1163,6 +1198,8 @@ export async function startCoolerApp() {
       symbols: renderSymbols,
       ir: renderIR,
       assembly: renderAssembly,
+      mips: () => course.mipsHTML(),
+      course: () => course.courseModeHTML(),
       cfg: renderCFG,
 	  explore: renderExplore,
 	  optimization: renderOptimization,
@@ -1191,6 +1228,12 @@ export async function startCoolerApp() {
   }
 
   function renderDiagnostics() {
+    const reference = course.render("diagnostics");
+    if (reference) return reference;
+    return course.viewSwitchHTML("diagnostics") + renderCoolerDiagnostics();
+  }
+
+  function renderCoolerDiagnostics() {
     const diagnostics = state.result?.diagnostics || [];
     if (diagnostics.length === 0) {
       return `${metricsHTML()}<div class="success-card"><div><strong>No diagnostics</strong><br><span>The current source passed every completed stage.</span></div></div>`;
@@ -1216,6 +1259,12 @@ export async function startCoolerApp() {
   }
 
   function renderTokens() {
+    const reference = course.render("tokens");
+    if (reference) return reference;
+    return course.viewSwitchHTML("tokens") + renderCoolerTokens();
+  }
+
+  function renderCoolerTokens() {
     const tokens = (state.result?.tokens || []).filter((token) => token.type !== "EOF");
     return `${metricsHTML()}<input id="tokenFilter" class="token-filter" type="search" value="${escapeHTML(state.tokenFilter)}" placeholder="Filter tokens" aria-label="Filter tokens"><div class="table-wrap"><table class="data-table">
       <thead><tr><th>#</th><th>Type</th><th>Lexeme</th><th>Literal</th><th>Location</th></tr></thead>
@@ -1231,6 +1280,12 @@ export async function startCoolerApp() {
   }
 
   function renderAST() {
+    const reference = course.render("ast");
+    if (reference) return reference;
+    return course.viewSwitchHTML("ast") + renderCoolerAST();
+  }
+
+  function renderCoolerAST() {
     const ast = state.result?.ast;
     if (!ast) return emptyInline("No AST was produced because parsing did not complete.");
     return `${metricsHTML()}${graphHTML(state.result,"ast",document.documentElement.dataset.theme!=="light")}${layoutGraph(state.result,"ast").truncated ? "" : `<details><summary>AST tree</summary><div class="tree">${client.renderASTNode(ast)}</div></details>`}`;
@@ -1816,6 +1871,19 @@ export async function startCoolerApp() {
   }
 
   function wireArtifactInteractions() {
+	$$(COURSE_CLICK_SELECTOR, elements.content).forEach((element) => element.addEventListener("click", (event) => {
+	  event.stopPropagation();
+	  course.handleClick(element);
+	}));
+	$$("[data-course-input]", elements.content).forEach((field) => {
+	  field.addEventListener("keydown", (event) => {
+	    if (event.key !== "Enter") return;
+	    event.preventDefault();
+	    const send = field.closest(".course-live-input")?.querySelector('[data-course-action="send-input"]');
+	    if (send) course.handleClick(send);
+	  });
+	  field.focus();
+	});
 	$$('[data-related-phase]', elements.content).forEach((button) => button.addEventListener("click", () => {
 	  const phaseTabs = { tokens: "tokens", ast: "ast", symbols: "symbols", ir: "ir", cfg: "cfg", assembly: "assembly", vm: "vm", diagnostics: "diagnostics" };
 	  setActiveTab(phaseTabs[button.dataset.relatedPhase] || "explore");
@@ -2067,6 +2135,7 @@ export async function startCoolerApp() {
     elements.nextPhaseButton.disabled = state.busy || terminal;
     elements.compileButton.disabled = state.busy;
     if (elements.optimizationMode) elements.optimizationMode.disabled = state.busy;
+    if (elements.frontendMode) elements.frontendMode.disabled = state.busy;
     elements.runButton.disabled = client.shouldDisableRunButton({
       busy: state.busy,
       autoRunning: state.autoRunning,
@@ -2239,6 +2308,12 @@ export async function startCoolerApp() {
   }
 
   async function exportSelectedArtifact() {
+    const courseExports = { "ref-tokens": ["tokens", "tokens.ref.txt"], "ref-ast": ["ast", "ast.ref.txt"], "ref-semant": ["semant", "typed-ast.ref.txt"], "ref-diagnostics": ["diagnostics", "diagnostics.ref.txt"], "mips-s": ["mips", "s"] };
+    if (courseExports[elements.exportSelect.value]) {
+      const [artifact, file] = courseExports[elements.exportSelect.value];
+      await course.exportArtifact(artifact, file);
+      return;
+    }
     if (!state.result) return;
     const stem = client.stripExtension(state.documentName || "program.cl");
     if (/^(ast|cfg)-(svg|png)$/.test(elements.exportSelect.value)) { const [kind,format]=elements.exportSelect.value.split("-"); const graph=layoutGraph(state.result,kind); try { if(format==="svg") download(`${stem}.${kind}.svg`,graphSVG(graph,document.documentElement.dataset.theme!=="light"),"image/svg+xml"); else downloadBlob(`${stem}.${kind}.png`,await graphPNG(graph,Number($("#pngScale").value),document.documentElement.dataset.theme!=="light")); setGlobalStatus("Graph exported", "ok"); toast("Graph exported"); } catch(error){setGlobalStatus(error.message,"error"); toast(error.message,"error");} return; }
@@ -2299,15 +2374,10 @@ export async function startCoolerApp() {
     downloadBlob(filename, new Blob([content], { type }));
   }
 
+  // Every export goes through the store-sandbox-friendly path: the share
+  // sheet on touch builds, a Blob download elsewhere.
   function downloadBlob(filename, blob) {
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = filename;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    void shareOrDownload(filename, blob, blob.type || "application/octet-stream");
   }
 
   function toggleTheme() {
@@ -2414,6 +2484,15 @@ export async function startCoolerApp() {
 	  renderAll();await compilePipeline();
 	});
 	elements.formatButton.addEventListener("click", formatSource);
+	elements.frontendMode?.addEventListener("change", () => {
+	  if(inspectingReport())return;
+	  state.frontend = elements.frontendMode.value === "generated" ? "generated" : "handwritten";
+	  course.options.frontend = state.frontend === "generated" ? "generated" : undefined;
+	  invalidateSession();
+	  state.stale = true;
+	  renderAll();
+	  setGlobalStatus(`Front-end: ${state.frontend === "generated" ? "generated (spec-driven lexer + LALR parser)" : "hand-written"} — pipeline reset`, "idle");
+	});
 	elements.optimizationMode?.addEventListener("change", () => {
 	  if(inspectingReport())return;
 	  state.optimization = elements.optimizationMode.value === "basic" ? "basic" : "none";

@@ -77,8 +77,13 @@ func NormalizeOptions(options Options) (Options, error) {
 	if err != nil {
 		return Options{}, fmt.Errorf("%w: optimization must be none or basic", ErrInvalidOptions)
 	}
+	frontend, err := internal.NormalizeFrontend(options.Frontend)
+	if err != nil {
+		return Options{}, fmt.Errorf("%w: frontend must be handwritten or generated", ErrInvalidOptions)
+	}
 	options.Limits = fromInternalLimits(policy)
 	options.Optimization = optimization
+	options.Frontend = frontend
 	if strings.TrimSpace(options.CompilerVersion) == "" {
 		options.CompilerVersion = "1.0.0"
 	}
@@ -277,6 +282,7 @@ func NewSession(ctx context.Context, project Project, options Options) (*Compila
 			Execute:      normalized.Mode == ModeRun, VMMaxSteps: normalized.MaxSteps,
 			InputProvided: normalized.Input != "", VMPolicy: toInternalLimits(normalized.Limits),
 			Optimization: normalized.Optimization,
+			Frontend:     normalized.Frontend,
 		},
 	}
 	return &Compilation{pipeline: internal.NewProjectCompilationSession(units, contract), options: normalized}, nil

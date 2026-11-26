@@ -67,8 +67,9 @@ harness compares:
   error, and program-input behavior;
 - multifile source order.
 
-It does not compare diagnostic wording, MIPS instruction sequences, object
-layout, or Cooler's educational bytecode.
+This runtime comparison does not compare diagnostic wording (the
+[phase comparisons](#phase-comparisons-pa2pa4) do), MIPS instruction
+sequences, object layout, or Cooler's educational bytecode.
 
 ## Containment and normalization
 
@@ -111,33 +112,88 @@ stale and must be removed.
 The versioned allowlist is
 [`differential-allowlist.json`](../internal/compiler/testdata/conformance/differential-allowlist.json).
 Every entry identifies exactly one fixture and reciprocal rule ID and includes
-a reason, normative/reference evidence, issue link, expected Cooler and
-reference outcomes, and a removal condition. Guessed or tool-wide exceptions
-are not accepted. The harness rejects unknown, duplicate, mismatched, or stale
-entries; an unexpected pass is therefore a gate failure rather than silent
-allowlist growth.
+a reason, normative/reference evidence, expected Cooler and reference outcomes,
+and a removal condition. Guessed or tool-wide exceptions are not accepted. The
+harness rejects unknown, duplicate, mismatched, or stale entries; an unexpected
+pass is therefore a gate failure rather than silent allowlist growth.
 
-## Local validation record
+## Phase comparisons (PA2–PA4)
 
-On 2026-09-01 the complete strict corpus ran on Windows amd64 with Go 1.26.4,
-using WSL2 Debian GNU/Linux 13 as the execution environment for the classic
-32-bit Linux tools. The locally installed StanfordOnline student-distribution
-compiler does not expose a version flag; its underlying `coolc` executable had
-SHA-256 `c03fe0a2ded81aeb902ccdced0e640e87e4eed4dd1eddcbd8c80f7d1667bb71a`.
-The course runtime reported `SPIM Version 6.5 of January 4, 2003` and its
-underlying executable had SHA-256
-`7916869176b14fb975719e67dc69ed0010871243af734046540eff30787ec252`.
-Both were invoked through path-translating Windows launchers with SHA-256
-`0fb25796fb919ac3c49a42e27d76a190f751f700149cae6791ddbf245901d0aa`;
-the machine report fingerprints those resolved launchers and exact arguments.
+`make differential` also compares Cooler's opt-in reference formats with a
+user-supplied course `lexer`, `parser`, and `semant` (see
+[`course-assignments.md`](course-assignments.md)):
 
-`STRICT=1 make differential` selected all 90 fixtures: 81 matched, 9 were exact
-evidence-backed expected divergences, 0 were unexpected mismatches, 0 were
-unexpected passes, and 0 were reference errors. The comparison exposed and
-fixed one real Cooler defect: explicit dispatch evaluated the receiver before
-its arguments instead of the manual/reference argument-first order. The nine
-retained boundaries are the documented Unicode/host-input policies, modular
-integer overflow, and Cooler-only debugger or deterministic execution-budget
-protocols. The generated machine report remains uncommitted because it contains
-host-specific paths; this record and the issue-closing evidence retain the
-portable fingerprints and totals.
+- **tokens**: `lexer files...` against `coolerc emit tokens --format=reference`;
+- **parser**: `lexer files... | parser` against
+  `coolerc emit ast --format=reference` (stdout on success, the error report on
+  stderr after a syntax error);
+- **semant**: `lexer | parser | semant` against
+  `coolerc emit ast --format=reference --stage=semant` and the reference
+  diagnostics (typed AST, or error text and order).
+
+The corpus is every selected conformance fixture (multifile fixtures keep their
+source order) plus the PA-style battery in `internal/course/testdata/phases`.
+`-rule`/`-fixture` restrict the conformance part and skip the battery. Each
+case runs in a new private directory where the sources are copied under their
+base names, so both sides print the same `#name` and `_class` file names; the
+only normalization removes that directory prefix if a tool prints it. Message
+text and token values are never normalized.
+
+Tool discovery: `-lexer`, `-parser`, `-semant` (or `COOLER_REFERENCE_LEXER`,
+`COOLER_REFERENCE_PARSER`, `COOLER_REFERENCE_SEMANT`), then `PATH`, then the
+classic layouts under the Cool root (`-cool-root` or `COOLER_COOL_ROOT`,
+default `/var/tmp/cool`): `bin/`, `lib/.x86_64/`, `lib/.i686/`. Without a
+`lexer` the phase run is a documented skip; with `STRICT=1` a missing lexer,
+parser, or semant exits `2`. The phase report
+(`dist/differential-phases-report.json`, `-phase-report`) records each tool's
+path, resolved path, size, modification time, and SHA-256, plus every
+comparison's outcome and first differing line. Use `-phases=false` to run only
+the runtime comparison.
+
+An evidenced divergence can be allowlisted with `-phase-allowlist FILE`:
+
+```json
+{
+  "schemaVersion": "1.0.0",
+  "entries": [
+    {
+      "id": "lexer-unterminated-line",
+      "case": "battery/lex_errors.cl",
+      "phase": "tokens",
+      "reason": "why the outputs differ",
+      "evidence": "tool SHA-256 and the differing lines",
+      "removalCondition": "when this entry can be deleted"
+    }
+  ]
+}
+```
+
+The same live comparisons also run as Go tests (`go test ./internal/course`),
+which skip without the tools unless `STRICT=1` or `COOLER_REFERENCE_STRICT=1`.
+Course binaries and course-tree fixtures are never downloaded or committed.
+
+## MIPS end-to-end comparison (PA5)
+
+`make differential` finally runs Cooler-generated MIPS on a user-supplied real
+SPIM with the Cool runtime's `trap.handler`, for CI/dev only:
+
+- for every program in the PA5 corpus (`internal/course/testdata/pa5`, or
+  `-mips-corpus DIR`) plus the Cool root's `examples/` directory when it
+  exists (so the course's own `hello_world.cl`, `arith.cl`, `list.cl`,
+  `complex.cl`, ... are compared without being committed), and for each
+  collector flag set in `-mips-gc` (default: none, `-g`, `-g -t`);
+- Cooler's `.s` runs on SPIM; with a reference `coolc`, the reference `.s`
+  for the same flags runs on the same SPIM, and normalized stdout and the
+  runtime-error category (`ok`, `dispatch-void`, `case-void`,
+  `case-no-match`, `abort`, `substr`, `error`) must match;
+- the embedded simulator's output must equal Cooler's output on real SPIM.
+
+SPIM's banner lines (`SPIM Version`, copyright, `Loaded:`) are the only
+normalization. Discovery: `-runner`/`COOLER_REFERENCE_RUNNER` (or `PATH`, or
+the Cool root) for `spim`, `-trap-handler`/`COOLER_TRAP_HANDLER` (or
+`<cool-root>/lib/trap.handler`) for the runtime, and `-coolc` for the
+reference compiler. Without `spim` the comparison is a documented skip; with
+`STRICT=1`, a missing `spim` or `coolc` exits `2`. The report is
+`dist/differential-mips-report.json` (`-mips-report`); `-mips=false` disables
+the comparison. Real SPIM is never used by the app: the GUI and
+`coolerc run --target=mips` use the embedded simulator.

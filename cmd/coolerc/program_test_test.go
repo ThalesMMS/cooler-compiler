@@ -132,3 +132,35 @@ func TestProgramManifestReadError(t *testing.T) {
 		t.Fatalf("non-regular manifest: %d %s", code, &log)
 	}
 }
+
+func TestProgramCaseUnderSymlinkedRoot(t *testing.T) {
+	real := t.TempDir()
+	linked := filepath.Join(t.TempDir(), "linked")
+	if err := os.Symlink(real, linked); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	if err := os.WriteFile(filepath.Join(real, "main.cl"), []byte(`class Main inherits IO {main():Object {out_string("ok")};};`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	manifest, err := parseProgramManifest(strings.NewReader(`{"schemaVersion":"1.0.0","cases":[{"name":"linked","sources":["main.cl"],"expect":{"outcome":"success","output":"ok"}}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result := executeProgramCase(context.Background(), linked, manifest.Cases[0]); !result.Passed {
+		t.Fatalf("symlinked root %+v", result)
+	}
+	outside := t.TempDir()
+	if err := os.WriteFile(filepath.Join(outside, "x.cl"), []byte("class Main {};"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join(outside, "x.cl"), filepath.Join(real, "escape.cl")); err != nil {
+		t.Fatal(err)
+	}
+	escape, err := parseProgramManifest(strings.NewReader(`{"schemaVersion":"1.0.0","cases":[{"name":"escape","sources":["escape.cl"],"expect":{"outcome":"success","output":""}}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result := executeProgramCase(context.Background(), linked, escape.Cases[0]); result.Outcome != "tool-error" || !strings.Contains(strings.Join(result.Failures, " "), "escapes manifest directory") {
+		t.Fatalf("escape %+v", result)
+	}
+}
