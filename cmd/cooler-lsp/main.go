@@ -12,7 +12,7 @@ import (
 	"github.com/ThalesMMS/cooler-compiler/internal/lsp"
 )
 
-var version = "1.0.0"
+var version = "1.1.0"
 
 func main() {
 	maxMessage := flag.Int("max-message-bytes", 4<<20, "maximum JSON-RPC payload size")

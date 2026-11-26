@@ -74,7 +74,7 @@ func TestCompileRunAndImmutableArtifacts(t *testing.T) {
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %+v", result.Diagnostics())
 	}
-	if result.CompilerVersion() != "1.0.0" {
+	if result.CompilerVersion() != "1.1.0" {
 		t.Fatalf("compiler version %q", result.CompilerVersion())
 	}
 	if got := strings.Join(result.Runtime().Output, ""); got != "hello\n" {

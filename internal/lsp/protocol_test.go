@@ -482,7 +482,7 @@ func testConfig() Config {
 }
 
 func TestDefaultConfigUsesReleaseVersion(t *testing.T) {
-	if version := DefaultConfig().Version; version != "1.0.0" {
+	if version := DefaultConfig().Version; version != "1.1.0" {
 		t.Fatalf("version = %q", version)
 	}
 }

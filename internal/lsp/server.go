@@ -44,7 +44,7 @@ type Config struct {
 
 func DefaultConfig() Config {
 	return Config{
-		Version:         "1.0.0",
+		Version:         "1.1.0",
 		MaxMessageBytes: 4 << 20, MaxOpenDocuments: 256, MaxWorkspaceFiles: 1_024,
 		MaxWorkspaceRoots: defaultWorkspaceRoots, MaxWorkspaceEntries: defaultWorkspaceEntries,
 		MaxContentChanges: defaultContentChanges,

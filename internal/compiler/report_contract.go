@@ -56,6 +56,9 @@ func DecodeReport(data []byte) (Result, error) {
 	if !reportSchemaAtLeast(result.SchemaVersion, 1, 5) {
 		result.Options.WarningRules = ""
 	}
+	if !reportSchemaAtLeast(result.SchemaVersion, 1, 6) {
+		result.Options.Frontend = ""
+	}
 	return result, nil
 }
 
@@ -66,6 +69,12 @@ func compatibleReportSchema(version string) bool {
 }
 
 func validateReportContract(result Result) error {
+	if reportSchemaAtLeast(result.SchemaVersion, 1, 6) {
+		frontend := result.Options.Frontend
+		if frontend != "" && frontend != FrontendHandwritten && frontend != FrontendGenerated {
+			return errors.New("invalid Cooler report: options.frontend must be handwritten or generated")
+		}
+	}
 	if reportSchemaAtLeast(result.SchemaVersion, 1, 5) {
 		if err := ValidateWarningRules(result.Options.WarningRules); err != nil {
 			return fmt.Errorf("invalid Cooler report: options.warningRules: %w", err)

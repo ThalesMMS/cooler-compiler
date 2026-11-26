@@ -116,6 +116,7 @@
   },
   "allOf": [
     {"if":{"properties":{"schemaVersion":{"pattern":"^1\\.[0-4]\\."}}},"then":{"properties":{"sources":false,"options":{"properties":{"warningRules":false}}}}},
+    {"if":{"properties":{"schemaVersion":{"pattern":"^1\\.[0-5]\\."}}},"then":{"properties":{"options":{"properties":{"frontend":false}}}}},
     {
       "if": {
         "properties": {

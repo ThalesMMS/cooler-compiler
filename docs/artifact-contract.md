@@ -1,7 +1,7 @@
 # Artifact and schema contract
 
-Cooler v0.1.1 introduces version 1 of its complete-report, report-archive, and
-release-provenance contracts. The machine-readable definitions live in
+The project uses version 1 contracts for complete reports, report archives,
+and release provenance. The machine-readable definitions live in
 [`schemas/`](../schemas/), including the standalone diagnostics subdocument.
 
 ## Version policy
@@ -82,6 +82,12 @@ upgrade its advertised schema. The schema also declares the GUI's existing
 optional `project`, `sourceFile`, and explicitly requested `exportedAt` metadata,
 so individual JSON downloads and ZIP-contained reports can be validated in full.
 
+Schema `1.6.0` adds optional `options.frontend` for reports compiled with the
+generated LALR front-end. Its values are `handwritten` or `generated`; absence
+means the default hand-written front-end. Reports advertising schemas through
+`1.5.x` must not include this field, and the Go decoder ignores it when reading
+those older schemas.
+
 Every source-linked span includes its `sourceId`. Token and diagnostic
 lines/columns are 1-based and count decoded Unicode runes;
 ends are exclusive. Offsets are 0-based UTF-16 code units, not UTF-8 byte
@@ -107,7 +113,7 @@ No current clock value is added unless a caller explicitly requests an
 Run from a clean reviewed commit:
 
 ```bash
-make release-artifacts VERSION=1.0.0
+make release-artifacts VERSION=1.1.0
 ```
 
 The local builder creates deterministic Linux amd64/arm64 tarballs, Windows

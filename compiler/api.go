@@ -85,7 +85,7 @@ func NormalizeOptions(options Options) (Options, error) {
 	options.Optimization = optimization
 	options.Frontend = frontend
 	if strings.TrimSpace(options.CompilerVersion) == "" {
-		options.CompilerVersion = "1.0.0"
+		options.CompilerVersion = "1.1.0"
 	}
 	return options, nil
 }

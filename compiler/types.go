@@ -16,7 +16,7 @@ import (
 
 const (
 	// APIVersion follows semantic versioning independently from the compiler.
-	APIVersion = "1.0.0"
+	APIVersion = "1.1.0"
 	// ReportSchemaVersion identifies the JSON artifact contract.
 	ReportSchemaVersion = internal.ReportSchemaVersion
 

@@ -63,7 +63,7 @@ func TestBuildProducesDeterministicSafePackagesAndVerifiedMetadata(t *testing.T)
 	if decoded.SchemaVersion != ManifestSchemaVersion || decoded.SourceCommit != options.SourceCommit || decoded.Validation.BuildStatus != "built" {
 		t.Fatalf("unexpected release manifest: %+v", decoded)
 	}
-	if decoded.Validation.EvidenceDocument != "docs/release-validation-v1.0.0.md" {
+	if decoded.Validation.EvidenceDocument != "docs/release-validation-v0.1.1.md" {
 		t.Fatalf("evidence document = %q", decoded.Validation.EvidenceDocument)
 	}
 	assertReleaseSchemaFields(t, filepath.Join("..", "..", "schemas", "release-manifest-v1.schema.json"), manifestData)

@@ -49,6 +49,10 @@ limits, optimization names, project identities, and nil contexts return Go
 errors. COOL lexical, parse, semantic, verifier, and runtime failures remain
 structured diagnostics in `Result`.
 
+`Options.Frontend` selects the default hand-written front-end or the generated
+LALR front-end. The default is unchanged. This optional field is part of Go API
+version 1.1.0 and is recorded in report schema 1.6.0 when selected.
+
 ```go
 options := compiler.DefaultOptions()
 result, err := compiler.Compile(ctx, source, options)

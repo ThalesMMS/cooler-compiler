@@ -58,7 +58,7 @@ func TestCompileWithContractNormalizesAndHonorsExecutionOptions(t *testing.T) {
 	if notExecuted.Options.VMMaxSteps != defaultVMMaxSteps {
 		t.Fatalf("normalized VM limit = %d, want %d", notExecuted.Options.VMMaxSteps, defaultVMMaxSteps)
 	}
-	if notExecuted.CompilerVersion != "1.0.0" {
+	if notExecuted.CompilerVersion != "1.1.0" {
 		t.Fatalf("normalized compiler version = %q", notExecuted.CompilerVersion)
 	}
 	if len(notExecuted.Runtime.Output) != 0 || notExecuted.Runtime.ExecutedSteps != 0 {
@@ -204,7 +204,7 @@ func TestReportOptimizationContractAndLegacyUpgrade(t *testing.T) {
 
 func TestWarningRulesReportVersionGate(t *testing.T) {
 	result := CompileWithContract(pipelineProgram, "", ResultContract{Options: CompilationOptions{WarningRules: "none"}})
-	if result.SchemaVersion != "1.5.0" {
+	if result.SchemaVersion != "1.6.0" {
 		t.Fatalf("new report version = %s", result.SchemaVersion)
 	}
 	for _, tc := range []struct {
@@ -229,5 +229,45 @@ func TestWarningRulesReportVersionGate(t *testing.T) {
 				t.Fatalf("rules=%q want %q", decoded.Options.WarningRules, tc.want)
 			}
 		})
+	}
+}
+
+func TestFrontendReportVersionGate(t *testing.T) {
+	handwritten := CompileWithContract(pipelineProgram, "", ResultContract{Options: CompilationOptions{Frontend: FrontendHandwritten}})
+	if handwritten.SchemaVersion != "1.6.0" {
+		t.Fatalf("handwritten frontend report version = %s", handwritten.SchemaVersion)
+	}
+	if err := validateReportContract(handwritten); err != nil {
+		t.Fatalf("explicit handwritten frontend was rejected: %v", err)
+	}
+
+	result := CompileWithContract(pipelineProgram, "", ResultContract{Options: CompilationOptions{Frontend: FrontendGenerated}})
+	if result.SchemaVersion != "1.6.0" || result.Options.Frontend != FrontendGenerated {
+		t.Fatalf("generated frontend report = %+v", result.Options)
+	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := DecodeReport(data)
+	if err != nil || decoded.Options.Frontend != FrontendGenerated {
+		t.Fatalf("generated frontend did not roundtrip: frontend=%q err=%v", decoded.Options.Frontend, err)
+	}
+
+	result.SchemaVersion = "1.5.0"
+	data, err = json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err = DecodeReport(data)
+	if err != nil || decoded.Options.Frontend != "" {
+		t.Fatalf("legacy schema frontend was not ignored: frontend=%q err=%v", decoded.Options.Frontend, err)
+	}
+
+	result.SchemaVersion = "1.6.0"
+	result.Options.Frontend = "unknown"
+	if err := validateReportContract(result); err == nil {
+		t.Fatal("unknown frontend option was accepted")
 	}
 }

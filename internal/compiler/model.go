@@ -13,7 +13,7 @@ import (
 	"unicode/utf8"
 )
 
-const ReportSchemaVersion = "1.5.0"
+const ReportSchemaVersion = "1.6.0"
 
 // Span identifies a source range. Lines and columns are 1-based, the end is
 // exclusive, and offsets are UTF-16 code units so browser clients can select
@@ -717,7 +717,7 @@ func NewSourceUnitMetadataWithID(id, name, source string, order int) SourceUnitM
 
 func normalizeResultContract(source string, contract ResultContract) ResultContract {
 	if strings.TrimSpace(contract.CompilerVersion) == "" {
-		contract.CompilerVersion = "1.0.0"
+		contract.CompilerVersion = "1.1.0"
 	}
 	if contract.Options.VMMaxSteps <= 0 {
 		contract.Options.VMMaxSteps = 100_000
