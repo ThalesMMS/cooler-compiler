@@ -21,7 +21,7 @@ func fakeCourseTools(t *testing.T) string {
 	}
 	dir := t.TempDir()
 	coolerc := filepath.Join(dir, "coolerc")
-	build := exec.Command("go", "build", "-o", coolerc, "./cmd/coolerc")
+	build := exec.CommandContext(t.Context(), "go", "build", "-o", coolerc, "./cmd/coolerc")
 	build.Dir = filepath.Join("..", "..")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build coolerc: %v\n%s", err, output)

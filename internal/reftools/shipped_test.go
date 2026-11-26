@@ -16,7 +16,7 @@ func TestShippedAppsDoNotLinkCourseTools(t *testing.T) {
 		t.Skip("go tool not available")
 	}
 	shipped := []string{"../../cmd/coolergui", "../../cmd/coolerc", "../../cmd/cooler-lsp", "../../cmd/cooler-dap", "../../compiler"}
-	output, err := exec.Command("go", append([]string{"list", "-deps"}, shipped...)...).Output()
+	output, err := exec.CommandContext(t.Context(), "go", append([]string{"list", "-deps"}, shipped...)...).Output()
 	if err != nil {
 		t.Fatalf("go list: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestShippedAppsDoNotLinkCourseTools(t *testing.T) {
 			}
 		}
 	}
-	wasm := exec.Command("go", "list", "-deps", "../../cmd/cooler-wasm")
+	wasm := exec.CommandContext(t.Context(), "go", "list", "-deps", "../../cmd/cooler-wasm")
 	wasm.Env = append(wasm.Environ(), "GOOS=js", "GOARCH=wasm")
 	output, err = wasm.Output()
 	if err != nil {

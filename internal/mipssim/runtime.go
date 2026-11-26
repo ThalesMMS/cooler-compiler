@@ -4,6 +4,7 @@ package mipssim
 
 import (
 	"bytes"
+	"context"
 	"strconv"
 	"strings"
 )
@@ -69,7 +70,7 @@ func (m *machine) wordAt(name string) (int32, error) {
 // start mirrors the runtime's start-up: initialize the memory manager,
 // copy Main's prototype, run Main_init and Main.main, and print the success
 // line.
-func (m *machine) start() error {
+func (m *machine) start(ctx context.Context) error {
 	initializer, err := m.wordAt("_MemMgr_INITIALIZER")
 	if err != nil {
 		return err
@@ -104,7 +105,7 @@ func (m *machine) start() error {
 	if err != nil {
 		return err
 	}
-	if err := m.call(mainInit); err != nil || m.halted {
+	if err := m.call(ctx, mainInit); err != nil || m.halted {
 		return err
 	}
 	mainMethod, err := m.symbol("Main.main")
@@ -112,7 +113,7 @@ func (m *machine) start() error {
 		return err
 	}
 	m.reg[4] = int32(mainObject)
-	if err := m.call(mainMethod); err != nil || m.halted {
+	if err := m.call(ctx, mainMethod); err != nil || m.halted {
 		return err
 	}
 	return m.write(SuccessMessage)

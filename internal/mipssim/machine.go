@@ -91,7 +91,6 @@ type machine struct {
 	output  strings.Builder
 	input   int
 	gc      *memoryManager
-	ctx     context.Context
 	halted  bool
 }
 
@@ -119,7 +118,7 @@ func RunProgram(ctx context.Context, program *Program, options Options) Result {
 	if options.Limits.MaxOutputBytes <= 0 {
 		options.Limits.MaxOutputBytes = defaults.MaxOutputBytes
 	}
-	m := &machine{program: program, options: options, ctx: ctx}
+	m := &machine{program: program, options: options}
 	m.memory = append([]byte(nil), program.data...)
 	for len(m.memory)%8 != 0 {
 		m.memory = append(m.memory, 0)
@@ -129,7 +128,7 @@ func RunProgram(ctx context.Context, program *Program, options Options) Result {
 	m.reg[29] = int32(StackTop)
 	m.reg[30] = int32(StackTop)
 	result := Result{}
-	err := m.start()
+	err := m.start(ctx)
 	result.Output = m.output.String()
 	result.Steps = m.steps
 	result.InputConsumed = m.input
@@ -233,23 +232,23 @@ func (m *machine) value(op operand) int32 {
 }
 
 // call runs MIPS code at address until it returns to the driver.
-func (m *machine) call(address uint32) error {
+func (m *machine) call(ctx context.Context, address uint32) error {
 	m.reg[31] = int32(haltAddr)
 	m.pc = address
 	for m.pc != haltAddr {
-		if err := m.step(); err != nil {
+		if err := m.step(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *machine) step() error {
+func (m *machine) step(ctx context.Context) error {
 	m.steps++
 	if m.steps > m.options.Limits.MaxSteps {
 		return m.fail("step-limit", "Execution stopped after %d instructions (step limit).", m.options.Limits.MaxSteps)
 	}
-	if m.steps%4096 == 0 && m.ctx != nil && m.ctx.Err() != nil {
+	if m.steps%4096 == 0 && ctx != nil && ctx.Err() != nil {
 		return m.fail("cancelled", "Execution cancelled.")
 	}
 	if name, ok := m.program.natives[m.pc]; ok {
