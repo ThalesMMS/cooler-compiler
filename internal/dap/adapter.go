@@ -319,6 +319,10 @@ func (a *adapter) launch(ctx context.Context, req request) {
 			a.reply(req, nil, err)
 			return
 		}
+		// The resolved path identifies the source (so two spellings of one
+		// file are the same source); the client's own path is what the
+		// adapter reports back, so editors match it to their open documents.
+		requested := absolute
 		absolute, err = filepath.EvalSymlinks(absolute)
 		if err != nil {
 			a.reply(req, nil, err)
@@ -352,7 +356,7 @@ func (a *adapter) launch(ctx context.Context, req request) {
 			a.reply(req, nil, fmt.Errorf("source project exceeds 1 MiB or could not be read"))
 			return
 		}
-		project.Sources = append(project.Sources, compiler.SourceUnit{ID: absolute, Name: absolute, Content: string(content)})
+		project.Sources = append(project.Sources, compiler.SourceUnit{ID: absolute, Name: requested, Content: string(content)})
 	}
 	a.project = project
 	a.stopOnEntry = args.StopOnEntry

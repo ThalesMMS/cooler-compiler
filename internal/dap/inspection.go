@@ -68,7 +68,8 @@ func (a *adapter) setBreakpoints(req request) {
 				}
 			}
 		}
-		item := object{"verified": line > 0, "line": point.Line, "source": object{"path": path, "name": filepath.Base(path)}}
+		reported := a.sourcePath(path)
+		item := object{"verified": line > 0, "line": point.Line, "source": object{"path": reported, "name": filepath.Base(reported)}}
 		if line > 0 {
 			item["line"] = line
 			points = append(points, compiler.Breakpoint{ID: fmt.Sprintf("%s:%d", path, line), SourceID: path, Line: line})
@@ -80,6 +81,18 @@ func (a *adapter) setBreakpoints(req request) {
 	a.breakpoints[path] = points
 	a.reply(req, object{"breakpoints": result}, nil)
 }
+
+// sourcePath returns the path the client launched a source with, given the
+// source's resolved ID.
+func (a *adapter) sourcePath(id string) string {
+	for _, source := range a.project.Sources {
+		if source.ID == id && source.Name != "" {
+			return source.Name
+		}
+	}
+	return id
+}
+
 func (a *adapter) frameID(index int) int { return a.generation*1024 + index + 1 }
 func (a *adapter) frameIndex(id int) (int, error) {
 	index := id - a.generation*1024 - 1
@@ -113,7 +126,8 @@ func (a *adapter) stackTrace(req request) {
 		}
 		item := object{"id": a.frameID(index), "name": boundedText(frame.FunctionName, 256), "line": max(1, span.StartLine), "column": max(1, span.StartColumn)}
 		if span.SourceID != "" {
-			item["source"] = object{"name": filepath.Base(span.SourceID), "path": span.SourceID}
+			reported := a.sourcePath(span.SourceID)
+			item["source"] = object{"name": filepath.Base(reported), "path": reported}
 		}
 		items = append(items, item)
 	}

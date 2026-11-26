@@ -253,3 +253,28 @@ func TestDisplayBounds(t *testing.T) {
 		t.Fatal("short display changed")
 	}
 }
+
+func TestSymlinkedSourceKeepsClientPath(t *testing.T) {
+	real := t.TempDir()
+	linked := filepath.Join(t.TempDir(), "linked")
+	if err := os.Symlink(real, linked); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	source(t, real, "main.cl", "class Main inherits IO {\n main():Object {\n out_int(1)\n };\n};")
+	main := filepath.Join(linked, "main.cl")
+	c := newClient(t)
+	c.launch([]string{main}, nil)
+	points := c.ok("setBreakpoints", object{"source": object{"path": main}, "breakpoints": []any{object{"line": 3}}})
+	point := points["breakpoints"].([]any)[0].(map[string]any)
+	if point["verified"] != true || point["source"].(map[string]any)["path"] != main {
+		t.Fatal(points)
+	}
+	c.ok("configurationDone", nil)
+	if stop := c.event("stopped"); stop["reason"] != "breakpoint" {
+		t.Fatal(stop)
+	}
+	frames := c.ok("stackTrace", object{"threadId": 1})["stackFrames"].([]any)
+	if path := frames[0].(map[string]any)["source"].(map[string]any)["path"]; path != main {
+		t.Fatalf("stack frame path %v, want the launched path %s", path, main)
+	}
+}
