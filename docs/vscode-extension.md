@@ -24,22 +24,3 @@ bound applies after source selection. In multi-root workspaces, put shared binar
 and source-set settings in the `.code-workspace` settings rather than individual
 folder settings; all roots form one program. Warning selectors and each inlay
 category are configurable. Debugger/F5 integration is provided by the local [DAP adapter](dap-debugger.md).
-
-Windows validation used real VS Code **1.136.1**. The test runner installed the
-VSIX into an isolated extensions directory and loaded that installed package in
-the Extension Development Host, using the official `@vscode/test-electron`
-harness. It exercised editor diagnostics, completion, hover, definition, document
-symbols, semantic tokens, QuickFix application and diagnostic clearing, check/run
-exit statuses, unsaved-file refusal, two concurrent restarts and graceful LSP
-stop. The workspace contained 1,025 excluded exercise files alongside the selected
-program. No cooler-lsp test process remained after the host exited.
-
-The explicit developer test command `npm test` downloads pinned VS Code 1.136.1
-to ignored `dist` if absent. This download is never part of extension activation.
-The runner currently configures Windows `.exe` paths. Linux/macOS native editor
-validation and an untrusted-window UI run were unavailable; trust declarations
-and process guards were inspected. No claim of Marketplace installation or
-manual visual inspection is made.
-
-Implementation follows the official [language server extension guide](https://code.visualstudio.com/api/language-extensions/language-server-extension-guide)
-and [extension testing guide](https://code.visualstudio.com/api/working-with-extensions/testing-extension).

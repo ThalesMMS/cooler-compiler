@@ -2,7 +2,7 @@
 
 **Cooler Compiler** is a standalone educational compiler and debugger for the **COOL (Classroom Object-Oriented Language)** programming language. It combines a Go compiler core, an embedded browser/WebView interface, source-linked artifacts, a stack IR, pseudo-assembly, and an interactive VM session.
 
-**Current supported release:** [Cooler Compiler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0), published on September 2, 2026. Downloaded release assets are checksum-verifiable through `SHA256SUMS` and `release-manifest.json`; the exact platform qualification boundaries are recorded in the [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md).
+**Current supported release:** [Cooler Compiler v1.0.0](https://github.com/ThalesMMS/cooler-compiler/releases/tag/v1.0.0). Release assets include checksums and a build manifest.
 
 The compiler and local server are self-contained. On macOS, the GUI opens in a native `WKWebView`; on Windows, a CGO build uses the native WebView2-backed window. Linux and CGO-disabled desktop builds automatically use the default browser.
 
@@ -36,11 +36,13 @@ Every row below is part of the published v1.0.0 contract. The conformance summar
 
 Important intentional differences from the reference toolchain:
 
-- `-assembly` and the Assembly panel expose educational pseudo-assembly only. Cooler does not emit executable or linkable MIPS and does not invoke SPIM.
-- Programs execute through Cooler's purpose-built Go VM. Runtime objects are managed by Go's garbage collector; Cooler does not reproduce the reference runtime's object layout, collector choices, or GC test modes.
+- `-assembly` and the Assembly panel expose educational pseudo-assembly by default. The opt-in MIPS target (`--target=mips`, the GUI's MIPS tab) emits SPIM assembly for the Cool runtime and runs it on an embedded simulator; Cooler never invokes a host SPIM.
+- By default programs execute through Cooler's purpose-built Go VM. Runtime objects are managed by Go's garbage collector; the VM does not reproduce the reference runtime's object layout, collector choices, or GC test modes (the opt-in MIPS target does).
 - COOL `Int` is an architecture-independent signed 32-bit value. Non-negative literals stop at `2147483647`; arithmetic and `~` wrap modulo 2^32, including `-2147483648 / -1 == -2147483648`, as an explicit deterministic Cooler policy where the manual leaves overflow unspecified.
 - `IO.in_string` and `IO.in_int` consume one supplied line per call. Exhausted input returns `""`/`0`; `in_int` trims whitespace and returns `0` for an invalid or out-of-range signed 32-bit line. With CLI file arguments, redirected or piped stdin is deterministic program input; without file arguments, stdin is source. Explicit `run --interactive FILE...` reserves stdin for program input and reads only when the VM reports `waiting-input`.
 - Execution is bounded for reproducible debugging: the VM limits instructions, operand-stack size, call depth, object allocations, and retained trace entries.
+
+Optional course-assignment modes go beyond this contract without changing its defaults: course reference formats for tokens, ASTs, and diagnostics; a generated Flex/Bison-style front-end; and the MIPS target with an embedded simulator. The GUI presents them as Course mode (PA1–PA5). They aim to match the course tools' formats and are compared only against tools you supply; default Cooler output is not `coolc` output. See [`docs/course-assignments.md`](docs/course-assignments.md).
 
 This section is the canonical release-note link for the v1.0.0 compatibility contract. The detailed grammar, built-ins, and precedence rules remain in [`docs/cool-language.md`](docs/cool-language.md).
 
@@ -227,9 +229,9 @@ Before preparing a release, run the complete local gate:
 make release-check
 ```
 
-The command checks module integrity, whitespace, formatting, the normative conformance corpus, differential-harness self-tests, tests, a bounded local fuzz smoke, vet, the exact repository-pinned `golangci-lint`, shell and JavaScript syntax, examples/resources, release builds, and two byte-identical package builds; it also reports platform-specific checks as passed or skipped. Install the pinned linter once with `./scripts/install-golangci-lint.sh`; verification itself performs no tool download. Run `make conformance` alone for its human summary and `dist/conformance-report.json`. `make fuzz TARGET=FuzzCompile DURATION=10m` runs one opt-in campaign; the [robustness testing guide](docs/robustness-testing.md) documents every target, bound, property, and regression rule. An optional `make differential` compares the original corpus with user-supplied `coolc`/SPIM tools and skips cleanly when they are absent; `STRICT=1`, `RULE=...`, and `FIXTURE=...` control strict discovery and filtering. See [`docs/conformance.md`](docs/conformance.md) and the [`differential guide`](docs/differential.md) for the local contracts, and [`docs/release.md`](docs/release.md) for release prerequisites and result interpretation.
+The command checks module integrity, whitespace, formatting, the normative conformance corpus, differential-harness self-tests, tests, a bounded local fuzz smoke, vet, the exact repository-pinned `golangci-lint`, shell and JavaScript syntax, examples/resources, release builds, and two byte-identical package builds; it also reports platform-specific checks as passed or skipped. Install the pinned linter once with `./scripts/install-golangci-lint.sh`; verification itself performs no tool download. Run `make conformance` alone for its human summary and `dist/conformance-report.json`. `make fuzz TARGET=FuzzCompile DURATION=10m` runs an opt-in campaign. An optional `make differential` compares the original corpus with user-supplied `coolc`/SPIM tools and skips cleanly when they are absent; `STRICT=1`, `RULE=...`, and `FIXTURE=...` control strict discovery and filtering. See [`docs/conformance.md`](docs/conformance.md), the [`differential guide`](docs/differential.md), and [`docs/release.md`](docs/release.md).
 
-Successful cross-compilation is not runtime evidence. For v1.0.0, the exact published assets were rebuilt reproducibly and verified after download; Windows amd64 additionally passed bounded packaged CLI, LSP, browser-GUI, and native WebView2 smoke tests. Linux amd64/arm64 and macOS arm64 were cross-built and checksum-qualified, but target runtime execution is not claimed. See the [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md). This project intentionally does not use CI.
+Release packages are built for supported desktop platforms. See the [release guide](docs/release.md) for packaging details.
 
 The same operations without Make are:
 
@@ -244,27 +246,25 @@ go build ./cmd/cooler-lsp
 ## Documentation
 
 - Project policy: [roadmap](ROADMAP.md), [changelog](CHANGELOG.md),
-  [contributing guide](CONTRIBUTING.md), and [security policy](SECURITY.md).
+  [contributing guide](CONTRIBUTING.md),
+  [contributor license agreement](CLA.md), and [security policy](SECURITY.md).
 - Compiler/runtime: [language coverage](docs/cool-language.md),
   [normative conformance matrix](docs/conformance.md),
   [generated conformance summary](docs/conformance-summary.md),
   [local differential testing](docs/differential.md),
   [diagnostic catalog](docs/diagnostics.md), [stack IR](docs/stack-ir.md),
-  [VM runtime](docs/vm-runtime.md), and
-  [multifile semantics](docs/multifile.md).
+  [VM runtime](docs/vm-runtime.md),
+  [multifile semantics](docs/multifile.md),
+  [course assignments (PA1–PA5)](docs/course-assignments.md), and
+  [MIPS backend](docs/mips-backend.md).
 - Interfaces/artifacts: [CLI](docs/cli.md),
   [debugger protocol](docs/debugger-protocol.md), [program input](docs/input.md),
   [JSON and archive contract](docs/artifact-contract.md),
   [educational optimization contract](docs/optimization.md),
   [visualization and provenance model](docs/visualization-model.md).
 - Engineering/release: [architecture](docs/architecture.md),
-  [robustness testing](docs/robustness-testing.md),
-  [local performance engineering](docs/performance.md),
-  [adversarial v1.0.0 audit](docs/adversarial-audit-v1.0.0.md),
-  [v1.0.0 completion contract](docs/v1.0-completion-contract.md),
   [v1.0.0 release notes](docs/release-notes-v1.0.0.md),
-  [v1.0.0 validation ledger](docs/release-validation-v1.0.0.md),
-  [historical v0.1.1 target evidence](docs/release-validation-v0.1.1.md),
+  [v1.0.0 platform support](docs/release-validation-v1.0.0.md),
   [local release process](docs/release.md).
 
 Run `make docs-check` to validate local links and headings, JSON schema
@@ -337,4 +337,5 @@ model:
 - a separate commercial license from the copyright holder.
 
 See [`LICENSING.md`](LICENSING.md) for the scope and commercial contact.
+Contributions are accepted under the [Contributor License Agreement](CLA.md).
 Third-party material retains its own license terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the applicable notices.

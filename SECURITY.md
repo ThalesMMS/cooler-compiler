@@ -4,9 +4,8 @@
 
 | Version | Security support |
 | --- | --- |
-| Latest released `0.1.x` | Supported |
-| Development branches | Best-effort pre-release fixes; not a supported distribution |
-| Older minor or pre-release builds | Unsupported; upgrade first |
+| Latest released version | Supported |
+| Older releases | Unsupported; upgrade to the latest release |
 
 This table changes when a new minor line becomes the supported release. The
 [changelog](CHANGELOG.md) records security-relevant user-visible changes.
@@ -16,7 +15,7 @@ This table changes when a new minor line becomes the supported release. The
 Please use the repository's
 [private security advisory form](https://github.com/ThalesMMS/cooler-compiler/security/advisories/new).
 Do not include exploit details, tokens, private source programs, or unpatched
-vulnerabilities in a public issue.
+vulnerabilities in a public discussion.
 
 Include the affected version/commit and platform, a minimal reproduction, the
 security impact, whether remote access or `--allow-remote` was involved, and any
@@ -62,7 +61,6 @@ platform WebView security updates.
 
 Verify release archives with the adjacent `SHA256SUMS` before execution. The
 release manifest distinguishes built artifacts from target-runtime-tested ones;
-see the [artifact contract](docs/artifact-contract.md#release-provenance) and
-[manual evidence ledger](docs/release-validation-v0.1.1.md). Dependency licenses
-and provenance are listed in
+see the [artifact contract](docs/artifact-contract.md#release-provenance).
+Dependency licenses and provenance are listed in
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

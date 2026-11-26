@@ -59,19 +59,8 @@ The four packages, `release-manifest.json`, and `SHA256SUMS` are described by
 the versioned [artifact contract](artifact-contract.md). The builder refuses a
 dirty tree so its recorded source commit cannot silently misidentify the code.
 
-Cross-building an artifact does not establish that it runs on its target. The
-versioned [v1.0.0 target-runtime validation record](release-validation-v1.0.0.md)
-defines the required Windows, Linux, and macOS evidence for this release. The
-historical [v0.1.1 record](release-validation-v0.1.1.md) remains evidence only
-for the exact older packages named there. Checks remain deliberately local and
-manual; every distributed v1.0.0 package must be exercised on its real target
-before its row can be marked runtime-tested. Runtime smoke scripts accept the
-distributed archive, verify it against `SHA256SUMS`, extract it, and then
-execute its contents.
-
-The [draft v1.0.0 release notes](release-notes-v1.0.0.md) cover the package
-matrix, clean-clone installation, checksum/provenance verification, migration,
-packaged-LSP setup, known boundaries, and public repository update. They link
-to the README's canonical [Scope and compatibility](../README.md#scope-and-compatibility)
-section so “complete within Cooler's educational scope” is not confused with
-drop-in reference-toolchain compatibility.
+Cross-building an artifact does not establish that it runs on its target.
+Runtime smoke scripts accept the distributed archive, verify it against
+`SHA256SUMS`, extract it, and execute its contents on the target platform.
+Release packages, checksums, and provenance are described in the
+[artifact contract](artifact-contract.md#release-provenance).

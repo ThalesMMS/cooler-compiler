@@ -35,7 +35,7 @@ Rule IDs are stable and begin with one of `LEX`, `PAR`, `SEM-CLASS`, `SEM-EXPR`,
 - a name, normative source and section, compiler stage, and observable behavior;
 - one of the statuses below;
 - positive and negative fixtures, expected diagnostics or output where relevant;
-- a reference comparison and a tracking issue for every incomplete claim.
+- a reference comparison and a clear boundary for every incomplete claim.
 
 The matrix also contains the complete ordered section index of the selected
 COOL Reference Manual. Every section maps to rule IDs or an explicit
@@ -46,11 +46,11 @@ The allowed statuses have precise meanings:
 
 - `supported`: the stated behavior is implemented and every linked fixture must
   pass;
-- `partial`: a tested subset works, with the remaining gap linked to an issue;
+- `partial`: a tested subset works, with the remaining gap documented;
 - `intentional-divergence`: Cooler deliberately differs and documents the result;
-- `unsupported`: the behavior is outside the current implementation and linked
-  to an issue;
-- `not-yet-tested`: no sufficient fixture exists yet and the gap has an issue.
+- `unsupported`: the behavior is outside the current implementation and its
+  boundary is documented;
+- `not-yet-tested`: no sufficient fixture exists yet and the gap is identified.
 
 The matrix also maps each user-visible README compatibility claim to rule IDs.
 The loader checks that the exact claim still exists and that every rule is
@@ -98,7 +98,7 @@ diagnostics in emission order, rich locations where declared, selected AST
 shape/types, and output byte-for-byte. Supported lexer rules must have token
 evidence, parser rules AST evidence, semantic rules typed-AST or diagnostic
 evidence, and runtime/basic-class rules output/state or diagnostic evidence.
-Completed rules may not retain issue links. Intentional divergences must record
+Completed rules may not retain unresolved tracking metadata. Intentional divergences must record
 their exact boundary, reason, user consequence, and scope assertion.
 
 Every debugger scenario declares maximum actions and instructions and runs

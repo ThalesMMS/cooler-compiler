@@ -27,12 +27,3 @@ active unchanged document, retains selection around token boundaries (including
 spaces inside literals), marks the source dirty, saves its recovery copy and
 invalidates the prior compiler/debugger session. Disk saving remains explicit.
 
-Windows validation: token equivalence and idempotence corpus, nested comments,
-strings/escapes, Unicode, CRLF, let/case, invalid input, output expansion bound,
-CLI write/check/failure preservation, LSP UTF-16 and HTTP tests. Node tests verify
-selection mapping. `scripts/check-format-client.mjs` applies a formatting edit
-through the actual Microsoft LSP protocol client and verifies idempotence after
-didChange. In the real in-app browser, a compiled compact program was formatted;
-the nested comment and emoji string remained intact and the session changed from
-READY to SOURCE CHANGED, with the pipeline reset. Native WebView, macOS and native
-IDE visual validation were unavailable.

@@ -30,14 +30,14 @@ const (
 )
 
 var requiredDocuments = []string{
-	"ROADMAP.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md",
+	"ROADMAP.md", "CHANGELOG.md", "CONTRIBUTING.md", "CLA.md", "SECURITY.md",
 	"docs/diagnostics.md", "docs/stack-ir.md", "docs/vm-runtime.md",
 	"docs/debugger-protocol.md", "docs/artifact-contract.md",
 	"docs/multifile.md", "docs/conformance.md", "docs/lsp.md",
 	"docs/conformance-summary.md",
-	"docs/release-notes-v1.0.0.md", "docs/release-validation-v0.1.1.md",
-	"docs/release-validation-v1.0.0.md", "docs/v1.0-completion-contract.md",
-	"docs/adversarial-audit-v1.0.0.md",
+	"docs/release-notes-v1.0.0.md", "docs/release-validation-v1.0.0.md",
+	"docs/course-assignments.md",
+	"docs/mips-backend.md",
 }
 
 func main() {

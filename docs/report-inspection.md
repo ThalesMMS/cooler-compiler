@@ -25,14 +25,3 @@ and restores the original documents. If imported sources were edited, returning
 asks before discarding those edits. Save imported edits explicitly before leaving.
 Inspection never replaces the original durable recovery copy; the temporary
 imported workspace is not automatically persisted as recovery data.
-
-Validation on Windows: export/decode roundtrips, multi-file source hashes,
-metadata-only reports, malformed/incompatible/oversized/deep JSON, stripped
-session fields and endpoint capability tests. Full Go tests, vet, pinned lint
-and documentation checks were run. In the real in-app browser, invalid runtime
-data produced an inline error; a valid snapshot displayed recorded output and
-absent-artifact notices with read-only source and disabled execution. Explicit
-recompile produced a new READY session with zero executed instructions. Returning
-restored the original unsaved source and selection. Native file-picker automation,
-native WebView and macOS validation were unavailable; the browser's JSON paste
-path exercised the same importer and state transition.

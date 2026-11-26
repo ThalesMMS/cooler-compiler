@@ -2,7 +2,7 @@
 
 `cooler-lsp` is a local Language Server Protocol 3.17 process for `.cl` and
 `.cool` files. It uses the stable public Go compiler facade in semantic-check
-mode; it does not import the private compiler implementation or introduce a
+mode; it does not import internal compiler packages or introduce a
 second COOL type checker.
 
 ```bash
@@ -191,51 +191,3 @@ reloaded, and watched documents also preserve the combined retained-source
 ceiling across batches. An incremental edit that exceeds its change-count
 ceiling marks the buffer desynchronized and requires a bounded full-text update
 before analysis resumes.
-
-## Neovim smoke test
-
-Build the binary and note its absolute path:
-
-```bash
-go build -o ./bin/cooler-lsp ./cmd/cooler-lsp
-```
-
-With Neovim 0.10+, open a COOL file and run this Lua (replace the command path):
-
-```lua
-vim.filetype.add({ extension = { cl = "cool", cool = "cool" } })
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "cool",
-  callback = function()
-    vim.lsp.start({
-      name = "cooler-lsp",
-      cmd = { "/absolute/path/to/bin/cooler-lsp" },
-      root_dir = vim.fs.root(0, { ".git" }) or vim.fn.getcwd(),
-    })
-  end,
-})
-```
-
-Use `:LspInfo` to confirm initialization, introduce `missing` in an expression
-to see `COL3100`, hover an identifier with `K`, navigate with `gd`, find
-references with `gr`, request completion with `Ctrl-X Ctrl-O`, and run
-`:lua vim.lsp.buf.document_symbol()` for hierarchy. `:messages` shows stderr
-logs; protocol stdout remains invisible to the editor UI.
-
-## Local validation
-
-The package tests replay framed JSON-RPC lifecycle, malformed-message,
-diagnostic, and cancellation sequences. Feature tests cover multifile
-inheritance, overrides, `SELF_TYPE`, shadowing, cross-file related information,
-completion filtering, semantic tokens, quick fixes, UTF-16 edits, stale
-generations, concurrent cache reuse, and a 51-file workspace stress case.
-
-```bash
-go test -race ./internal/lsp ./cmd/cooler-lsp
-make release-check
-```
-
-No editor extension, CI workflow, or network service is required.
-
-See [symbol suggestions](symbol-suggestions.md) for bounded typo QuickFixes,
-UTF-16 application evidence, and versioned `documentChanges` negotiation.

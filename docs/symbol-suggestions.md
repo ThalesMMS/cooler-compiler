@@ -1,4 +1,4 @@
-# Symbol QuickFixes (#66)
+# Symbol suggestions and quick fixes
 
 Unknown identifiers, assignment targets, types and methods retain their existing
 diagnostic codes. A diagnostic offers **Replace with NAME** only when exactly
@@ -29,33 +29,3 @@ receive `documentChanges` with the analyzed open-document version (or null for
 a closed file). Clients must reject a versioned edit after intervening changes.
 Legacy clients retain `changes` edits without a version guard. The GUI resets
 the compilation session and old actions after applying a fix or editing source.
-
-## Reproduction and validation
-
-```sh
-CGO_ENABLED=0 go test ./internal/compiler -run 'TestSymbolSuggestions|TestSuggestionBounds|TestOneEditApart' -count=1
-CGO_ENABLED=0 go test ./internal/lsp -run TestSymbolQuickFixVersionedUTF16 -count=1
-```
-
-Tests cover variables/assignment, inherited members, shadowing, every unknown
-type declaration site, allocation and static dispatch, ambiguity, unavailable
-members, distance and search limits. Applying each positive single-file fix
-recompiles without errors. The LSP test applies a version-7 action after an
-emoji in a two-file project and successfully analyzes the corrected version 8.
-
-Browser GUI validation on Windows used:
-
-```cool
-class Main inherits IO {
-  main():Object {{"😀"; out_int("abcd".lenght());}};
-};
-```
-
-Compile displayed COL3173 and **Replace with length**. Clicking it changed only
-the method token, cleared stale artifacts, and recompilation/run halted with
-output `4` (22 instructions). This exercised the actual browser UI, not just a
-server build. Native macOS application validation was unavailable.
-
-The full short Go suite, vet, pinned lint and documentation checks passed on
-Windows. The focused LSP test also passed with the race detector; suggestion
-tests executed successfully in Debian/WSL. Independent review found no defects.

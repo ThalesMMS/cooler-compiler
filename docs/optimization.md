@@ -75,17 +75,12 @@ from the previous mode.
 
 ## Equivalence and limits
 
-Local tests compare baseline and optimized execution for output, input events,
-halt/wait/error state, runtime diagnostic identity and span, object-copy
-behavior, and heap projections. Generated and fuzzed constant programs extend
-that corpus. Verifier checks run before optimization, after every pass, and at
-the normal final backend barrier.
-
-Raw executed-instruction counts are expected to differ. Equivalence campaigns
-therefore use a policy high enough for both variants and compare semantic
-outcomes rather than requiring the same step count. A deliberately tight
-instruction budget can pause one variant before the other; that is a resource
-limit observation, not a language-semantic difference.
+Optimized and baseline programs preserve output, input consumption,
+halt/wait/error state, diagnostic identity and span, object-copy behavior, and
+heap projections when run under equivalent semantic budgets. Instruction
+counts may differ, so a deliberately tight instruction budget can pause one
+variant before the other. That reflects a resource limit rather than a
+language-semantic difference.
 
 The algebraic pass uses Cooler's signed 32-bit arithmetic, including wrapping
 negation at the minimum integer. It merges all removed origins into the
@@ -96,18 +91,6 @@ reduce executed instructions and can reduce transient stack usage; use the
 baseline for experiments with exact instruction or operand-stack budgets.
 The bytecode verifier establishes structural/type invariants after the pass;
 it is not a formal proof of semantic equivalence.
-
-## Issue #82 validation
-
-Focused tests compare baseline and optimized output, input events, runtime
-diagnostic identity/spans, and relevant heap snapshots. Cases cover zero,
-one, signed 32-bit extrema, integer and Boolean double negation, operand I/O,
-allocation and failure, incoming jumps into either removed instruction,
-zero-multiplication refusal, and exact retained origin indexes/source spans.
-The basic optimization golden records the new pass and its verifier barrier.
-The full short Go suite, vet, pinned lint and documentation checks passed on
-Windows. Algebraic tests also executed successfully on Debian/WSL using a
-cross-built Linux test executable. Native macOS validation was unavailable.
 
 ## Dead computations and effects
 
@@ -128,17 +111,3 @@ checks the resulting stack and CFG. Exact instruction and transient stack
 budgets, trace lengths, and debugger instruction stops may differ, as with the
 other opt-in passes.
 
-Issue #83 tests exercise discarded block results, interior targets, operand
-stack balance, input/output, allocations, division and string-policy failures,
-and bounded nonterminating loops. Sixteen generated cases compare baseline
-and optimized observables. Loop tests use a 100-instruction budget.
-Independent review found no concrete defects. The short full Go suite, vet,
-pinned lint and documentation checks passed on Windows; the focused dead-value
-tests also ran successfully in Debian/WSL. Native macOS was unavailable.
-
-## Inlining experiment
-
-The [known-target prototype and measurements](inlining-experiment.md) document
-why inlining remains test-only: it changes frame and lexical-scope policy
-failures and debugger observations, while growing the measured instruction
-streams. It is not part of either optimization mode.

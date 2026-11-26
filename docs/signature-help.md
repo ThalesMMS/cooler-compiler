@@ -1,4 +1,4 @@
-# LSP signature help (#67)
+# LSP signature help
 
 `cooler-lsp` advertises `signatureHelpProvider` with `(` and `,` triggers and `)`
 as a retrigger. Clients can also invoke `textDocument/signatureHelp` manually.
@@ -35,28 +35,3 @@ during token scanning and before returning, and rejects a changed generation
 with LSP ContentModified (-32801). `$/cancelRequest` uses the
 existing cancellation path. No last-good-document cache is substituted for
 current unsaved text.
-
-## Validation with an actual protocol client
-
-The test corpus covers opening/comma/closing triggers, nested calls, Unicode
-strings and nested comments, let-binding commas, lexical shadowing contexts,
-static SELF_TYPE and chains, unknown receivers, attribute initializers, zero
-parameters, multifile signature changes, builtin catalog drift and cancellation.
-
-The following uses Microsoft's real `vscode-languageserver-protocol` client
-implementation over the server's stdio transport, with a 20-second watchdog:
-
-```sh
-npm install --prefix dist/lsp-client --no-audit --no-fund vscode-languageserver-protocol@3.17.5
-go build -o dist/cooler-lsp ./cmd/cooler-lsp
-node scripts/check-signature-client.mjs dist/cooler-lsp
-```
-
-On Windows use `.exe` in both paths. The local run passed capability negotiation,
-an actually incomplete `out_int(` document, builtin documentation, a version-2
-change and closing-call dismissal. This is protocol-client validation; no visual
-IDE popup is claimed by this test. Local editor packaging is tracked separately
-in #74. The optional npm client is installed only in ignored dist and is not a
-runtime dependency of cooler-lsp.
-
-Protocol reference: [LSP signature help](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_signatureHelp).

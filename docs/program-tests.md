@@ -94,15 +94,3 @@ to save it; usage and manifest errors go to stderr.
 After a tool failure, later cases still receive result entries; an expired
 shared context makes those entries fail immediately. A tool failure takes exit
 status precedence over ordinary mismatches.
-
-## Validation
-
-Parser and CLI tests cover malformed manifests, version/field/path/limit errors,
-required output, all four outcomes, output-policy failures, independent input
-and output, exact newline mismatch, host I/O and cancellation. The complete
-multifile exercise also runs through the command in tests.
-
-The short full Go suite, vet, pinned lint and documentation checks passed on
-Windows. Focused command tests and the actual six-case CLI exercise also ran
-successfully in Debian/WSL. Independent review verified fixes for nonregular
-manifest loading and I/O-error classification. Native macOS was unavailable.

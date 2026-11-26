@@ -126,16 +126,8 @@ The LSP is a separate process API rather than part of this Go facade. Embedder
 code should start `cmd/cooler-lsp` and speak the documented JSON-RPC transport;
 see the [LSP guide](lsp.md) for lifecycle, cancellation, and workspace limits.
 
-## Executable examples and validation
+## Examples
 
-The package Go documentation contains executable examples for a source string,
-multifile and check-only compilation, incremental phases, detached artifacts,
-debugger stepping, input, heap/watch/reverse capabilities, cancellation, and
-explicit disposal. The test suite also:
-
-- imports the package from a temporary external Go module whose path contains
-  whitespace;
-- compiles every shipped example through the facade;
-- exercises representative diagnostics, artifacts, cancellation, concurrency,
-  pause, disposal, JSON round trips, and immutable copies;
-- compiles the v1 compatibility fixture on every `go test ./...` run.
+Package documentation provides executable examples for source and multifile
+compilation, incremental phases, detached artifacts, debugger stepping, input,
+heap/watch/reverse capabilities, cancellation, and explicit disposal.

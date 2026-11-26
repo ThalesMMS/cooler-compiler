@@ -1,4 +1,4 @@
-# Durable GUI draft recovery (#65)
+# GUI draft recovery
 
 The GUI saves recovery copies of tab names, ordered source contents and the active
 tab after a 300 ms debounce. On startup, **Restore drafts** reopens the saved tabs;
@@ -58,20 +58,3 @@ API actions are `read`, `save` and `clear`; all require the current GUI capabili
 and normal host/origin checks. Save adds `{revision, workspace}`; clear adds
 `revision`; read returns `{revision, workspace}`. Storage errors use 503 and invalid
 requests use 400. The capability is transported only in the request header.
-
-## Validation
-
-Go tests cover a new store reading prior data, ordered multiple tabs and active
-index, stale revisions, tombstone deletion, invalid versions/fields/content
-limits, corrupt data, unavailable storage and mutually exclusive independent
-file handles. JavaScript tests cover the payload allowlist, debounce, serialized
-revisions and unavailable/quota-style failures.
-
-Native macOS application interaction is unavailable on this Windows host and is
-not claimed as tested. The shared disk service and Unix locking can be tested
-locally under Linux. Windows and WSL Debian storage tests passed, including
-locking. Real Chromium validation edited two restored tabs, waited for the save
-acknowledgment, forcibly stopped the GUI service, closed the browser tab, and
-restarted the service from port 9091 to 9093 with the same draft directory. Both
-edited contents, order and active second tab were restored. Clearing followed by
-compilation without edits left `{workspace:null}` on disk.

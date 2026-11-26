@@ -162,7 +162,7 @@ The following files originated in the PUC Minas “Compiladores Parte 1” teach
 
 The assignment family and COOL distribution are described by [Stanford CS143](https://web.stanford.edu/class/cs143/) and the [UC Berkeley COOL distribution page](https://ftp.eecs.berkeley.edu/cool/). The `atoi.cl` helper is copied from the COOL examples collection; the stack interpreter and input are the corresponding course solution and test data.
 
-No standalone open-source license or SPDX identifier accompanied these three files, and no public license grant was identified for them. They are therefore not claimed as project-owned work and are not relicensed under the project's AGPL declaration. All rights in those files remain with their respective authors or institutions. They are retained only in the private development repository for assignment compatibility and are excluded by `scripts/publication-sync.sh` from every sanitized public snapshot. They are not included in binary release packages.
+No standalone open-source license or SPDX identifier accompanied these files, and no public license grant was identified for them. They are not claimed as project-owned work or relicensed under the project's AGPL declaration; all rights remain with their respective authors or institutions. They are retained in the source tree for assignment compatibility and are not included in binary release packages.
 
 ## Project-owned assets
 

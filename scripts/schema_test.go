@@ -66,10 +66,10 @@ func TestMachineReadableSchemasValidateProducedDocuments(t *testing.T) {
 	}
 	releaseManifest := releaseartifact.Manifest{
 		SchemaVersion: releaseartifact.ManifestSchemaVersion, ManifestType: "cooler-release", Project: "cooler-compiler",
-		Version: "0.1.1", SourceCommit: strings.Repeat("a", 40), SourceDateEpoch: 1,
+		Version: "1.0.0", SourceCommit: strings.Repeat("a", 40), SourceDateEpoch: 1,
 		Toolchain:  releaseartifact.Toolchain{GoVersion: runtime.Version(), HostOS: runtime.GOOS, HostArch: runtime.GOARCH},
 		BuildFlags: []string{"-trimpath"}, Packages: packages,
-		Validation: releaseartifact.Validation{BuildStatus: "built", RuntimeStatus: "see-evidence-document", SkippedChecks: []string{}, EvidenceDocument: "docs/release-validation-v0.1.1.md"},
+		Validation: releaseartifact.Validation{BuildStatus: "built", RuntimeStatus: "see-evidence-document", SkippedChecks: []string{}, EvidenceDocument: "docs/release-validation-v1.0.0.md"},
 	}
 	validateSchemaDocument(t, filepath.Join(repoRoot, "schemas", "release-manifest-v1.schema.json"), mustJSON(t, releaseManifest))
 }

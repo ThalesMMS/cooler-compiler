@@ -5,7 +5,7 @@ All notable user-visible changes are recorded here. The format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html) for the documented
 CLI, JSON, archive, and Go-facing contracts.
 
-## 1.0.0 - 2026-09-02
+## 1.0.0
 
 ### Added
 
@@ -124,7 +124,7 @@ CLI, JSON, archive, and Go-facing contracts.
   `cooler-lsp` binary, and neither debugger nor LSP capabilities are required
   for compilation.
 
-## 0.1.0 - 2026-08-31
+## 0.1.0
 
 ### Added
 

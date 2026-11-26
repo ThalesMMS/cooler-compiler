@@ -24,12 +24,3 @@ source, also respecting configured file/workspace limits and analysis timeout.
 Source replacement uses one pass. Cancellation or a changed generation discards
 the result. The guarantee covers the loaded source set; select the complete
 project to include all external references before renaming shared symbols.
-
-Windows validation: focused parameter/let/case/class/attribute/override tests,
-capture and inherited collision rejection, multi-file versions and emoji ranges,
-source trivia preservation and expansion limits. The real Microsoft LSP 3.17.5
-protocol client in `scripts/check-rename-client.mjs` prepares, applies a versioned
-rename and checks the updated document. Run it with the built cooler-lsp path,
-using the dependency setup in `scripts/check-signature-client.mjs`. Native IDE
-rename UI and macOS validation were unavailable; protocol execution is not a
-visual IDE test.
