@@ -1,0 +1,19 @@
+{
+  "fill": {
+    "solid": "extended-srgb:0.025,0.17,0.33,1.0"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "name": "Ice terminal",
+          "image-name": "Cooler.png",
+          "glass": false
+        }
+      ]
+    }
+  ],
+  "supported-platforms": {
+    "squares": ["macOS"]
+  }
+}

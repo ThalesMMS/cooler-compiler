@@ -12,6 +12,7 @@ APP_NAME="${APP_NAME:-Cooler Compiler}"
 APP="$DIST_DIR/$APP_NAME.app"
 MACOS="$APP/Contents/MacOS"
 RESOURCES="$APP/Contents/Resources"
+MIN_MACOS_VERSION="12.0"
 
 if [[ -z "$COMMIT" ]]; then
   printf '[WARN] Git source identity unavailable; embedding commit=unknown\n' >&2
@@ -56,12 +57,16 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$VERSION</string>
   <key>CFBundleVersion</key><string>$VERSION</string>
-  <key>LSMinimumSystemVersion</key><string>12.0</string>
+  <key>LSMinimumSystemVersion</key><string>$MIN_MACOS_VERSION</string>
   <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Thales Matheus M Santos</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>
 PLIST
+
+if [[ "${MACOS_ASSET_CATALOG:-0}" == "1" ]]; then
+  bash "$ROOT/scripts/compile-macos-app-icon.sh" "$APP" "$MIN_MACOS_VERSION"
+fi
 
 if [[ "$(uname -s)" == "Darwin" ]] && command -v codesign >/dev/null 2>&1; then
   codesign --force --sign - "$APP"
